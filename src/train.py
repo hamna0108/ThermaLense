@@ -84,7 +84,8 @@ def main():
     torch.save({
         'model_state_dict': model.state_dict(),
         'log_alpha_mean': train_dataset.log_alpha_mean,
-        'log_alpha_std': train_dataset.log_alpha_std
+        'log_alpha_std': train_dataset.log_alpha_std,
+        'use_hard_mask': model.use_hard_mask
     }, os.path.join(model_dir, 'fno2d_heat.pt'))
     print("Training finished and model saved.")
     

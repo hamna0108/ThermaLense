@@ -108,7 +108,8 @@ def precompute_models(Nx=50, Nt=100, num_la=120):
     fno_path = os.path.join(base_dir, 'models', 'fno2d_heat.pt')
     checkpoint = torch.load(fno_path, map_location=device)
     
-    fno_model = FNO2d(modes1=16, modes2=12, width=32)
+    fno_model = FNO2d(modes1=16, modes2=12, width=32, use_hard_mask=checkpoint.get('use_hard_mask', False))
+    assert fno_model.use_hard_mask == checkpoint.get('use_hard_mask', False), "FNO mask mismatch"
     fno_model.load_state_dict(checkpoint['model_state_dict'])
     fno_model.eval()
     

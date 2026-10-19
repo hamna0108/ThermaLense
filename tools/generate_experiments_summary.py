@@ -39,20 +39,20 @@ splits = [
 # Load models
 models = {}
 
-# 1. FNO Base
-fno_base = FNO2d(modes1=16, modes2=12, width=32).to(device)
+# 1. FNO Base (unmasked)
+fno_base = FNO2d(modes1=16, modes2=12, width=32, use_hard_mask=False).to(device)
 fno_base.load_state_dict(checkpoint['model_state_dict'])
 fno_base.eval()
 models['fno_base'] = ('fno', fno_base, 'src/train.py', '42 (train)')
 
-# 2. FNO Exp C
-fno_expC = ReparametrizedFNO2d(modes1=16, modes2=12, width=32).to(device)
+# 2. FNO Exp C (unmasked)
+fno_expC = ReparametrizedFNO2d(modes1=16, modes2=12, width=32, use_hard_mask=False).to(device)
 fno_expC.load_state_dict(torch.load(str(EXP_MODELS / 'fno2d_expC.pt'), map_location=device)['model_state_dict'])
 fno_expC.eval()
 models['fno_expC'] = ('fno', fno_expC, 'experiments/train_expC.py', '42 (train)')
 
-# 3. FNO Exp D
-fno_expD = BoundedReparametrizedFNO2d(modes1=16, modes2=12, width=32).to(device)
+# 3. FNO Exp D (unmasked)
+fno_expD = BoundedReparametrizedFNO2d(modes1=16, modes2=12, width=32, use_hard_mask=False).to(device)
 fno_expD.load_state_dict(torch.load(str(MODELS / 'fno2d_expD.pt'), map_location=device)['model_state_dict'])
 fno_expD.eval()
 models['fno_expD'] = ('fno', fno_expD, 'src/train_expD_fno.py', '42 (train)')

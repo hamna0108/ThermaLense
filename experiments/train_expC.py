@@ -32,9 +32,9 @@ def relative_l2_per_sample(pred, target):
 import math
 
 class ReparametrizedFNO2d(nn.Module):
-    def __init__(self, modes1=16, modes2=12, width=32):
+    def __init__(self, modes1=16, modes2=12, width=32, use_hard_mask=False):
         super().__init__()
-        self.fno = FNO2d(modes1, modes2, width)
+        self.fno = FNO2d(modes1, modes2, width, use_hard_mask=use_hard_mask)
         
     def forward(self, x):
         N = self.fno(x) # (batch, 1, Nt, Nx)
@@ -107,7 +107,8 @@ def main():
     torch.save({
         'model_state_dict': model.state_dict(),
         'log_alpha_mean': train_dataset.log_alpha_mean,
-        'log_alpha_std': train_dataset.log_alpha_std
+        'log_alpha_std': train_dataset.log_alpha_std,
+        'use_hard_mask': model.fno.use_hard_mask
     }, os.path.join(model_dir, 'fno2d_expC.pt'))
     print("Training finished and FNO ExpC model saved.")
     

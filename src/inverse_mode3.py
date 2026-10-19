@@ -37,7 +37,8 @@ def cramer_rao_bound(alpha, t_sensors, x_sensors, sigma):
 def evaluate_mode3():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     checkpoint = torch.load('models/fno2d_heat.pt', map_location=device)
-    model = FNO2d(modes1=16, modes2=12, width=32).to(device)
+    model = FNO2d(modes1=16, modes2=12, width=32, use_hard_mask=checkpoint.get('use_hard_mask', False)).to(device)
+    assert model.use_hard_mask == checkpoint.get('use_hard_mask', False), "FNO mask mismatch"
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
     

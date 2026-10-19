@@ -46,7 +46,7 @@ class FNO2d(nn.Module):
     Modes: 12x12, width: 32.
     Enforces Dirichlet zero boundary conditions via a hard boundary mask.
     """
-    def __init__(self, modes1=12, modes2=12, width=32, in_channels=3, out_channels=1, use_hard_mask=True):
+    def __init__(self, modes1=12, modes2=12, width=32, in_channels=3, out_channels=1, use_hard_mask=False):
         super(FNO2d, self).__init__()
 
         self.modes1 = modes1
@@ -105,12 +105,19 @@ class FNO2d(nn.Module):
         x = self.fc2(x) # (B, H, W, out_channels)
         x = x.permute(0, 3, 1, 2) # (B, out_channels, H, W)
         
-        # Hard mask to strictly enforce zero boundary condition u = 0 on boundary
-        if self.use_hard_mask:
-            # Mask is 1 inside and 0 on edges
+        # Boundary masking
+        if self.use_hard_mask is True or self.use_hard_mask in ('2d', 'poisson'):
+            # Enforce zero Dirichlet on all 4 boundaries (Poisson 2D: x=0,1 and y=0,1)
             mask = torch.ones((1, 1, H, W), device=x.device, dtype=x.dtype)
             mask[:, :, 0, :] = 0.0
             mask[:, :, -1, :] = 0.0
+            mask[:, :, :, 0] = 0.0
+            mask[:, :, :, -1] = 0.0
+            x = x * mask
+        elif self.use_hard_mask in ('spatial_only', 'heat'):
+            # Enforce zero Dirichlet only on spatial boundaries x=0,1 (Heat 1D: columns 0 and -1)
+            # Row 0 (t=0, initial condition) and Row -1 (t=1, end state) remain unmasked.
+            mask = torch.ones((1, 1, H, W), device=x.device, dtype=x.dtype)
             mask[:, :, :, 0] = 0.0
             mask[:, :, :, -1] = 0.0
             x = x * mask

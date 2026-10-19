@@ -41,6 +41,18 @@ def test_hard_bc_satisfaction():
     assert torch.all(y[:, :, :, 0] == 0.0)
     assert torch.all(y[:, :, :, -1] == 0.0)
     
+    # Also verify loaded trained checkpoint if present
+    if os.path.exists('models/fno2d_poisson_v2.pt'):
+        fno_trained = FNO2d(modes1=12, modes2=12, width=32, in_channels=3, out_channels=1, use_hard_mask=True)
+        fno_trained.load_state_dict(torch.load('models/fno2d_poisson_v2.pt', map_location='cpu'))
+        fno_trained.eval()
+        with torch.no_grad():
+            y_tr = fno_trained(x)
+            assert torch.all(y_tr[:, :, 0, :] == 0.0)
+            assert torch.all(y_tr[:, :, -1, :] == 0.0)
+            assert torch.all(y_tr[:, :, :, 0] == 0.0)
+            assert torch.all(y_tr[:, :, :, -1] == 0.0)
+    
     # PINN hard envelope x*(1-x)*y*(1-y)
     pinn = HardPINNPoisson()
     N_pts = 50

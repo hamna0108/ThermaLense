@@ -11,6 +11,11 @@ from src.solvers.poisson_2d import Poisson2DSolver, manufactured_source_2d
 from src.models.fno2d import FNO2d
 from src.models.linear_baseline import LinearPoissonBaseline
 
+try:
+    from paths import DATASETS, RESULTS, MODELS
+except ImportError:
+    from src.paths import DATASETS, RESULTS, MODELS
+
 def benchmark_fresh_factorization_single(N=64, n_trials=30):
     """
     Measures the cost of solving -nabla^2 u = f with fresh matrix construction and fresh sparse LU factorization per query.
@@ -69,7 +74,9 @@ def benchmark_solver_batched(solver, batch_size=32, n_trials=30):
     per_query_ms = total_batch_ms / batch_size
     return total_batch_ms, per_query_ms
 
-def run_timing_honesty_benchmark(N=64, batch_size=32, fno_path="models/fno2d_poisson_v2.pt"):
+def run_timing_honesty_benchmark(N=64, batch_size=32, fno_path=None):
+    if fno_path is None:
+        fno_path = str(MODELS / "fno2d_poisson_v2.pt")
     print("--- Running Timing Honesty Benchmark ---")
     solver = Poisson2DSolver(N=N)
     
@@ -90,12 +97,13 @@ def run_timing_honesty_benchmark(N=64, batch_size=32, fno_path="models/fno2d_poi
     
     # 4. Linear Ridge baseline
     lin = LinearPoissonBaseline()
-    if os.path.exists("models/linear_baseline_poisson_v2.npz"):
-        lin.load("models/linear_baseline_poisson_v2.npz")
-    elif os.path.exists("models/linear_baseline_poisson.npz"):
-        lin.load("models/linear_baseline_poisson.npz")
+    lin_path_v2 = str(MODELS / "linear_baseline_poisson_v2.npz")
+    if os.path.exists(lin_path_v2):
+        lin.load(lin_path_v2)
+    elif os.path.exists("archive/superseded/linear_baseline_poisson.npz"):
+        lin.load("archive/superseded/linear_baseline_poisson.npz")
     else:
-        d = np.load("data/poisson_v2_train.npz")
+        d = np.load(str(DATASETS / "poisson_v2_train.npz"))
         lin.fit(d["F"][:1000], d["U"][:1000])
         
     f_batch = np.repeat(f_single[None, ...], batch_size, axis=0)
@@ -153,7 +161,7 @@ def run_timing_honesty_benchmark(N=64, batch_size=32, fno_path="models/fno2d_poi
         )
     }
     
-    with open("data/timing_honesty.json", "w") as f:
+    with open(str(RESULTS / "timing_honesty.json"), "w") as f:
         json.dump(results, f, indent=2)
         
     print("\n--- Timing Summary ---")

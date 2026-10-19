@@ -86,30 +86,30 @@
   },
   "files": [
     {
-      "path": "data/mode2_pipeline_results_v2.csv",
+      "path": "data/results/mode2_pipeline_results_v2.csv",
       "rows": 180,
       "description": "Mode 2 (Crank-Nicolson Spline) inverse pipeline results v2"
     },
     {
-      "path": "data/mode3_pipeline_results_v2.csv",
+      "path": "data/results/mode3_pipeline_results_v2.csv",
       "rows": 135,
       "description": "Mode 3 (FNO Spline) inverse pipeline results v2 with unified status rule & alpha=4.0 narrow flagged"
     },
     {
-      "path": "data/mode3plus_hybrid_results.csv",
+      "path": "data/results/mode3plus_hybrid_results.csv",
       "rows": 135,
       "description": "Ablation: Solver Polish of FNO initial estimate results"
     },
     {
-      "path": "data/mode2_table.md",
+      "path": "data/results/mode2_table.md",
       "description": "Mode 2 formatted Markdown benchmark table"
     },
     {
-      "path": "data/mode3_table.md",
+      "path": "data/results/mode3_table.md",
       "description": "Mode 3 formatted Markdown benchmark table"
     },
     {
-      "path": "data/mode3plus_table.md",
+      "path": "data/results/mode3plus_table.md",
       "description": "Ablation formatted Markdown benchmark table"
     },
     {
@@ -126,7 +126,7 @@
       "description": "Task A: Per-replication outputs (alpha_hat, layout_seed, noise_seed) for time placement study (7 strategies)"
     },
     {
-      "path": "data/sensor_placement_summary.csv",
+      "path": "data/results/sensor_placement_summary.csv",
       "rows": 84,
       "description": "Task A: Aggregated cell metrics across 7 strategies (including deployable two-stage and all-at-t*)"
     },
@@ -136,16 +136,16 @@
       "description": "Task B: Per-replication outputs (alpha_hat, layout_seed, noise_seed) for Mode 1 PINN inverse"
     },
     {
-      "path": "data/mode1_pinn_summary.csv",
+      "path": "data/results/mode1_pinn_summary.csv",
       "rows": 12,
       "description": "Task B: Mode 1 PINN inverse cell metrics (median error, spread/CRB, wall time per fit)"
     },
     {
-      "path": "data/audit_sensor_placement.txt",
+      "path": "data/audits/audit_sensor_placement.txt",
       "description": "Task A sensor time placement audit report"
     },
     {
-      "path": "data/audit_pinn_report.txt",
+      "path": "data/audits/audit_pinn_report.txt",
       "description": "Task B Mode 1 PINN inverse audit report"
     },
     {
@@ -154,77 +154,77 @@
       "description": "Anomaly Detection: Per-episode features (chi2, z_max, frac_3s, loo_ratio, early_late_shift, m3_m2_disagree, ood_dist), ground truth, predictions, and seeds across 6 cells plus offgrid"
     },
     {
-      "path": "data/anomaly_summary.csv",
+      "path": "data/results/anomaly_summary.csv",
       "rows": 24,
       "description": "Anomaly Detection: Per-cell aggregated metrics, precision, recall, F1, and FAR"
     },
     {
-      "path": "data/audit_anomaly.txt",
+      "path": "data/audits/audit_anomaly.txt",
       "description": "Anomaly Detection audit report with 4x4 confusion matrices, power analysis, and limitation study"
     },
     {
-      "path": "data/poisson_train.npz",
+      "path": "archive/superseded/poisson_train.npz",
       "rows": 1000,
       "description": "Stage 2: 2D Poisson training split (1000 samples, 64x64)"
     },
     {
-      "path": "data/poisson_val.npz",
+      "path": "archive/superseded/poisson_val.npz",
       "rows": 100,
       "description": "Stage 2: 2D Poisson validation split (100 samples, 64x64)"
     },
     {
-      "path": "data/poisson_test_interp.npz",
+      "path": "archive/superseded/poisson_test_interp.npz",
       "rows": 200,
       "description": "Stage 2: 2D Poisson interpolation test split (200 samples, 64x64)"
     },
     {
-      "path": "data/poisson_test_ood_narrow.npz",
+      "path": "archive/superseded/poisson_test_ood_narrow.npz",
       "rows": 200,
       "description": "Stage 2: 2D Poisson OOD narrow sources split (200 samples, 64x64)"
     },
     {
-      "path": "data/poisson_test_ood_count.npz",
+      "path": "archive/superseded/poisson_test_ood_count.npz",
       "rows": 200,
       "description": "Stage 2: 2D Poisson OOD 4-5 sources split (200 samples, 64x64)"
     },
     {
-      "path": "data/poisson_test_ood_boundary.npz",
+      "path": "archive/superseded/poisson_test_ood_boundary.npz",
       "rows": 200,
       "description": "Stage 2: 2D Poisson OOD boundary sources split (200 samples, 64x64)"
     },
     {
-      "path": "data/poisson_manufactured_sanity.npz",
+      "path": "archive/superseded/poisson_manufactured_sanity.npz",
       "rows": 1,
       "description": "Stage 2: Manufactured solution sanity benchmark"
     },
     {
-      "path": "data/fno2d_training_log.csv",
+      "path": "archive/superseded/fno2d_training_log.csv",
       "rows": 15,
       "description": "Stage 2: FNO2d 15-epoch training and validation loss log"
     },
     {
-      "path": "data/pinn_poisson_summary.json",
+      "path": "data/results/pinn_poisson_summary.json",
       "description": "Stage 2: Hard-constrained PINN benchmark metrics & training time"
     },
     {
-      "path": "data/poisson_eval_results.json",
+      "path": "archive/superseded/poisson_eval_results.json",
       "description": "Stage 2: Full evaluation metrics across all splits and baselines"
     },
     {
-      "path": "data/poisson_benchmark_table.csv",
+      "path": "archive/superseded/poisson_benchmark_table.csv",
       "rows": 6,
       "description": "Stage 2: Summary benchmark table comparing FNO and Linear baseline"
     },
     {
-      "path": "data/audit_poisson.txt",
+      "path": "data/audits/audit_poisson.txt",
       "description": "Stage 2: 41-line audit report verifying all Week 1 deliverables"
     },
     {
-      "path": "models/fno2d_poisson.pt",
+      "path": "archive/superseded/fno2d_poisson.pt",
       "description": "Stage 2: Trained FNO2d PyTorch model checkpoint"
     },
     {
-      "path": "models/linear_baseline_poisson.npz",
+      "path": "archive/superseded/linear_baseline_poisson.npz",
       "description": "Stage 2: Fitted Linear Ridge Regression dual parameters"
     },
     {

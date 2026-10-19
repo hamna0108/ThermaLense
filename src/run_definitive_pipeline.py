@@ -1,3 +1,7 @@
+try:
+    from paths import RESULTS
+except ImportError:
+    from src.paths import RESULTS
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
@@ -373,8 +377,8 @@ def run_pipeline():
     # -------------------------------------------------------------
     # 6. EXPORT UPDATED CSV FILES
     # -------------------------------------------------------------
-    os.makedirs('data', exist_ok=True)
-    csv_m2_path = 'data/mode2_pipeline_results_v2.csv'
+    os.makedirs(str(RESULTS), exist_ok=True)
+    csv_m2_path = str(RESULTS / 'mode2_pipeline_results_v2.csv')
     with open(csv_m2_path, 'w', newline='') as f:
         fields = ['split', 'alpha', 'sensors', 'sigma', 'med_rel_err', 'spread_log', 'wald_cov_95', 'deploy_cov_95', 'frac_bound', 'single_fit_time_ms', 'status']
         w = csv.writer(f)
@@ -384,7 +388,7 @@ def run_pipeline():
                         f"{r['med_rel_err']:.6f}", f"{r['spread_log']:.6f}", r['wald_cov_95'],
                         r['deploy_cov_95'], f"{r['frac_bound']:.3f}", f"{r['time_ms']:.3f}", r['status']])
 
-    csv_m3_path = 'data/mode3_pipeline_results_v2.csv'
+    csv_m3_path = str(RESULTS / 'mode3_pipeline_results_v2.csv')
     with open(csv_m3_path, 'w', newline='') as f:
         fields = ['split', 'alpha', 'sensors', 'sigma', 'med_narrow', 'med_wide', 'sprd_crb', 'wald_cov_95', 'deploy_cov_95', 'frac_bound', 'single_fit_time_ms', 'status']
         w = csv.writer(f)

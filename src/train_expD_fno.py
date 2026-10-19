@@ -37,7 +37,11 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     base_dir = os.path.dirname(os.path.dirname(__file__))
-    data_dir = os.path.join(base_dir, 'data', 'interim')
+    try:
+        from paths import DATASETS, MODELS
+    except ImportError:
+        from src.paths import DATASETS, MODELS
+    data_dir = str(DATASETS)
     
     train_dataset = HeatEquationDataset(os.path.join(data_dir, 'train.npz'))
     val_dataset = HeatEquationDataset(os.path.join(data_dir, 'val.npz'), 

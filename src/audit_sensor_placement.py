@@ -12,15 +12,20 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
-D = sys.argv[1] if len(sys.argv) > 1 else "data"
+try:
+    from paths import RAW, RESULTS, AUDITS
+except ImportError:
+    from src.paths import RAW, RESULTS, AUDITS
+
+D = sys.argv[1] if len(sys.argv) > 1 else str(RESULTS)
 out = []
 
 def say(s=""):
     out.append(s)
     print(s)
 
-raw_path = os.path.join(D, "raw", "sensor_placement_raw.csv")
-summary_path = os.path.join(D, "sensor_placement_summary.csv")
+raw_path = str(RAW / "sensor_placement_raw.csv")
+summary_path = str(RESULTS / "sensor_placement_summary.csv")
 
 say("=== 1. File existence and row counts ===")
 if not os.path.exists(raw_path) or not os.path.exists(summary_path):
@@ -87,7 +92,7 @@ for st, a, n, sg in spot_checks:
     row = df_sum[(df_sum.strategy == st) & (df_sum.alpha_true == a) & (df_sum.sensors == n) & (df_sum.sigma == sg)].iloc[0]
     say(f"  {st:35s} a={a:5.3f} N={n:2d} sig={sg:.2f} -> med_err={row.med_rel_err:.4f}, CRB_rel={row.crb_rel:.4f}, sprd/CRB={row.sprd_crb:.2f}")
 
-report_txt_path = os.path.join(D, "audit_sensor_placement.txt")
+report_txt_path = str(AUDITS / "audit_sensor_placement.txt")
 with open(report_txt_path, "w", encoding="utf-8") as f:
     f.write("\n".join(out))
 say(f"\nAudit report saved to: {report_txt_path}")

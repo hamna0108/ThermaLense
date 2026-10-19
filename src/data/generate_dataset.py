@@ -1,3 +1,7 @@
+try:
+    from paths import DATASETS
+except ImportError:
+    from src.paths import DATASETS
 import os
 import numpy as np
 from tqdm import tqdm
@@ -38,7 +42,7 @@ def generate_dataset(num_samples, alpha_range, alpha_dist='log-uniform', Nx=50, 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--out_dir', type=str, default='data/interim')
+    parser.add_argument('--out_dir', type=str, default=str(DATASETS))
     args = parser.parse_args()
     
     # Use absolute path for output dir based on script location

@@ -1,3 +1,7 @@
+try:
+    from paths import DATASETS
+except ImportError:
+    from src.paths import DATASETS
 import os
 import sys
 import time
@@ -82,7 +86,8 @@ def generate_split_v2(solver, n_samples, base_seed, split_type):
         
     return F_list, U_list, seeds
 
-def build_poisson_dataset_v2(out_dir="data", N=64):
+def build_poisson_dataset_v2(out_dir=None, N=64):
+    if out_dir is None: out_dir = str(DATASETS)
     os.makedirs(out_dir, exist_ok=True)
     solver = Poisson2DSolver(N=N)
     

@@ -144,10 +144,14 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     checkpoint = torch.load('models/fno2d_heat.pt', map_location=device)
     
+    try:
+        from paths import DATASETS
+    except ImportError:
+        from src.paths import DATASETS
     splits = [
-        ("Interpolation", 'data/interim/test_interpolation.npz', lambda a: True),
-        ("Low-alpha OOD", 'data/interim/test_ood.npz', lambda a: a < 0.01),
-        ("High-alpha OOD", 'data/interim/test_ood.npz', lambda a: a > 1.0)
+        ("Interpolation", str(DATASETS / 'test_interpolation.npz'), lambda a: True),
+        ("Low-alpha OOD", str(DATASETS / 'test_ood.npz'), lambda a: a < 0.01),
+        ("High-alpha OOD", str(DATASETS / 'test_ood.npz'), lambda a: a > 1.0)
     ]
     
     print("====== FNO Decision Verification ======")

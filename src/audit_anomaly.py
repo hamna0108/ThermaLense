@@ -39,17 +39,22 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
-D = sys.argv[1] if len(sys.argv) > 1 else "data"
+try:
+    from paths import REPO_ROOT, RAW, RESULTS, AUDITS
+except ImportError:
+    from src.paths import REPO_ROOT, RAW, RESULTS, AUDITS
+
+D = sys.argv[1] if len(sys.argv) > 1 else str(RESULTS)
 out = []
 
 def say(s=""):
     out.append(s)
     print(s)
 
-raw_path = os.path.join(D, "raw", "anomaly_raw.csv")
-dev_raw_path = os.path.join(D, "raw", "anomaly_dev_raw.csv")
-summary_path = os.path.join(D, "anomaly_summary.csv")
-audit_txt_path = os.path.join(D, "audit_anomaly.txt")
+raw_path = str(RAW / "anomaly_raw.csv")
+dev_raw_path = str(RAW / "anomaly_dev_raw.csv")
+summary_path = str(RESULTS / "anomaly_summary.csv")
+audit_txt_path = str(AUDITS / "audit_anomaly.txt")
 
 say("=" * 105)
 say("AUDIT REPORT: ENHANCED 4-CLASS ANOMALY DETECTION (H, A, F, C)")
@@ -84,13 +89,13 @@ say("\n" + "=" * 80)
 say("=== 1. FILE VERIFICATION, ROW COUNTS & STRICT SEED DISCIPLINE ===")
 say("=" * 80)
 
-say(f"Final Test Set raw CSV: {raw_path} (Total rows: {len(df)})")
+say(f"Final Test Set raw CSV: {os.path.relpath(raw_path, REPO_ROOT)} (Total rows: {len(df)})")
 say(f"  - Primary grid episodes (N in {{10, 20}}): {len(primary)} (4 cells x 4 classes x 200 episodes)")
 say(f"  - Limitation grid episodes (N = 5):        {len(limitation)} (2 cells x 4 classes x 200 episodes)")
 say(f"  - Off-grid robustness test episodes:       {len(offgrid)} (4 primary cells x 180 episodes)")
 
 dev_exists = os.path.exists(dev_raw_path)
-say(f"Development Set raw CSV: {dev_raw_path} (Exists: {dev_exists})")
+say(f"Development Set raw CSV: {os.path.relpath(dev_raw_path, REPO_ROOT)} (Exists: {dev_exists})")
 
 test_layout_seeds = df[df['cell_type'].isin(['primary', 'limitation'])]['layout_seed'].unique()
 test_noise_seeds = df[df['cell_type'].isin(['primary', 'limitation'])]['noise_seed'].unique()

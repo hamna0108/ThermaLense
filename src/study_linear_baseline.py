@@ -6,7 +6,13 @@ import numpy as np
 from src.models.linear_baseline import LinearPoissonBaseline
 from src.data.poisson_loader import load_all_splits
 
-def run_linear_baseline_study(data_dir="data", version="v2"):
+try:
+    from paths import DATASETS, RESULTS
+except ImportError:
+    from src.paths import DATASETS, RESULTS
+
+def run_linear_baseline_study(data_dir=None, version="v2"):
+    if data_dir is None: data_dir = str(DATASETS)
     print("--- Running Linear Baseline SVD & Sample Efficiency Study ---")
     splits = load_all_splits(data_dir, version=version)
     F_train = splits["train"]["F"] # (1000, 64, 64)
@@ -105,7 +111,7 @@ def run_linear_baseline_study(data_dir="data", version="v2"):
         )
     }
     
-    save_path = os.path.join(data_dir, "linear_baseline_study.json")
+    save_path = str(RESULTS / "linear_baseline_study.json")
     with open(save_path, "w") as f:
         json.dump(study_output, f, indent=2)
     print(f"Saved linear baseline study to {save_path}")

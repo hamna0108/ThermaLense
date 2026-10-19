@@ -8,7 +8,13 @@ import sys, os
 import pandas as pd
 import numpy as np
 
-D = sys.argv[1] if len(sys.argv) > 1 else "data"
+try:
+    from paths import RESULTS, AUDITS
+except ImportError:
+    from src.paths import RESULTS, AUDITS
+
+D = sys.argv[1] if len(sys.argv) > 1 else str(RESULTS)
+audit_out = sys.argv[2] if len(sys.argv) > 2 else str(AUDITS / "audit_report.txt")
 out = []
 def say(s=""):
     out.append(s); print(s)
@@ -106,4 +112,4 @@ for n, d, c, (a, s, sg), old in ref:
     say(f"{n} a={a} N={s} sig={sg}: {v:.6f} / {old:.6f}  {'same' if same else 'CHANGED'}  status={r.status.iloc[0]}")
 say(f"cells changed vs earlier run: {nchg} of {len(ref)}")
 
-open(os.path.join(D, "audit_report.txt"), "w", encoding="utf-8").write("\n".join(out))
+open(audit_out, "w", encoding="utf-8").write("\n".join(out))

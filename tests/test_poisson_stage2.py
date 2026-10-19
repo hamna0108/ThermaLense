@@ -1,3 +1,7 @@
+try:
+    from paths import DATASETS
+except ImportError:
+    from src.paths import DATASETS
 import os
 import sys
 import numpy as np
@@ -51,7 +55,7 @@ def test_hard_bc_satisfaction():
 
 def test_dataset_v1_disjoint_seeds():
     """Verify dataset v1 splits, row counts, and disjointness of seeds."""
-    splits = load_all_splits("data", version="v1")
+    splits = load_all_splits(version="v1")
     expected_counts = {
         "train": 1000,
         "val": 100,
@@ -72,7 +76,7 @@ def test_dataset_v1_disjoint_seeds():
 
 def test_dataset_v2_disjoint_seeds_and_sine_modes():
     """Verify dataset v2 splits (including highmodes), 2100 samples, and disjoint seeds."""
-    splits = load_all_splits("data", version="v2")
+    splits = load_all_splits(str(DATASETS), version="v2")
     expected_counts = {
         "train": 1000,
         "val": 100,
@@ -94,7 +98,7 @@ def test_dataset_v2_disjoint_seeds_and_sine_modes():
 
 def test_svd_decay_rapid():
     """Verify that the training source matrix has rapid singular-value decay."""
-    splits = load_all_splits("data", version="v2")
+    splits = load_all_splits(str(DATASETS), version="v2")
     F_mat = splits["train"]["F"][:300].reshape(300, -1).astype(np.float64)
     s = np.linalg.svd(F_mat, compute_uv=False)
     # sigma_10 should be substantially smaller than sigma_1
@@ -104,7 +108,7 @@ def test_svd_decay_rapid():
 
 def test_linear_baseline_performance():
     """Verify that Linear Ridge baseline matches Poisson operator and generalizes OOD."""
-    splits = load_all_splits("data", version="v2")
+    splits = load_all_splits(str(DATASETS), version="v2")
     lin = LinearPoissonBaseline(alpha_reg=1e-8)
     lin.fit(splits["train"]["F"], splits["train"]["U"])
     

@@ -1,3 +1,7 @@
+try:
+    from paths import RAW
+except ImportError:
+    from src.paths import RAW
 """Task: 4-Class Anomaly Detection for Digital Twin Heat Equation System.
 
 Enhanced Architecture with:
@@ -453,8 +457,8 @@ def run_study():
     print("Continuous 2D GLR, Integrated Cascade & Full Factorial Fault Design")
     print("=" * 105)
     
-    os.makedirs("data/raw", exist_ok=True)
-    os.makedirs("data", exist_ok=True)
+    os.makedirs(str(RAW), exist_ok=True)
+    
     
     x_grid, t_grid, grid_la, U_cn, fno_grid, cs_b_m3 = precompute_models()
     gamma_f, gamma_c, glr_thresholds, logreg, feat_mean, feat_std = calibrate_detectors()
@@ -722,7 +726,7 @@ def run_study():
     dur_eval = time.time() - t0_eval
     print(f"Evaluated {len(raw_rows)} total episodes in {dur_eval:.2f} s")
     
-    raw_path = "data/raw/anomaly_raw.csv"
+    raw_path = str(RAW / "anomaly_raw.csv")
     print(f"Writing per-episode outputs to {raw_path}...")
     fieldnames = list(raw_rows[0].keys())
     with open(raw_path, 'w', newline='', encoding='utf-8') as f:

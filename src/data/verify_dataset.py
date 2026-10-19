@@ -1,10 +1,14 @@
+try:
+    from paths import DATASETS, PLOTS
+except ImportError:
+    from src.paths import DATASETS, PLOTS
 import numpy as np
 import os
 import matplotlib.pyplot as plt
 import json
 
 base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-data_dir = os.path.join(base_dir, 'data/interim')
+data_dir = str(DATASETS)
 plot_dir = os.path.join(base_dir, 'plots')
 os.makedirs(plot_dir, exist_ok=True)
 

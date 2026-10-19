@@ -1,3 +1,7 @@
+try:
+    from paths import DATASETS, RESULTS
+except ImportError:
+    from src.paths import DATASETS, RESULTS
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
@@ -168,7 +172,7 @@ def run_spline_pipeline():
     log_alpha_mean = checkpoint['log_alpha_mean'].item()
     log_alpha_std = checkpoint['log_alpha_std'].item()
 
-    data = np.load('data/interim/test_interpolation.npz')
+    data = np.load(str(DATASETS / 'test_interpolation.npz'))
     x_np = data['x']
     t_np = data['t']
 
@@ -398,7 +402,7 @@ def run_spline_pipeline():
     print(f"Mode 3 Mean Time per Inversion: {m3_mean_per_inversion_ms:.3f} ms ({m3_mean_per_inversion_ms/1000.0:.6f} s)")
 
     # Save summary data
-    np.savez('data/spline_pipeline_results.npz',
+    np.savez(str(RESULTS / 'spline_pipeline_results.npz'),
              m2_precompute_s=t_pre_m2,
              m2_per_inv_ms=m2_mean_per_inversion_ms,
              m3_precompute_s=t_pre_fno,

@@ -12,16 +12,21 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
-D = sys.argv[1] if len(sys.argv) > 1 else "data"
+try:
+    from paths import RAW, RESULTS, AUDITS
+except ImportError:
+    from src.paths import RAW, RESULTS, AUDITS
+
+D = sys.argv[1] if len(sys.argv) > 1 else str(RESULTS)
 out = []
 
 def say(s=""):
     out.append(s)
     print(s)
 
-raw_path = os.path.join(D, "raw", "mode1_pinn_raw.csv")
-summary_path = os.path.join(D, "mode1_pinn_summary.csv")
-m2_path = os.path.join(D, "mode2_pipeline_results_v2.csv")
+raw_path = str(RAW / "mode1_pinn_raw.csv")
+summary_path = str(RESULTS / "mode1_pinn_summary.csv")
+m2_path = str(RESULTS / "mode2_pipeline_results_v2.csv")
 
 say("=== 1. File existence and row counts ===")
 if not os.path.exists(raw_path) or not os.path.exists(summary_path):
@@ -86,7 +91,7 @@ say("-" * len(header5))
 for _, r in df_sum.iterrows():
     say(f"{r['alpha_true']:5.3f} | {int(r['sensors']):2d} | {r['sigma']:5.2f} | {r['med_rel_err']:10.4f} | {r['spread_log']:10.4f} | {r['crb_log']:9.4f} | {r['sprd_crb']:9.2f} | {r['single_fit_time_ms']:11.2f}")
 
-report_txt_path = os.path.join(D, "audit_pinn_report.txt")
+report_txt_path = str(AUDITS / "audit_pinn_report.txt")
 with open(report_txt_path, "w", encoding="utf-8") as f:
     f.write("\n".join(out))
 say(f"\nAudit report saved to: {report_txt_path}")

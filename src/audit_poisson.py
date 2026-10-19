@@ -7,7 +7,13 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from src.solvers.poisson_2d import compute_convergence_study
 from src.data.poisson_loader import load_all_splits
 
-def run_audit(data_dir="data"):
+try:
+    from paths import DATASETS, AUDITS, ARCHIVE
+except ImportError:
+    from src.paths import DATASETS, AUDITS, ARCHIVE
+
+def run_audit(data_dir=None):
+    if data_dir is None: data_dir = str(DATASETS)
     out = []
     def say(s=""):
         out.append(s)
@@ -102,7 +108,7 @@ def run_audit(data_dir="data"):
     say(f"Offline Training Runtimes     : PINN = {pinn_time:.1f}s | Linear Ridge = {eval_data.get('linear_fit_time_s', 0.0):.2f}s")
 
     # Write audit text file
-    audit_file = os.path.join(data_dir, "audit_poisson.txt")
+    audit_file = str(AUDITS / "audit_poisson.txt")
     with open(audit_file, "w") as f:
         f.write("\n".join(out) + "\n")
     return "\n".join(out)

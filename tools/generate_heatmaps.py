@@ -1,3 +1,7 @@
+try:
+    from paths import RESULTS, PLOTS
+except ImportError:
+    from src.paths import RESULTS, PLOTS
 import csv
 import os
 import numpy as np
@@ -8,11 +12,11 @@ def generate_heatmaps():
     os.makedirs('plots', exist_ok=True)
     
     # 1. Load CSV data
-    with open('data/mode2_pipeline_results_v2.csv', 'r') as f:
+    with open(str(RESULTS / 'mode2_pipeline_results_v2.csv'), 'r') as f:
         m2_rows = list(csv.DictReader(f))
-    with open('data/mode3_pipeline_results_v2.csv', 'r') as f:
+    with open(str(RESULTS / 'mode3_pipeline_results_v2.csv'), 'r') as f:
         m3_rows = list(csv.DictReader(f))
-    with open('data/mode3plus_hybrid_results.csv', 'r') as f:
+    with open(str(RESULTS / 'mode3plus_hybrid_results.csv'), 'r') as f:
         m3p_rows = list(csv.DictReader(f))
 
     # Grid axes

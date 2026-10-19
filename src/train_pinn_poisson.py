@@ -1,3 +1,7 @@
+try:
+    from paths import RESULTS, MODELS
+except ImportError:
+    from src.paths import RESULTS, MODELS
 import os
 import sys
 import time
@@ -12,7 +16,7 @@ def train_pinn_single_source(n_collocation=1000, adam_epochs=600, lbfgs_iters=60
     np.random.seed(seed)
     
     os.makedirs("models", exist_ok=True)
-    os.makedirs("data", exist_ok=True)
+    os.makedirs(str(RESULTS), exist_ok=True)
     
     model = HardPINNPoisson(hidden_layers=[50, 50, 50, 50])
     
@@ -118,7 +122,7 @@ def train_pinn_single_source(n_collocation=1000, adam_epochs=600, lbfgs_iters=60
     
     # Save model and metrics
     torch.save(model.state_dict(), "models/pinn_poisson.pt")
-    with open("data/pinn_poisson_summary.json", "w") as f:
+    with open(str(RESULTS / "pinn_poisson_summary.json"), "w") as f:
         json.dump(metrics, f, indent=2)
         
     print(f"PINN Training complete in {total_train_time:.2f}s!")

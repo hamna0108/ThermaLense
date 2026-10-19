@@ -1,3 +1,7 @@
+try:
+    from paths import DATASETS
+except ImportError:
+    from src.paths import DATASETS
 import os
 import torch
 import numpy as np
@@ -46,7 +50,7 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     checkpoint = torch.load('models/fno2d_heat.pt', map_location=device)
-    test_ood_dataset = HeatEquationDataset('data/interim/test_ood.npz', 
+    test_ood_dataset = HeatEquationDataset(str(DATASETS / 'test_ood.npz'), 
                                            log_alpha_mean=checkpoint['log_alpha_mean'], 
                                            log_alpha_std=checkpoint['log_alpha_std'])
     

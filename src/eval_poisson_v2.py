@@ -106,11 +106,19 @@ def build_stress_matrix_cases(solver):
     
     return cases
 
+try:
+    from paths import DATASETS, RESULTS, MODELS
+except ImportError:
+    from src.paths import DATASETS, RESULTS, MODELS
+
 def run_evaluation_v2(
-    data_dir="data",
-    fno_path="models/fno2d_poisson_v2.pt",
-    save_results_path="data/poisson_v2_eval_results.json"
+    data_dir=None,
+    fno_path=None,
+    save_results_path=None
 ):
+    if data_dir is None: data_dir = str(DATASETS)
+    if fno_path is None: fno_path = str(MODELS / "fno2d_poisson_v2.pt")
+    if save_results_path is None: save_results_path = str(RESULTS / "poisson_v2_eval_results.json")
     print("--- Evaluating Stage 2 Round 2 Models on Dataset v2 ---")
     splits = load_all_splits(data_dir, version="v2")
     N = splits["train"]["grid_x"].shape[0]
@@ -125,7 +133,7 @@ def run_evaluation_v2(
         splits["train"]["U"],
         val_data=(splits["val"]["F"], splits["val"]["U"])
     )
-    lin_model.save("models/linear_baseline_poisson_v2.npz")
+    lin_model.save(str(MODELS / "linear_baseline_poisson_v2.npz"))
     print(f"Linear baseline fit in {lin_model.train_time:.3f}s (alpha_reg={lin_model.alpha_reg})")
     
     # 2. Load FNO2d v2
@@ -259,7 +267,7 @@ def run_evaluation_v2(
         json.dump(full_output, f, indent=2)
         
     # Save CSV table
-    with open("data/poisson_v2_benchmark_table.csv", "w", newline="") as f:
+    with open(str(RESULTS / "poisson_v2_benchmark_table.csv"), "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=[
             "split", "samples",
             "fno_l2_med", "fno_l2_p90", "fno_l2_max", "fno_res_med",

@@ -1,3 +1,7 @@
+try:
+    from paths import DATASETS, PLOTS
+except ImportError:
+    from src.paths import DATASETS, PLOTS
 import os
 import torch
 import numpy as np
@@ -46,7 +50,7 @@ def evaluate_fno(model, ood_loader, device):
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     base_dir = os.path.dirname(os.path.dirname(__file__))
-    data_dir = os.path.join(base_dir, 'data', 'interim')
+    data_dir = str(DATASETS)
     model_dir = os.path.join(base_dir, 'models')
     
     # Load dataset to get alphas

@@ -1,3 +1,7 @@
+try:
+    from paths import RAW, RESULTS
+except ImportError:
+    from src.paths import RAW, RESULTS
 """Task B: Mode 1 (Frozen PINN Surrogate Inversion) Small Grid Evaluation
 
 Grid:
@@ -46,8 +50,8 @@ def run_task_b():
     print("TASK B: MODE 1 (FROZEN PINN SURROGATE INVERSION) SMALL GRID EVALUATION")
     print("=" * 90)
     
-    os.makedirs("data/raw", exist_ok=True)
-    os.makedirs("data", exist_ok=True)
+    os.makedirs(str(RAW), exist_ok=True); os.makedirs(str(RESULTS), exist_ok=True)
+    
     
     device = torch.device('cpu')
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -72,8 +76,8 @@ def run_task_b():
     sigmas = [0.01, 0.05]
     num_reps = 20
     
-    raw_csv_path = "data/raw/mode1_pinn_raw.csv"
-    summary_csv_path = "data/mode1_pinn_summary.csv"
+    raw_csv_path = str(RAW / "mode1_pinn_raw.csv")
+    summary_csv_path = str(RESULTS / "mode1_pinn_summary.csv")
     
     raw_rows = []
     summary_rows = []

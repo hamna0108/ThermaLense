@@ -1,3 +1,7 @@
+try:
+    from paths import RAW, RESULTS
+except ImportError:
+    from src.paths import RAW, RESULTS
 """Task A: Sensor Time Placement Study for Hidden Parameter Inversion (Mode 2)
 
 Evaluates sensor time placement strategies at domain center x = 0.5:
@@ -116,8 +120,8 @@ def run_task_a():
     print("TASK A: SENSOR TIME PLACEMENT STUDY (MODE 2)")
     print("=" * 115)
     
-    os.makedirs("data/raw", exist_ok=True)
-    os.makedirs("data", exist_ok=True)
+    os.makedirs(str(RAW), exist_ok=True); os.makedirs(str(RESULTS), exist_ok=True)
+    
     
     Nx, Nt = 51, 501
     t_min, t_max = 0.01, 1.0
@@ -148,8 +152,8 @@ def run_task_a():
     sigmas = [0.01, 0.05]
     num_reps = 200
     
-    raw_csv_path = "data/raw/sensor_placement_raw.csv"
-    summary_csv_path = "data/sensor_placement_summary.csv"
+    raw_csv_path = str(RAW / "sensor_placement_raw.csv")
+    summary_csv_path = str(RESULTS / "sensor_placement_summary.csv")
     
     raw_rows = []
     summary_rows = []

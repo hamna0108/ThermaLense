@@ -40,7 +40,14 @@ def get_dataloader(data_path, batch_size=32, shuffle=True):
     dataset = PoissonGridDataset(data_path)
     return DataLoader(dataset, batch_size=batch_size, shuffle=shuffle)
 
-def load_all_splits(data_dir="data", version="v2"):
+try:
+    from paths import DATASETS
+except ImportError:
+    from src.paths import DATASETS
+
+def load_all_splits(data_dir=None, version="v2"):
+    if data_dir is None:
+        data_dir = DATASETS
     prefix = f"poisson_{version}_" if version == "v2" else "poisson_"
     split_names = [
         "train", "val", "test_interp",

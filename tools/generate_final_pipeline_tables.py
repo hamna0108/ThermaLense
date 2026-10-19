@@ -1,3 +1,7 @@
+try:
+    from paths import RESULTS, MODELS
+except ImportError:
+    from src.paths import RESULTS, MODELS
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
@@ -323,7 +327,7 @@ def main():
 
     # Save to disk
     import pickle
-    with open('data/final_pipeline_tables.pkl', 'wb') as f:
+    with open(str(RESULTS / 'final_pipeline_tables.pkl'), 'wb') as f:
         pickle.dump({
             'm2_records': m2_table_records,
             'm3_records': m3_table_records,
@@ -332,7 +336,7 @@ def main():
             'm2_fit_ms': m2_mean_time_per_fit,
             'm3_fit_ms': m3_mean_time_per_fit
         }, f)
-    print("\nSaved final records to data/final_pipeline_tables.pkl.")
+    print(f"\nSaved final records to {RESULTS / 'final_pipeline_tables.pkl'}.")
 
 if __name__ == '__main__':
     main()

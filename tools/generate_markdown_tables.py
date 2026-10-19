@@ -1,18 +1,22 @@
+try:
+    from paths import RESULTS
+except ImportError:
+    from src.paths import RESULTS
 import csv
 
 def generate_markdown_tables():
     # Read Mode 2
-    with open('data/mode2_pipeline_results_v2.csv', 'r') as f:
+    with open(str(RESULTS / 'mode2_pipeline_results_v2.csv'), 'r') as f:
         reader = csv.DictReader(f)
         m2_rows = list(reader)
 
     # Read Mode 3
-    with open('data/mode3_pipeline_results_v2.csv', 'r') as f:
+    with open(str(RESULTS / 'mode3_pipeline_results_v2.csv'), 'r') as f:
         reader = csv.DictReader(f)
         m3_rows = list(reader)
 
     # Read Mode 3+
-    with open('data/mode3plus_hybrid_results.csv', 'r') as f:
+    with open(str(RESULTS / 'mode3plus_hybrid_results.csv'), 'r') as f:
         reader = csv.DictReader(f)
         m3p_rows = list(reader)
 
@@ -51,16 +55,16 @@ def generate_markdown_tables():
         line = f"| {r['split']} | {float(r['alpha']):.3f} | {int(r['sensors'])} | {float(r['sigma']):.2f} | {float(r['med_rel_err']):.4f} | {float(r['spread_log']):.4f} | {r['sprd_crb']} | {r['wald_cov_95']} | {r['deploy_cov_95']} | {float(r['frac_bound']):.2f} | {float(r['single_fit_time_ms']):.2f} ms | {status_fmt} |"
         m3p_md.append(line)
 
-    with open('data/mode2_table.md', 'w', encoding='utf-8') as f:
+    with open(str(RESULTS / 'mode2_table.md'), 'w', encoding='utf-8') as f:
         f.write('\n'.join(m2_md))
 
-    with open('data/mode3_table.md', 'w', encoding='utf-8') as f:
+    with open(str(RESULTS / 'mode3_table.md'), 'w', encoding='utf-8') as f:
         f.write('\n'.join(m3_md))
 
-    with open('data/mode3plus_table.md', 'w', encoding='utf-8') as f:
+    with open(str(RESULTS / 'mode3plus_table.md'), 'w', encoding='utf-8') as f:
         f.write('\n'.join(m3p_md))
 
-    print("Markdown tables written to data/mode2_table.md, data/mode3_table.md, and data/mode3plus_table.md.")
+    print(f"Markdown tables written to {RESULTS / 'mode2_table.md'}, {RESULTS / 'mode3_table.md'}, and {RESULTS / 'mode3plus_table.md'}.")
 
 if __name__ == '__main__':
     generate_markdown_tables()

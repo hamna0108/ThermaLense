@@ -38,19 +38,28 @@ def combined_h1_l2_loss(pred, target, beta=0.1, h=1.0/63.0):
     h1 = h1_loss_2d(pred, target, h=h)
     return l2 + beta * h1, l2, h1
 
+try:
+    from paths import DATASETS, RESULTS, MODELS
+except ImportError:
+    from src.paths import DATASETS, RESULTS, MODELS
+
 def train_fno_v2(
-    train_path="data/poisson_v2_train.npz",
-    val_path="data/poisson_v2_val.npz",
+    train_path=None,
+    val_path=None,
     max_epochs=150,
     batch_size=32,
     lr=2e-3,
     beta_h1=0.1,
     patience=15,
     max_time_minutes=50,
-    save_model_path="models/fno2d_poisson_v2.pt",
-    curves_csv_path="data/fno2d_v2_training_curves.csv",
+    save_model_path=None,
+    curves_csv_path=None,
     seed=42
 ):
+    if train_path is None: train_path = str(DATASETS / "poisson_v2_train.npz")
+    if val_path is None: val_path = str(DATASETS / "poisson_v2_val.npz")
+    if save_model_path is None: save_model_path = str(MODELS / "fno2d_poisson_v2.pt")
+    if curves_csv_path is None: curves_csv_path = str(RESULTS / "fno2d_v2_training_curves.csv")
     torch.manual_seed(seed)
     np.random.seed(seed)
     torch.set_num_threads(min(8, os.cpu_count() or 4))
@@ -216,7 +225,7 @@ def train_fno_v2(
         "status": convergence_status,
         "diagnosis": generalization_diagnosis
     }
-    with open("data/fno2d_v2_training_summary.json", "w") as f:
+    with open(str(RESULTS / "fno2d_v2_training_summary.json"), "w") as f:
         json.dump(summary, f, indent=2)
         
     return summary

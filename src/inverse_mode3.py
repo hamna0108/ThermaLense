@@ -1,3 +1,7 @@
+try:
+    from paths import DATASETS, MODELS, PLOTS
+except ImportError:
+    from src.paths import DATASETS, MODELS, PLOTS
 import numpy as np
 import torch
 import scipy.optimize as opt
@@ -40,7 +44,7 @@ def evaluate_mode3():
     log_alpha_mean = checkpoint['log_alpha_mean'].item()
     log_alpha_std = checkpoint['log_alpha_std'].item()
     
-    data = np.load('data/interim/test_interpolation.npz')
+    data = np.load(str(DATASETS / 'test_interpolation.npz'))
     x_np = data['x']
     t_np = data['t']
     

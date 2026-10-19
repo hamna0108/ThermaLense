@@ -1,3 +1,7 @@
+try:
+    from paths import RESULTS
+except ImportError:
+    from src.paths import RESULTS
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
@@ -364,9 +368,9 @@ def run_comprehensive_benchmark(target_mode='all'):
         print(f"Mode 3+ mean fit time: {m3p_total_time / len(m3plus_records) / num_replications * 1000.0:.3f} ms")
 
     # ----------------- EXPORT FINAL CSV FILES -----------------
-    os.makedirs('data', exist_ok=True)
+    os.makedirs(str(RESULTS), exist_ok=True)
     if target_mode in ['all', 'mode2'] and len(m2_records) > 0:
-        with open('data/mode2_pipeline_results_v2.csv', 'w', newline='') as f:
+        with open(str(RESULTS / 'mode2_pipeline_results_v2.csv'), 'w', newline='') as f:
             fields = ['split', 'alpha', 'sensors', 'sigma', 'med_rel_err', 'spread_log', 'wald_cov_95', 'deploy_cov_95', 'frac_bound', 'single_fit_time_ms', 'status']
             w = csv.writer(f)
             w.writerow(fields)
@@ -374,10 +378,10 @@ def run_comprehensive_benchmark(target_mode='all'):
                 w.writerow([r['split'], f"{r['alpha']:.3f}", r['sensors'], f"{r['sigma']:.2f}",
                             f"{r['med_rel_err']:.6f}", f"{r['spread_log']:.6f}", r['wald_cov_95'],
                             r['deploy_cov_95'], f"{r['frac_bound']:.3f}", f"{r['single_fit_time_ms']:.3f}", r['status']])
-        print("Exported data/mode2_pipeline_results_v2.csv")
+        print(f"Exported {RESULTS / 'mode2_pipeline_results_v2.csv'}")
 
     if target_mode in ['all', 'mode3'] and len(m3_records) > 0:
-        with open('data/mode3_pipeline_results_v2.csv', 'w', newline='') as f:
+        with open(str(RESULTS / 'mode3_pipeline_results_v2.csv'), 'w', newline='') as f:
             fields = ['split', 'alpha', 'sensors', 'sigma', 'med_narrow', 'med_wide', 'sprd_crb', 'wald_cov_95', 'deploy_cov_95', 'frac_bound', 'single_fit_time_ms', 'status']
             w = csv.writer(f)
             w.writerow(fields)
@@ -386,10 +390,10 @@ def run_comprehensive_benchmark(target_mode='all'):
                 w.writerow([r['split'], f"{r['alpha']:.3f}", r['sensors'], f"{r['sigma']:.2f}",
                             med_n_str, f"{r['med_wide']:.6f}", r['sprd_crb'],
                             r['wald_cov_95'], r['deploy_cov_95'], f"{r['frac_bound']:.3f}", f"{r['single_fit_time_ms']:.3f}", r['status']])
-        print("Exported data/mode3_pipeline_results_v2.csv")
+        print(f"Exported {RESULTS / 'mode3_pipeline_results_v2.csv'}")
 
     if target_mode in ['all', 'ablation'] and len(m3plus_records) > 0:
-        with open('data/mode3plus_hybrid_results.csv', 'w', newline='') as f:
+        with open(str(RESULTS / 'mode3plus_hybrid_results.csv'), 'w', newline='') as f:
             fields = ['split', 'alpha', 'sensors', 'sigma', 'med_rel_err', 'spread_log', 'sprd_crb', 'wald_cov_95', 'deploy_cov_95', 'frac_bound', 'single_fit_time_ms', 'status']
             w = csv.writer(f)
             w.writerow(fields)
@@ -397,7 +401,7 @@ def run_comprehensive_benchmark(target_mode='all'):
                 w.writerow([r['split'], f"{r['alpha']:.3f}", r['sensors'], f"{r['sigma']:.2f}",
                             f"{r['med_rel_err']:.6f}", f"{r['spread_log']:.6f}", r['sprd_crb'],
                             r['wald_cov_95'], r['deploy_cov_95'], f"{r['frac_bound']:.3f}", f"{r['single_fit_time_ms']:.3f}", r['status']])
-        print("Exported data/mode3plus_hybrid_results.csv")
+        print(f"Exported {RESULTS / 'mode3plus_hybrid_results.csv'}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Definitive Benchmark Runner")

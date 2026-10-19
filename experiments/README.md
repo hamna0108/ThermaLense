@@ -27,9 +27,6 @@ python -m experiments.train_pinn
 
 # Evaluate FNO out-of-distribution generalization
 python -m experiments.eval_fno_compare
-
-# Summarize errors across all heat ablation models
-python -m experiments.eval_summary
 ```
 
 ## Structure

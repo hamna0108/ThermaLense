@@ -1,4 +1,7 @@
 import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 import torch
 import torch.nn as nn
 import numpy as np
@@ -159,7 +162,8 @@ def main():
     for split_name, npz_path, mask_fn in splits:
         print(f"\n--- {split_name} ---")
         res_fno = evaluate_fno(FNO2d, 'models/fno2d_heat.pt', npz_path, checkpoint, mask_fn, device, apply_override=True)
-        res_expC = evaluate_fno(ReparametrizedFNO2d, 'models/fno2d_expC.pt', npz_path, checkpoint, mask_fn, device)
+        expC_path = 'experiments/models/fno2d_expC.pt' if os.path.exists('experiments/models/fno2d_expC.pt') else 'models/fno2d_expC.pt'
+        res_expC = evaluate_fno(ReparametrizedFNO2d, expC_path, npz_path, checkpoint, mask_fn, device)
         res_expD = evaluate_fno(BoundedReparametrizedFNO2d, 'models/fno2d_expD.pt', npz_path, checkpoint, mask_fn, device)
         
         print_row("FNO Baseline (+t=0)", res_fno)

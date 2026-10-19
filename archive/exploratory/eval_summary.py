@@ -3,9 +3,9 @@ import numpy as np
 import sys
 import os
 
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 src_dir = os.path.join(base_dir, "src")
-exp_dir = os.path.dirname(os.path.abspath(__file__))
+exp_dir = os.path.join(base_dir, "experiments")
 for p in [base_dir, src_dir, exp_dir]:
     if p not in sys.path:
         sys.path.insert(0, p)

@@ -14,7 +14,8 @@ def run_audit(data_dir="data"):
         print(s)
 
     say("=== 1. Dataset Row Counts & Grid Dimensions ===")
-    splits = load_all_splits(data_dir)
+    v1_dir = data_dir if os.path.exists(os.path.join(data_dir, "poisson_train.npz")) else os.path.join("archive", "superseded")
+    splits = load_all_splits(v1_dir, version="v1")
     exp_counts = {
         "train": 1000, "val": 100, "test_interp": 200,
         "test_ood_narrow": 200, "test_ood_count": 200, "test_ood_boundary": 200
@@ -51,6 +52,10 @@ def run_audit(data_dir="data"):
 
     say("\n=== 4. Split Metrics: FNO2d vs Linear Ridge Baseline ===")
     results_path = os.path.join(data_dir, "poisson_eval_results.json")
+    if not os.path.exists(results_path):
+        arch_results = os.path.join("archive", "superseded", "poisson_eval_results.json")
+        if os.path.exists(arch_results):
+            results_path = arch_results
     if not os.path.exists(results_path):
         from src.eval_poisson_all import run_evaluation
         eval_data = run_evaluation(data_dir=data_dir)

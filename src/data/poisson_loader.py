@@ -49,8 +49,14 @@ def load_all_splits(data_dir="data", version="v2"):
     if version == "v2":
         split_names.append("test_ood_highmodes")
         
+    target_dir = data_dir
+    if not os.path.exists(os.path.join(data_dir, f"{prefix}{split_names[0]}.npz")):
+        arch_dir = os.path.join("archive", "superseded")
+        if os.path.exists(os.path.join(arch_dir, f"{prefix}{split_names[0]}.npz")):
+            target_dir = arch_dir
+
     splits = {}
     for name in split_names:
-        p = os.path.join(data_dir, f"{prefix}{name}.npz")
+        p = os.path.join(target_dir, f"{prefix}{name}.npz")
         splits[name] = np.load(p)
     return splits

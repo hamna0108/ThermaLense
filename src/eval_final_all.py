@@ -6,7 +6,10 @@ import numpy as np
 from data.dataset import HeatEquationDataset
 from models.fno2d import FNO2d
 from models.pinn import PINN
-from train_expC import ReparametrizedFNO2d
+try:
+    from train_expC import ReparametrizedFNO2d
+except ImportError:
+    from experiments.train_expC import ReparametrizedFNO2d
 from train_expD_fno import BoundedReparametrizedFNO2d
 
 class NormalizedPINN(nn.Module):

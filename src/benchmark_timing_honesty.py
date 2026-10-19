@@ -69,7 +69,7 @@ def benchmark_solver_batched(solver, batch_size=32, n_trials=30):
     per_query_ms = total_batch_ms / batch_size
     return total_batch_ms, per_query_ms
 
-def run_timing_honesty_benchmark(N=64, batch_size=32, fno_path="models/fno2d_poisson.pt"):
+def run_timing_honesty_benchmark(N=64, batch_size=32, fno_path="models/fno2d_poisson_v2.pt"):
     print("--- Running Timing Honesty Benchmark ---")
     solver = Poisson2DSolver(N=N)
     
@@ -90,7 +90,9 @@ def run_timing_honesty_benchmark(N=64, batch_size=32, fno_path="models/fno2d_poi
     
     # 4. Linear Ridge baseline
     lin = LinearPoissonBaseline()
-    if os.path.exists("models/linear_baseline_poisson.npz"):
+    if os.path.exists("models/linear_baseline_poisson_v2.npz"):
+        lin.load("models/linear_baseline_poisson_v2.npz")
+    elif os.path.exists("models/linear_baseline_poisson.npz"):
         lin.load("models/linear_baseline_poisson.npz")
     else:
         d = np.load("data/poisson_v2_train.npz")

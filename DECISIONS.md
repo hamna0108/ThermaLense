@@ -6,26 +6,41 @@ This document records the foundational architectural decisions made across the D
 
 ### Decision 1: Forward Neural Surrogate Architecture (Heat Equation)
 - **Options Tried:**
-  1. Pointwise parametric Physics-Informed Neural Network (PINN) trained with soft boundary and PDE residual losses.
-  2. Fourier Neural Operator (FNO-2D) mapping parameter $\alpha$ and coordinate grids directly to solution fields.
-- **Option Selected:** Fourier Neural Operator (FNO-2D) for digital twin surrogate; Bounded PINN (Exp D) retained as an alternative benchmark baseline.
-- **Why:** FNO evaluates full 2D spatiotemporal fields $[0, 1] \times [0, 1]$ in a single operator forward pass, eliminating pointwise $(x, t)$ MLP query loops. In interpolation splits (`data/results/experiments_summary.csv`), `fno_base` achieves median relative $L_2$ error of 0.1655 (P90: 0.3444) and `fno_expD` achieves 0.1047 (P90: 0.3438), while `pinn_base` achieves 0.0275 (P90: 0.2147) and `pinn_expD` achieves 0.0088 (P90: 0.0130). Both neural models substantially outperform the data-only persistence baseline (median relative $L_2$ error 0.6865, P90: 2.9983). The classical Crank-Nicolson solver (`solver_cn`) achieves 0.00012 median error. In High-alpha OOD extrapolation, `fno_expD` achieves 0.6930 median error vs 0.6559 for `pinn_expD`, 0.0024 for `solver_cn`, and 5.8046 for data-only persistence.
-- **Status:** **Decided; evidence is a plot only (no summary table yet)**
-- **Evidence File:** `data/results/experiments_summary.csv`, `plots/full_rollout_abs_error_comparison.png`, `src/eval_final_all.py`, `src/models/fno2d.py`, `src/models/pinn.py`.
+  1. *Parametric Physics-Informed Neural Network (PINN):* Evaluated in unconstrained base form (`pinn_base`) and bounded reparametrized form (`pinn_expD`).
+  2. *Fourier Neural Operator (FNO-2D):* Evaluated in unconstrained base form (`fno_base`) and bounded reparametrized form (`fno_expD`).
+  3. *Plain Data-Only Network (`mlp_data_only`):* 4-layer MLP with identical width/depth to the PINN, trained purely on observed solution fields via MSE regression without physics loss (`src/train_data_only_mlp.py`).
+  4. *Classical Crank-Nicolson Solver (`solver_cn`):* Deterministic numerical reference solver (`src/inverse_mode2.py`).
+  5. *Persistence (Trivial Baseline):* Static initial condition persistence baseline $u(x, t) = \sin(\pi x)$ (`src/data/generate_dataset.py`).
+- **Option Selected:** Both neural models are retained for distinct pipeline roles: Bounded PINN (`pinn_expD`) is selected for Mode 1 direct parameter autograd; Fourier Neural Operator (`fno_base`) is selected for Mode 3 fast grid precomputation and spline inversion; Classical Crank-Nicolson is selected as the Mode 2 ground-truth standard.
+- **Why:**
+  - *Empirical Accuracy from `data/results/experiments_summary.csv`:* On the held-out interpolation split, `pinn_expD` is substantially more accurate in full-field relative $L_2$ error (median: 0.0088, P90: 0.0130) than `fno_expD` (median: 0.1047, P90: 0.3438) and `fno_base` (median: 0.1655, P90: 0.3444 with boundary mask; 0.0045 interior error unmasked). The data-only network (`mlp_data_only`) achieves median error of 0.0296 (P90: 0.1289), outperforming unconstrained PINN (`pinn_base`, 0.0275 / P90: 0.2147) and persistence (0.6865 / P90: 2.9983), but failing to match the physics-constrained `pinn_expD`.
+  - *Out-of-Distribution Degradation:* Both neural surrogates fail under High-$\alpha$ OOD extrapolation ($\alpha \in [1.5, 3.0]$ vs training $\alpha \in [0.01, 1.0]$): `fno_expD` degrades to 0.6930 median error and `pinn_expD` degrades to 0.6559 median error (with data-only MLP at 0.5740 and persistence at 5.8046), whereas the classical Crank-Nicolson solver maintains 0.0024 median error.
+  - *Operational Rationale for Pipeline Assignment:* FNO is not chosen for superior full-field interpolation accuracy over PINN Exp D. Rather, each model is selected for its distinct functional properties:
+    1. *Mode 1 uses PINN (`pinn_expD`):* Mode 1 requires backpropagation of sensor residuals directly to the physical parameter $\alpha$ via autograd ($d\mathcal{L}/d\alpha$). The PINN serves as a continuously differentiable pointwise function $u_\theta(x, t, \alpha)$ that enables direct parameter gradient optimization without spatial interpolation.
+    2. *Mode 3 uses FNO (`fno_base`):* Mode 3 requires precomputing complete 2D spatio-temporal solution fields across a 350-point parameter grid to construct 1D cubic splines over $\log_{10}(\alpha)$. FNO evaluates entire 2D grids $[0, 1] \times [0, 1]$ simultaneously in a single forward pass, eliminating pointwise query loops. Furthermore, in the spatiotemporal interior where sensors are located ($t \in [0.01, 1.0]$, $x \in [0.2, 0.8]$), FNO achieves 0.45% median relative error ($0.0045$), enabling Mode 3 to deliver 0.67 ms inversion with near-solver accuracy (median error ratio 1.020 vs Mode 2).
+- **Status:** **Decided; evidence: data/results/experiments_summary.csv**
+- **Evidence File:** `data/results/experiments_summary.csv`, `src/eval_final_all.py`, `src/models/fno2d.py`, `src/models/pinn.py`, `src/train_data_only_mlp.py`, `src/run_definitive_pipeline.py`.
 
 ---
 
 ### Decision 2: Boundary & Initial Condition Enforcement (Ablation Series Exp A–D)
 - **Options Tried:**
-  1. *Baseline:* Unconstrained neural network with penalty weights in loss objective.
-  2. *Exp A:* Soft-penalty PINN with tuning of PDE vs BC loss balancing.
-  3. *Exp B:* Spatial boundary reparametrization $u(x, t) = \sin(\pi x) + x(1-x) N(x, t)$.
-  4. *Exp C:* Spatial boundary reparametrization on FNO Fourier modes.
-  5. *Exp D:* Bounded temporal and spatial reparametrization $u(x, t) = \sin(\pi x) + x(1-x)(1 - e^{-5t}) N(x, t)$.
-- **Option Selected:** Exp D (Bounded Reparametrization).
-- **Why:** By mathematical construction, at $t = 0$ the temporal factor $(1 - e^0) = 0$, enforcing $u(x, 0) = \sin(\pi x)$ (exact initial conditions), while at boundaries $x \in \{0, 1\}$ the factor $x(1 - x) = 0$ and $\sin(0) = \sin(\pi) = 0$, enforcing $u(0, t) = u(1, t) = 0$ for all $t \ge 0$. In empirical evaluation (`data/results/experiments_summary.csv`), unconstrained `fno_base` exhibits median $t=0$ MAE of 0.623674 across all splits. Soft-penalty PINNs fail to eliminate initial condition error: `pinn_base` exhibits median $t=0$ MAE of 0.0139 (Interpolation), 0.0454 (Low-alpha OOD), and 0.2214 (High-alpha OOD); `pinn_expA` exhibits median $t=0$ MAE of 0.3380 (Interpolation) and 0.4141 (High-alpha OOD). By contrast, `fno_expD` reduces median $t=0$ MAE to $5.06 \times 10^{-8}$ and `pinn_expD` reduces median $t=0$ MAE to $4.79 \times 10^{-8}$ across all splits (exact down to float32 precision).
-- **Status:** **Decided; evidence is a plot only (no summary table yet)**
-- **Evidence File:** `data/results/experiments_summary.csv`, `src/eval_final_all.py` (lines 44–46), `src/train_expD_pinn.py`, `src/train_expD_fno.py`, `experiments/diagnostics_exp.py`, `plots/t0_error_experiments.png`.
+  1. *Baseline:* Soft-penalty PINN (`pinn_base`) / unconstrained FNO (`fno_base`) with loss terms penalizing boundary/initial condition violations.
+  2. *Exp A (Loss Weighting Axis):* Soft-penalty PINN with normalized PDE residual loss scaling $f = (u_t - \alpha u_{xx}) / \alpha$ (`experiments/train_pinn_expA.py`).
+  3. *Exp B (Hard Spatiotemporal Reparametrization Axis):* PINN reparametrized with exact initial condition and linear temporal enforcement: $u(x, t) = \sin(\pi x) + x(1-x) \cdot t \cdot N(x, t)$ (`experiments/train_pinn_expB.py`).
+  4. *Exp C (FNO Hard Reparametrization Axis):* FNO reparametrized with exact initial condition and linear temporal enforcement on operator output: $u(x, t) = \sin(\pi x) + x(1-x) \cdot t \cdot N(x, t)$ (`experiments/train_expC.py`).
+  5. *Exp D (Bounded Reparametrization Axis):* PINN and FNO reparametrized with bounded exponential temporal enforcement: $u(x, t) = \sin(\pi x) + x(1-x)(1 - e^{-5t}) N(x, t)$ (`src/train_expD_pinn.py`, `src/train_expD_fno.py`).
+- **Option Selected:** Exp D (Bounded Reparametrization) for PINN (`models/pinn_expD.pt`); Exp D for FNO (`models/fno2d_expD.pt`).
+- **Why:**
+  - *Construction vs Accuracy ($t = 0$):* By mathematical construction, at $t = 0$ the temporal factor $(1 - e^0) = 0$ in Exp D (and $t = 0$ in Exp B/C), identically collapsing $u(x, 0) \equiv \sin(\pi x)$ down to float precision ($4.79 \times 10^{-8}$ for PINN, $5.06 \times 10^{-8}$ for FNO). Because initial condition error is eliminated by algebraic construction rather than learned optimization, comparing $t=0$ error alone evaluates the mathematical formula, not surrogate accuracy.
+  - *Learned Interior Accuracy ($t > 0$):* To evaluate true learned representation accuracy, models must be compared on the interior domain ($t > 0$, time slices $1 \dots 99$) on the interpolation split:
+    - *PINN Models:* Baseline unconstrained PINN (`pinn_base`) achieves interior median relative $L_2$ error of 0.02756 (P90: 0.22215). Exp B achieves 0.00789 (P90: 0.05418). Exp D achieves 0.00902 with a dramatically tighter tail (P90: 0.01378, a $3.9\times$ reduction in 90th-percentile error over Exp B).
+    - *FNO Models:* Baseline unmasked FNO (`fno_base`) achieves interior median relative $L_2$ error of 0.00457 (P90: 0.00597). Exp C achieves 0.10600 (P90: 0.36653) and Exp D achieves 0.10602 (P90: 0.36619), reflecting late-time temporal distortion introduced by the multiplicative factor when paired with global Fourier modes.
+  - *Coverage of Brief Ablation Axes:*
+    - *Covered:* **Loss weighting** is systematically tested in Exp A via normalized residual loss scaling $f = (u_t - \alpha u_{xx}) / \alpha$.
+    - *Missing:* **Activation function** variation is missing (standard Tanh activation is fixed across all PINN architectures, and GeLU across all FNOs). **Collocation sampling strategies** are missing (uniform random interior sampling is kept constant across all runs without testing adaptive or residual-based resampling).
+- **Status:** **Decided; evidence: data/results/experiments_summary.csv**
+- **Evidence File:** `data/results/experiments_summary.csv`, `src/train_expD_pinn.py`, `src/train_expD_fno.py`, `experiments/train_pinn_expA.py`, `experiments/train_pinn_expB.py`, `experiments/train_expC.py`, `plots/t0_error_experiments.png`.
 
 ---
 

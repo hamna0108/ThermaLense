@@ -1,0 +1,43 @@
+=== 1. Shape, duplicates, status rule ===
+Mode2: rows 180 (expected 180), duplicate cells 0, rule violations 0
+   status counts: {'Identifiable': 85, 'sigma=0 floor': 60, 'Not Identifiable': 34, 'bias-dominated': 1}
+Mode3: rows 135 (expected 135), duplicate cells 0, rule violations 0
+   status counts: {'Identifiable': 52, 'sigma=0 floor': 45, 'Not Identifiable': 20, 'bias-dominated (FNO)': 13, 'bias-uncorrected': 5}
+Hybrid: rows 135 (expected 135), duplicate cells 0, rule violations 0
+   status counts: {'Identifiable': 68, 'sigma=0 floor': 45, 'Not Identifiable': 21, 'bias-dominated': 1}
+
+=== 2. alpha = 4.0 narrow-bound flag (Mode 3) ===
+narrow column flagged N/A in 9 of 9 rows at alpha=4.0 (want 9 of 9)
+
+=== 3. sigma=0 floor (median rel err) by split ===
+Mode2: Extended High-alpha OOD: 0.0127, Extended Low-alpha OOD: 0.0003, High-alpha OOD: 0.0039, Interpolation: 0.0003, Low-alpha OOD: 0.0003
+Mode3: Extended High-alpha OOD: 0.0408, Extended Low-alpha OOD: 0.2126, High-alpha OOD: 0.0138, Interpolation: 0.0064, Low-alpha OOD: 0.0625
+Hybrid: Extended High-alpha OOD: 0.0127, Extended Low-alpha OOD: 0.0003, High-alpha OOD: 0.0039, Interpolation: 0.0003, Low-alpha OOD: 0.0003
+
+=== 4. Coverage (sigma>0) ===
+Mode2: Wald mean 93.6%, cells under 90%: 16 of 120
+Mode3: Wald mean 88.2%, cells under 90%: 26 of 90
+Hybrid: Wald mean 94.0%, cells under 90%: 8 of 90
+
+=== 5. Pairing check (same noise draws) ===
+Mode 2 vs Hybrid: median |diff|/error 0.0002, max 0.070 (earlier run: 0.0002 / 0.070)
+Mode 3 / Mode 2 error ratio at sigma=0.05, alpha>=0.02: median 1.020 (earlier run: about 1.02)
+
+=== 6. Timing (mean single fit, ms) ===
+Mode2: 1.85
+Mode3: 0.67
+Hybrid: 137.12
+
+=== 7. Spot-check cells vs earlier run (value now / value before) ===
+Mode3 a=0.1 N=5 sig=0.01: 0.019130 / 0.019132  same  status=Identifiable
+Mode3 a=3.0 N=5 sig=0.01: 0.056753 / 0.056753  same  status=bias-uncorrected
+Mode3 a=4.0 N=5 sig=0.01: 0.059465 / 0.059465  same  status=bias-uncorrected
+Mode3 a=0.002 N=5 sig=0.0: 0.100317 / 0.100317  same  status=sigma=0 floor
+Mode3 a=2.5 N=20 sig=0.05: 0.039647 / 0.039649  same  status=Identifiable
+Mode3 a=0.5 N=20 sig=0.01: 0.010675 / 0.010675  same  status=bias-dominated (FNO)
+Mode2 a=0.1 N=5 sig=0.01: 0.017353 / 0.017353  same  status=Identifiable
+Mode2 a=3.0 N=5 sig=0.01: 0.015125 / 0.015125  same  status=Identifiable
+Mode2 a=4.0 N=10 sig=0.01: 0.015647 / 0.015647  same  status=Identifiable
+Hybrid a=0.1 N=5 sig=0.01: 0.017362 / 0.017362  same  status=Identifiable
+Hybrid a=2.5 N=5 sig=0.01: 0.018704 / 0.018704  same  status=Identifiable
+cells changed vs earlier run: 0 of 11

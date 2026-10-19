@@ -1,0 +1,9 @@
+{
+  "time_per_epoch_s": 19.94753384590149,
+  "total_train_sec": 1856.026712179184,
+  "epochs_trained": 62,
+  "best_epoch": 47,
+  "best_val_rel_l2": 0.04421946942806244,
+  "status": "early_stopped_plateau (patience 15 reached at epoch 62, best epoch 47)",
+  "diagnosis": "Mild overfitting observed (val loss gap > 50% above train loss)."
+}

@@ -1,0 +1,136 @@
+split,alpha,sensors,sigma,med_rel_err,spread_log,sprd_crb,wald_cov_95,deploy_cov_95,frac_bound,single_fit_time_ms,status
+Extended Low-alpha OOD,0.002,5,0.00,0.000342,0.000008,N/A,N/A,N/A,0.000,62.759,sigma=0 floor
+Extended Low-alpha OOD,0.002,5,0.01,0.399839,0.206338,  0.81,88.5%,88.5%,0.145,68.465,Not Identifiable
+Extended Low-alpha OOD,0.002,5,0.05,0.499942,0.404575,  0.32,87.5%,87.5%,0.390,83.162,Not Identifiable
+Extended Low-alpha OOD,0.002,10,0.00,0.000343,0.000009,N/A,N/A,N/A,0.000,60.275,sigma=0 floor
+Extended Low-alpha OOD,0.002,10,0.01,0.316906,0.177510,  0.85,97.5%,97.5%,0.150,74.123,Not Identifiable
+Extended Low-alpha OOD,0.002,10,0.05,0.499942,0.373310,  0.36,85.0%,85.0%,0.370,95.073,Not Identifiable
+Extended Low-alpha OOD,0.002,20,0.00,0.000350,0.000009,N/A,N/A,N/A,0.000,57.359,sigma=0 floor
+Extended Low-alpha OOD,0.002,20,0.01,0.237116,0.141288,  0.88,96.5%,96.5%,0.025,72.132,Not Identifiable
+Extended Low-alpha OOD,0.002,20,0.05,0.499942,0.343333,  0.43,88.0%,88.0%,0.335,210.421,Not Identifiable
+Low-alpha OOD,0.003,5,0.00,0.000345,0.000007,N/A,N/A,N/A,0.000,147.947,sigma=0 floor
+Low-alpha OOD,0.003,5,0.01,0.292225,0.193830,  1.14,96.0%,96.0%,0.055,173.997,Not Identifiable
+Low-alpha OOD,0.003,5,0.05,0.666628,0.416112,  0.49,88.5%,88.5%,0.310,192.927,Not Identifiable
+Low-alpha OOD,0.003,10,0.00,0.000341,0.000007,N/A,N/A,N/A,0.000,113.292,sigma=0 floor
+Low-alpha OOD,0.003,10,0.01,0.219966,0.158273,  1.14,96.0%,96.0%,0.020,143.667,Not Identifiable
+Low-alpha OOD,0.003,10,0.05,0.666628,0.394185,  0.57,91.0%,91.0%,0.335,152.168,Not Identifiable
+Low-alpha OOD,0.003,20,0.00,0.000343,0.000007,N/A,N/A,N/A,0.000,135.465,sigma=0 floor
+Low-alpha OOD,0.003,20,0.01,0.154475,0.104819,  0.97,95.5%,95.5%,0.000,135.564,Identifiable
+Low-alpha OOD,0.003,20,0.05,0.666618,0.347409,  0.64,91.5%,91.5%,0.250,165.774,Not Identifiable
+Low-alpha OOD,0.004,5,0.00,0.000343,0.000006,N/A,N/A,N/A,0.000,122.331,sigma=0 floor
+Low-alpha OOD,0.004,5,0.01,0.199232,0.134977,  1.04,95.0%,95.0%,0.000,144.348,Identifiable
+Low-alpha OOD,0.004,5,0.05,0.749970,0.424397,  0.66,91.0%,91.0%,0.290,205.728,Not Identifiable
+Low-alpha OOD,0.004,10,0.00,0.000343,0.000006,N/A,N/A,N/A,0.000,138.464,sigma=0 floor
+Low-alpha OOD,0.004,10,0.01,0.153299,0.113737,  1.08,93.5%,93.5%,0.000,149.049,Identifiable
+Low-alpha OOD,0.004,10,0.05,0.697315,0.384330,  0.73,92.5%,92.5%,0.270,208.397,Not Identifiable
+Low-alpha OOD,0.004,20,0.00,0.000341,0.000006,N/A,N/A,N/A,0.000,160.748,sigma=0 floor
+Low-alpha OOD,0.004,20,0.01,0.121756,0.095000,  1.17,96.0%,96.0%,0.000,148.940,Identifiable
+Low-alpha OOD,0.004,20,0.05,0.705816,0.370485,  0.91,88.0%,88.0%,0.190,182.820,Not Identifiable
+Low-alpha OOD,0.005,5,0.00,0.000343,0.000005,N/A,N/A,N/A,0.000,142.222,sigma=0 floor
+Low-alpha OOD,0.005,5,0.01,0.156145,0.109585,  1.04,92.0%,92.0%,0.000,140.275,Identifiable
+Low-alpha OOD,0.005,5,0.05,0.799970,0.436359,  0.82,93.0%,93.0%,0.270,186.927,Not Identifiable
+Low-alpha OOD,0.005,10,0.00,0.000326,0.000005,N/A,N/A,N/A,0.000,103.316,sigma=0 floor
+Low-alpha OOD,0.005,10,0.01,0.120734,0.085652,  1.00,93.0%,93.0%,0.000,155.495,Identifiable
+Low-alpha OOD,0.005,10,0.05,0.668722,0.389945,  0.91,89.0%,89.0%,0.145,180.271,Not Identifiable
+Low-alpha OOD,0.005,20,0.00,0.000326,0.000005,N/A,N/A,N/A,0.000,161.569,sigma=0 floor
+Low-alpha OOD,0.005,20,0.01,0.103321,0.065041,  0.99,94.5%,94.5%,0.000,171.123,Identifiable
+Low-alpha OOD,0.005,20,0.05,0.559562,0.343104,  1.04,92.5%,92.5%,0.105,188.039,Not Identifiable
+Low-alpha OOD,0.008,5,0.00,0.000342,0.000005,N/A,N/A,N/A,0.000,146.694,sigma=0 floor
+Low-alpha OOD,0.008,5,0.01,0.095522,0.066885,  1.02,96.0%,96.0%,0.000,150.781,Identifiable
+Low-alpha OOD,0.008,5,0.05,0.539435,0.401306,  1.22,91.5%,91.5%,0.100,178.699,Not Identifiable
+Low-alpha OOD,0.008,10,0.00,0.000327,0.000005,N/A,N/A,N/A,0.000,155.881,sigma=0 floor
+Low-alpha OOD,0.008,10,0.01,0.081719,0.060858,  1.10,91.5%,91.5%,0.000,156.563,Identifiable
+Low-alpha OOD,0.008,10,0.05,0.446315,0.350188,  1.27,92.5%,92.5%,0.080,180.588,Not Identifiable
+Low-alpha OOD,0.008,20,0.00,0.000326,0.000003,N/A,N/A,N/A,0.000,161.294,sigma=0 floor
+Low-alpha OOD,0.008,20,0.01,0.068401,0.041312,  0.98,95.5%,95.5%,0.000,147.026,Identifiable
+Low-alpha OOD,0.008,20,0.05,0.409367,0.313770,  1.49,94.0%,94.0%,0.025,154.177,Not Identifiable
+Interpolation,0.020,5,0.00,0.000330,0.000009,N/A,N/A,N/A,0.000,149.724,sigma=0 floor
+Interpolation,0.020,5,0.01,0.044973,0.032175,  1.07,93.0%,93.0%,0.000,160.423,Identifiable
+Interpolation,0.020,5,0.05,0.222309,0.166067,  1.11,94.5%,94.5%,0.000,170.774,Not Identifiable
+Interpolation,0.020,10,0.00,0.000329,0.000004,N/A,N/A,N/A,0.000,156.954,sigma=0 floor
+Interpolation,0.020,10,0.01,0.043908,0.025809,  1.07,96.0%,96.0%,0.000,159.138,Identifiable
+Interpolation,0.020,10,0.05,0.195453,0.122446,  1.01,98.0%,98.0%,0.000,159.074,Identifiable
+Interpolation,0.020,20,0.00,0.000330,0.000002,N/A,N/A,N/A,0.000,163.869,sigma=0 floor
+Interpolation,0.020,20,0.01,0.025708,0.017144,  0.93,95.5%,96.0%,0.000,159.643,Identifiable
+Interpolation,0.020,20,0.05,0.126747,0.100675,  1.09,93.0%,93.0%,0.000,153.265,Identifiable
+Interpolation,0.050,5,0.00,0.000359,0.000002,N/A,N/A,N/A,0.000,164.333,sigma=0 floor
+Interpolation,0.050,5,0.01,0.022466,0.014406,  0.92,98.0%,98.0%,0.000,65.383,Identifiable
+Interpolation,0.050,5,0.05,0.106185,0.087056,  1.12,95.0%,95.0%,0.000,65.673,Identifiable
+Interpolation,0.050,10,0.00,0.000362,0.000002,N/A,N/A,N/A,0.000,66.989,sigma=0 floor
+Interpolation,0.050,10,0.01,0.020983,0.012917,  1.06,93.5%,93.5%,0.000,71.997,Identifiable
+Interpolation,0.050,10,0.05,0.099034,0.064168,  1.05,96.0%,96.0%,0.000,94.821,Identifiable
+Interpolation,0.050,20,0.00,0.000366,0.000001,N/A,N/A,N/A,0.000,162.434,sigma=0 floor
+Interpolation,0.050,20,0.01,0.012631,0.009280,  1.03,93.5%,93.5%,0.000,154.949,Identifiable
+Interpolation,0.050,20,0.05,0.059977,0.041860,  0.93,98.0%,98.0%,0.000,160.836,Identifiable
+Interpolation,0.100,5,0.00,0.000336,0.000006,N/A,N/A,N/A,0.000,98.434,sigma=0 floor
+Interpolation,0.100,5,0.01,0.017362,0.011496,  1.00,96.5%,96.5%,0.000,59.361,Identifiable
+Interpolation,0.100,5,0.05,0.096203,0.062731,  1.09,94.5%,94.5%,0.000,59.189,Identifiable
+Interpolation,0.100,10,0.00,0.000338,0.000001,N/A,N/A,N/A,0.000,61.116,sigma=0 floor
+Interpolation,0.100,10,0.01,0.013193,0.008387,  0.99,94.0%,95.5%,0.000,58.473,Identifiable
+Interpolation,0.100,10,0.05,0.067737,0.044602,  1.05,94.0%,94.0%,0.000,79.616,Identifiable
+Interpolation,0.100,20,0.00,0.000340,0.000001,N/A,N/A,N/A,0.000,146.030,sigma=0 floor
+Interpolation,0.100,20,0.01,0.009678,0.005832,  0.94,97.5%,97.5%,0.000,154.439,Identifiable
+Interpolation,0.100,20,0.05,0.046964,0.032827,  1.06,93.0%,93.5%,0.000,153.756,Identifiable
+Interpolation,0.200,5,0.00,0.000311,0.000007,N/A,N/A,N/A,0.000,147.978,sigma=0 floor
+Interpolation,0.200,5,0.01,0.017287,0.010711,  0.99,97.0%,97.0%,0.000,150.448,Identifiable
+Interpolation,0.200,5,0.05,0.079917,0.058381,  1.08,94.0%,94.0%,0.000,137.131,Identifiable
+Interpolation,0.200,10,0.00,0.000314,0.000007,N/A,N/A,N/A,0.000,130.454,sigma=0 floor
+Interpolation,0.200,10,0.01,0.010392,0.006931,  0.94,97.0%,97.5%,0.000,135.964,Identifiable
+Interpolation,0.200,10,0.05,0.067386,0.037751,  1.03,96.5%,96.5%,0.000,144.028,Identifiable
+Interpolation,0.200,20,0.00,0.000310,0.000010,N/A,N/A,N/A,0.000,139.488,sigma=0 floor
+Interpolation,0.200,20,0.01,0.008068,0.005217,  1.01,91.5%,92.0%,0.000,140.126,Identifiable
+Interpolation,0.200,20,0.05,0.039793,0.025067,  0.97,96.5%,96.0%,0.000,133.829,Identifiable
+Interpolation,0.500,5,0.00,0.000138,0.000007,N/A,N/A,N/A,0.000,139.597,sigma=0 floor
+Interpolation,0.500,5,0.01,0.015769,0.010543,  0.97,95.0%,95.0%,0.000,138.207,Identifiable
+Interpolation,0.500,5,0.05,0.090685,0.051207,  0.94,99.0%,99.0%,0.000,133.987,Identifiable
+Interpolation,0.500,10,0.00,0.000139,0.000006,N/A,N/A,N/A,0.000,138.960,sigma=0 floor
+Interpolation,0.500,10,0.01,0.010967,0.006805,  0.95,97.5%,97.5%,0.000,140.168,Identifiable
+Interpolation,0.500,10,0.05,0.063806,0.037719,  1.06,94.5%,94.5%,0.000,138.970,Identifiable
+Interpolation,0.500,20,0.00,0.000138,0.000004,N/A,N/A,N/A,0.000,138.010,sigma=0 floor
+Interpolation,0.500,20,0.01,0.008539,0.005217,  1.04,94.0%,94.0%,0.000,139.448,Identifiable
+Interpolation,0.500,20,0.05,0.032072,0.023563,  0.94,96.0%,96.0%,0.000,140.265,Identifiable
+High-alpha OOD,1.500,5,0.00,0.001518,0.000008,N/A,N/A,N/A,0.000,146.953,sigma=0 floor
+High-alpha OOD,1.500,5,0.01,0.018388,0.011360,  1.02,95.5%,95.0%,0.000,131.457,Identifiable
+High-alpha OOD,1.500,5,0.05,0.079627,0.056638,  1.02,93.5%,94.0%,0.000,137.963,Identifiable
+High-alpha OOD,1.500,10,0.00,0.001512,0.000006,N/A,N/A,N/A,0.000,150.217,sigma=0 floor
+High-alpha OOD,1.500,10,0.01,0.009737,0.005932,  0.82,99.5%,99.5%,0.000,147.737,Identifiable
+High-alpha OOD,1.500,10,0.05,0.049743,0.033652,  0.93,95.0%,95.0%,0.000,144.621,Identifiable
+High-alpha OOD,1.500,20,0.00,0.001514,0.000004,N/A,N/A,N/A,0.000,150.899,sigma=0 floor
+High-alpha OOD,1.500,20,0.01,0.008089,0.005238,  1.04,94.5%,95.5%,0.000,148.473,Identifiable
+High-alpha OOD,1.500,20,0.05,0.042439,0.026913,  1.07,93.0%,92.5%,0.000,140.255,Identifiable
+High-alpha OOD,2.000,5,0.00,0.002960,0.000008,N/A,N/A,N/A,0.000,146.391,sigma=0 floor
+High-alpha OOD,2.000,5,0.01,0.017363,0.010600,  0.94,97.0%,96.5%,0.000,144.779,Identifiable
+High-alpha OOD,2.000,5,0.05,0.081762,0.052195,  0.93,98.0%,97.5%,0.000,148.467,Identifiable
+High-alpha OOD,2.000,10,0.00,0.002954,0.000006,N/A,N/A,N/A,0.000,156.737,sigma=0 floor
+High-alpha OOD,2.000,10,0.01,0.011001,0.006892,  0.95,94.5%,96.0%,0.000,134.601,Identifiable
+High-alpha OOD,2.000,10,0.05,0.061422,0.035931,  0.99,95.5%,95.5%,0.000,143.090,Identifiable
+High-alpha OOD,2.000,20,0.00,0.002955,0.000005,N/A,N/A,N/A,0.000,150.033,sigma=0 floor
+High-alpha OOD,2.000,20,0.01,0.008284,0.005201,  1.02,93.5%,94.5%,0.000,148.609,Identifiable
+High-alpha OOD,2.000,20,0.05,0.038618,0.025025,  0.98,95.0%,95.0%,0.000,143.421,Identifiable
+High-alpha OOD,2.500,5,0.00,0.004806,0.000008,N/A,N/A,N/A,0.000,141.837,sigma=0 floor
+High-alpha OOD,2.500,5,0.01,0.018704,0.011862,  1.05,93.0%,93.0%,0.000,139.626,Identifiable
+High-alpha OOD,2.500,5,0.05,0.085488,0.057901,  1.03,94.0%,94.0%,0.000,144.598,Identifiable
+High-alpha OOD,2.500,10,0.00,0.004801,0.000007,N/A,N/A,N/A,0.000,138.884,sigma=0 floor
+High-alpha OOD,2.500,10,0.01,0.012375,0.007409,  1.01,94.5%,96.0%,0.000,124.567,Identifiable
+High-alpha OOD,2.500,10,0.05,0.050602,0.036540,  1.00,94.0%,93.5%,0.000,64.726,Identifiable
+High-alpha OOD,2.500,20,0.00,0.004801,0.000005,N/A,N/A,N/A,0.000,62.248,sigma=0 floor
+High-alpha OOD,2.500,20,0.01,0.008338,0.005021,  0.98,95.0%,98.5%,0.000,72.701,Identifiable
+High-alpha OOD,2.500,20,0.05,0.034469,0.024355,  0.95,95.0%,94.0%,0.000,65.597,Identifiable
+High-alpha OOD,3.000,5,0.00,0.007052,0.000008,N/A,N/A,N/A,0.000,147.419,sigma=0 floor
+High-alpha OOD,3.000,5,0.01,0.015137,0.011666,  1.04,92.5%,92.0%,0.000,140.318,Identifiable
+High-alpha OOD,3.000,5,0.05,0.083540,0.059323,  1.05,93.5%,92.0%,0.000,152.362,Identifiable
+High-alpha OOD,3.000,10,0.00,0.007045,0.000008,N/A,N/A,N/A,0.000,164.203,sigma=0 floor
+High-alpha OOD,3.000,10,0.01,0.014687,0.008153,  1.09,90.0%,93.0%,0.000,153.183,Identifiable
+High-alpha OOD,3.000,10,0.05,0.058689,0.034104,  0.91,97.0%,97.5%,0.000,143.892,Identifiable
+High-alpha OOD,3.000,20,0.00,0.007042,0.000006,N/A,N/A,N/A,0.000,137.110,sigma=0 floor
+High-alpha OOD,3.000,20,0.01,0.010484,0.005082,  0.98,93.5%,98.5%,0.000,146.539,Identifiable
+High-alpha OOD,3.000,20,0.05,0.041837,0.025491,  0.99,96.5%,96.0%,0.000,144.745,Identifiable
+Extended High-alpha OOD,4.000,5,0.00,0.012713,0.000005,N/A,N/A,N/A,0.000,154.264,sigma=0 floor
+Extended High-alpha OOD,4.000,5,0.01,0.016794,0.010345,  0.93,94.0%,97.5%,0.000,148.196,Identifiable
+Extended High-alpha OOD,4.000,5,0.05,0.076234,0.051866,  0.93,97.0%,98.0%,0.000,155.210,Identifiable
+Extended High-alpha OOD,4.000,10,0.00,0.012701,0.000009,N/A,N/A,N/A,0.000,152.218,sigma=0 floor
+Extended High-alpha OOD,4.000,10,0.01,0.015635,0.007719,  0.98,90.0%,98.0%,0.000,147.305,Identifiable
+Extended High-alpha OOD,4.000,10,0.05,0.063003,0.040127,  1.02,94.5%,94.5%,0.000,143.955,Identifiable
+Extended High-alpha OOD,4.000,20,0.00,0.012693,0.000009,N/A,N/A,N/A,0.000,143.875,sigma=0 floor
+Extended High-alpha OOD,4.000,20,0.01,0.012225,0.005478,  1.02,82.0%,98.5%,0.000,142.491,bias-dominated
+Extended High-alpha OOD,4.000,20,0.05,0.045917,0.026858,  1.00,94.0%,97.0%,0.000,140.538,Identifiable

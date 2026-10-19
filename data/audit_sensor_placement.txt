@@ -1,0 +1,47 @@
+=== 1. File existence and row counts ===
+Raw data: 16800 rows (expected 16,800 across 7 strategies), duplicate reps: 0
+Summary data: 84 cells (expected 84), duplicate cells: 0
+
+=== 2. Seed integrity & pairing check ===
+Null values in raw: {'alpha_hat': 0, 'layout_seed': 0, 'noise_seed': 0}
+Unique layout seeds: 6 across 6 (alpha, N) configurations
+Unique noise seeds: 762 (200 distinct seeds per cell)
+Noise realizations identically paired across all 7 strategies: True
+
+=== 3. Strategy performance comparison (median rel err across all 12 cells) ===
+  all-at-t-star (oracle alpha)       : med_rel_err = 0.0362 | med_CRB_rel = 0.0519 | sprd/CRB = 1.03 | time = 0.248 ms
+  early-heavy                        : med_rel_err = 0.0624 | med_CRB_rel = 0.0946 | sprd/CRB = 1.03 | time = 0.283 ms
+  information-weighted (oracle alpha): med_rel_err = 0.0414 | med_CRB_rel = 0.0596 | sprd/CRB = 1.03 | time = 0.276 ms
+  late-heavy                         : med_rel_err = 0.0544 | med_CRB_rel = 0.0821 | sprd/CRB = 1.07 | time = 0.316 ms
+  log-spaced                         : med_rel_err = 0.0673 | med_CRB_rel = 0.0967 | sprd/CRB = 1.01 | time = 0.282 ms
+  two-stage deployable               : med_rel_err = 0.0474 | med_CRB_rel = 0.0669 | sprd/CRB = 1.02 | time = 1.160 ms
+  uniform                            : med_rel_err = 0.0629 | med_CRB_rel = 0.0959 | sprd/CRB = 1.06 | time = 0.303 ms
+
+=== 4. Deployable Two-Stage Design vs Baseline and Oracle Bounds (N=10, sigma=0.01) ===
+  alpha=0.005 | log-spaced: 0.0984 -> two-stage: 0.0642 (+34.7%) | oracle info-wt: 0.0546 | all-at-t*: 0.0427
+  alpha=0.100 | log-spaced: 0.0122 -> two-stage: 0.0082 (+33.2%) | oracle info-wt: 0.0058 | all-at-t*: 0.0052
+  alpha=2.500 | log-spaced: 0.0112 -> two-stage: 0.0077 (+31.0%) | oracle info-wt: 0.0068 | all-at-t*: 0.0054
+
+=== 5. Estimator spread vs Cramér-Rao Bound ===
+Spread/CRB across all 84 cells: mean = 1.04, min = 0.90, max = 1.24 (theoretical target = 1.00)
+
+=== 6. Runtime benchmark (Mode 2 fit time) ===
+Static placement single fit time: 0.301 ms
+Two-stage adaptive single fit time: 1.229 ms (includes 2 fits + adaptive design)
+Note: Single fit times (~0.3 ms) are for 1D temporal measurements at a single spatial sensor position (x = 0.5),
+allowing fast 1D spline evaluation rather than 2D PDE solves.
+
+=== 7. Spot-check key cells (including uniform at alpha=2.5) ===
+  all-at-t-star (oracle alpha)        a=0.005 N=10 sig=0.01 -> med_err=0.0427, CRB_rel=0.0673, sprd/CRB=0.97
+  information-weighted (oracle alpha) a=0.005 N=10 sig=0.01 -> med_err=0.0546, CRB_rel=0.0865, sprd/CRB=0.98
+  two-stage deployable                a=0.005 N=10 sig=0.01 -> med_err=0.0642, CRB_rel=0.1044, sprd/CRB=1.00
+  late-heavy                          a=0.005 N=10 sig=0.01 -> med_err=0.0602, CRB_rel=0.0917, sprd/CRB=0.99
+  log-spaced                          a=0.005 N=10 sig=0.01 -> med_err=0.0984, CRB_rel=0.1688, sprd/CRB=1.01
+  uniform                             a=0.005 N=10 sig=0.01 -> med_err=0.0721, CRB_rel=0.1118, sprd/CRB=0.99
+  all-at-t-star (oracle alpha)        a=2.500 N=10 sig=0.01 -> med_err=0.0054, CRB_rel=0.0086, sprd/CRB=0.93
+  information-weighted (oracle alpha) a=2.500 N=10 sig=0.01 -> med_err=0.0068, CRB_rel=0.0102, sprd/CRB=0.95
+  two-stage deployable                a=2.500 N=10 sig=0.01 -> med_err=0.0077, CRB_rel=0.0120, sprd/CRB=0.96
+  early-heavy                         a=2.500 N=10 sig=0.01 -> med_err=0.0143, CRB_rel=0.0190, sprd/CRB=1.03
+  log-spaced                          a=2.500 N=10 sig=0.01 -> med_err=0.0112, CRB_rel=0.0147, sprd/CRB=1.01
+  uniform                             a=2.500 N=10 sig=0.01 -> med_err=0.0280, CRB_rel=0.0405, sprd/CRB=1.07
+  late-heavy                          a=2.500 N=10 sig=0.01 -> med_err=0.0285, CRB_rel=0.0514, sprd/CRB=1.01

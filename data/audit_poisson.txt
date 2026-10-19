@@ -1,0 +1,41 @@
+=== 1. Dataset Row Counts & Grid Dimensions ===
+train: 1000 | val: 100 | test_interp: 200
+test_ood_narrow: 200 | test_ood_count: 200 | test_ood_boundary: 200
+Total dataset: 1900 samples across 6 splits on 64x64 grids.
+
+=== 2. Seed Separation & Disjointness Check ===
+train: [100000, 100999] | val: [200000, 200099] | test_interp: [300000, 300199]
+test_ood_narrow: [400000, 400199] | test_ood_count: [500000, 500199] | test_ood_boundary: [600000, 600199]
+Unique seeds: 1900/1900 | Seed collision count: 0 (strictly disjoint confirmed).
+
+=== 3. 5-Point Stencil Convergence Orders (Manufactured Solution) ===
+Grid N   | Grid Spacing h | Rel L2 Error | L_inf Error  | Observed Order (Expect 2)
+  16x16   | h = 1/15    | 3.6634e-03   | 3.6234e-03   |   ---  
+  32x32   | h = 1/31    | 8.5628e-04   | 8.5409e-04   | 2.0023
+  64x64   | h = 1/63    | 2.0725e-04   | 2.0712e-04   | 2.0005
+ 128x128  | h = 1/127   | 5.0995e-05   | 5.0987e-05   | 2.0001
+
+=== 4. Split Metrics: FNO2d vs Linear Ridge Baseline ===
+Split              | FNO Rel L2 (med/p90/max)   | Lin Rel L2 (med/p90/max)   | PDE Res (FNO/Lin)
+train              | 1.842e-02/3.864e-02/1.801e-01 | 1.588e-08/3.356e-08/1.331e-07 | 1.446e+00 / 2.280e-05
+val                | 1.756e-02/3.609e-02/1.088e-01 | 2.993e-08/1.011e-07/2.600e-06 | 1.453e+00 / 2.573e-05
+test_interp        | 1.917e-02/4.549e-02/1.074e-01 | 3.235e-08/8.554e-08/1.846e-06 | 1.542e+00 / 2.564e-05
+test_ood_narrow    | 9.759e-02/2.458e-01/5.639e-01 | 1.926e-04/7.384e-04/2.201e-03 | 3.282e+00 / 3.922e-02
+test_ood_count     | 2.316e-02/4.760e-02/9.502e-02 | 3.148e-08/7.225e-08/3.764e-07 | 1.784e+00 / 2.870e-05
+test_ood_boundary  | 1.467e-01/2.674e-01/7.140e-01 | 1.379e-06/1.463e-05/2.741e-04 | 5.131e+00 / 3.546e-04
+
+=== 5. Hard-Constrained PINN Baseline (Single Manufactured Source) ===
+Formulation: u = x(1-x)y(1-y)*NN(x,y) | BC Violation: 0.0e+00 (exact by construction)
+Rel L2 Error: 1.0461e-04 | Grid PDE Residual: 1.8281e-03 | Training Time: 26.13s
+
+=== 6. Spot-Check Cells (Relative L2 Error) ===
+Sanity Manufactured Solution : FNO = 2.0041e-01 | Linear = 2.0726e-04 | Solver = 2.0725e-04
+Sample test_interp[#42]      : FNO = 1.6840e-02 | Linear = 2.4073e-08 | (same family)
+Sample test_ood_narrow[#7]   : FNO = 2.1915e-01 | Linear = 9.9753e-04 | (width 0.04-0.07)
+Sample test_ood_boundary[#13]: FNO = 1.1757e-01 | Linear = 4.2807e-06 | (within 0.12 edge)
+
+=== 7. CPU Timing & Per-Query Inference Cost ===
+Sparse Direct Solver (single) : 0.534 ms / solve (prefactorized LU)
+FNO2d Operator (single / batch): 23.303 ms / query (B=1) | 10.332 ms / query (B=32)
+Linear Baseline (single/batch): 4.394 ms / query (B=1) | 2.721 ms / query (B=32)
+Offline Training Runtimes     : PINN = 26.1s | Linear Ridge = 2.01s

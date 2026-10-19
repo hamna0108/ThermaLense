@@ -1,0 +1,14 @@
+{
+  "source": "manufactured",
+  "formula": "2*pi^2*sin(pi*x)*sin(pi*y)",
+  "exact_solution": "sin(pi*x)*sin(pi*y)",
+  "rel_l2_error": 0.00010460751325694545,
+  "max_abs_error": 0.0002005700888109141,
+  "bc_violation_max": 0.0,
+  "pde_residual_rel": 0.0018281449894956613,
+  "training_time_sec": 26.12513780593872,
+  "adam_time_sec": 23.909151077270508,
+  "n_collocation": 1000,
+  "adam_epochs": 600,
+  "lbfgs_iters": 60
+}

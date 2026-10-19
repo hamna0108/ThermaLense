@@ -1,0 +1,127 @@
+{
+  "run_metadata": {
+    "generated_at": "2026-10-13T15:17:00+05:00",
+    "pipeline_script": "src/run_hybrid_benchmark.py",
+    "paired_noise_draws_confirmed": true,
+    "benchmark_status": "frozen",
+    "code_version": "v2.0-frozen",
+    "frozen_at": "2026-10-13T15:40:00+05:00"
+  },
+  "seeds": {
+    "replications_per_cell": 200,
+    "sensor_layout_seed_formula": "int(alpha_true * 1000) + num_sensors",
+    "measurement_noise_seed_formula": "int(alpha_true * 5000) + num_sensors * 10 + int(sigma * 100)",
+    "noise_pairing": "Exact identical random realizations pre-drawn and shared across Mode 2, Mode 3, and Mode 3+ ablation.",
+    "anomaly_detection_seeds": {
+      "calibration_seed": 4242,
+      "calibration_purpose": "Healthy-only BIC margin calibration (gamma_F, gamma_C) and multinomial logistic regression training",
+      "validation_seed": 5555,
+      "validation_purpose": "Rule structure & penalty margin validation",
+      "test_layout_seed_formula": "100000 + int(ep * 31) + N * 13",
+      "test_noise_seed_formula": "200000 + int(ep * 97) + N * 41 + int(sigma * 1000)",
+      "logistic_regression_disjoint_confirmed": true,
+      "test_seed_range_layout": [100065, 106429],
+      "test_seed_range_noise": [200215, 220173]
+    }
+  },
+  "runtime_benchmarks": {
+    "mode2_mean_fit_time_ms": 1.842,
+    "mode3_mean_fit_time_ms": 0.673,
+    "ablation_mean_fit_time_ms": 137.420,
+    "mode3_total_pipeline_eval_s": 39.65
+  },
+  "status_classification_rule": {
+    "sigma_zero": "sigma == 0.0 -> 'sigma=0 floor'",
+    "identifiable": "med_rel_err <= 0.20 and frac_bound < 0.10 and wald_cov_95 >= 90.0% -> 'Identifiable'",
+    "bias_dominated": "med_rel_err <= 0.20 and frac_bound < 0.10 and deploy_cov_95 >= 90.0% -> 'bias-dominated' ('bias-dominated (FNO)' for Mode 3)",
+    "bias_uncorrected": "med_rel_err <= 0.20 and frac_bound < 0.10 and deploy_cov_95 < 90.0% -> 'bias-uncorrected'",
+    "not_identifiable": "med_rel_err > 0.20 or frac_bound >= 0.10 -> 'Not Identifiable'"
+  },
+  "grid_dimensions": {
+    "alphas": [0.002, 0.003, 0.004, 0.005, 0.008, 0.02, 0.05, 0.1, 0.2, 0.5, 1.5, 2.0, 2.5, 3.0, 4.0],
+    "noise_sigmas": [0.0, 0.01, 0.05],
+    "mode2_sensors": [2, 5, 10, 20],
+    "mode3_sensors": [5, 10, 20],
+    "ablation_sensors": [5, 10, 20],
+    "note_on_2_sensor_mode3": "Mode 3 evaluates on [5, 10, 20] sensors (135 cells) to maintain exact 1:1 cell parity with ablation and heatmaps."
+  },
+  "files": [
+    {
+      "path": "data/mode2_pipeline_results_v2.csv",
+      "rows": 180,
+      "description": "Mode 2 (Crank-Nicolson Spline) inverse pipeline results v2"
+    },
+    {
+      "path": "data/mode3_pipeline_results_v2.csv",
+      "rows": 135,
+      "description": "Mode 3 (FNO Spline) inverse pipeline results v2 with unified status rule & alpha=4.0 narrow flagged"
+    },
+    {
+      "path": "data/mode3plus_hybrid_results.csv",
+      "rows": 135,
+      "description": "Ablation: Solver Polish of FNO initial estimate results"
+    },
+    {
+      "path": "data/mode2_table.md",
+      "description": "Mode 2 formatted Markdown benchmark table"
+    },
+    {
+      "path": "data/mode3_table.md",
+      "description": "Mode 3 formatted Markdown benchmark table"
+    },
+    {
+      "path": "data/mode3plus_table.md",
+      "description": "Ablation formatted Markdown benchmark table"
+    },
+    {
+      "path": "plots/inverse_pipeline_error_heatmaps.png",
+      "description": "3x3 Absolute median error heatmaps comparing Mode 2, Mode 3, and Ablation"
+    },
+    {
+      "path": "plots/mode3_vs_mode2_ratio_heatmaps.png",
+      "description": "Error ratio heatmaps (Mode 3 / Mode 2) for sigma in [0.01, 0.05], with [NI] marked cells"
+    },
+    {
+      "path": "data/raw/sensor_placement_raw.csv",
+      "rows": 16800,
+      "description": "Task A: Per-replication outputs (alpha_hat, layout_seed, noise_seed) for time placement study (7 strategies)"
+    },
+    {
+      "path": "data/sensor_placement_summary.csv",
+      "rows": 84,
+      "description": "Task A: Aggregated cell metrics across 7 strategies (including deployable two-stage and all-at-t*)"
+    },
+    {
+      "path": "data/raw/mode1_pinn_raw.csv",
+      "rows": 240,
+      "description": "Task B: Per-replication outputs (alpha_hat, layout_seed, noise_seed) for Mode 1 PINN inverse"
+    },
+    {
+      "path": "data/mode1_pinn_summary.csv",
+      "rows": 12,
+      "description": "Task B: Mode 1 PINN inverse cell metrics (median error, spread/CRB, wall time per fit)"
+    },
+    {
+      "path": "data/audit_sensor_placement.txt",
+      "description": "Task A sensor time placement audit report"
+    },
+    {
+      "path": "data/audit_pinn_report.txt",
+      "description": "Task B Mode 1 PINN inverse audit report"
+    },
+    {
+      "path": "data/raw/anomaly_raw.csv",
+      "rows": 4800,
+      "description": "Anomaly Detection: Per-episode features (chi2, z_max, frac_3s, loo_ratio, early_late_shift, m3_m2_disagree, ood_dist), ground truth, predictions, and seeds across 6 cells"
+    },
+    {
+      "path": "data/anomaly_summary.csv",
+      "rows": 24,
+      "description": "Anomaly Detection: Per-cell aggregated metrics, precision, recall, F1, and FAR"
+    },
+    {
+      "path": "data/audit_anomaly.txt",
+      "description": "Anomaly Detection audit report with 4x4 confusion matrices, power analysis, and limitation study"
+    }
+  ]
+}

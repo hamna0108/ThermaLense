@@ -1,0 +1,98 @@
+{
+  "svd": {
+    "sigma_1": 76098.38849326882,
+    "sigma_10_ratio": 0.38991098790811757,
+    "sigma_50_ratio": 7.161307083621354e-05,
+    "sigma_100_ratio": 4.389152058673215e-06,
+    "sigma_200_ratio": 2.341433936986454e-08,
+    "sigma_500_ratio": 1.6264586646718843e-09,
+    "rank_99_energy": 14,
+    "rank_999_energy": 15,
+    "rank_9999_energy": 16,
+    "effective_rank": 7.467044702144126
+  },
+  "sample_efficiency": {
+    "N_100": {
+      "n_samples": 100,
+      "train_time_s": 0.009019613265991211,
+      "metrics": {
+        "test_interp": {
+          "median_rel_l2": 2.151763328583911e-05,
+          "p90_rel_l2": 0.005793607793748379,
+          "max_rel_l2": 0.08579634130001068
+        },
+        "test_ood_narrow": {
+          "median_rel_l2": 0.09565465152263641,
+          "p90_rel_l2": 0.25823453068733215,
+          "max_rel_l2": 0.7141734957695007
+        },
+        "test_ood_boundary": {
+          "median_rel_l2": 0.030436843633651733,
+          "p90_rel_l2": 0.10154428333044052,
+          "max_rel_l2": 1.1736005544662476
+        },
+        "test_ood_highmodes": {
+          "median_rel_l2": 2.2148876190185547,
+          "p90_rel_l2": 6.413623332977295,
+          "max_rel_l2": 8.125133514404297
+        },
+        "manufactured_case": 0.00020725080685224384
+      }
+    },
+    "N_300": {
+      "n_samples": 300,
+      "train_time_s": 0.04703354835510254,
+      "metrics": {
+        "test_interp": {
+          "median_rel_l2": 2.605828740342986e-06,
+          "p90_rel_l2": 0.00030818121740594506,
+          "max_rel_l2": 0.005920576862990856
+        },
+        "test_ood_narrow": {
+          "median_rel_l2": 0.08413835614919662,
+          "p90_rel_l2": 0.29653844237327576,
+          "max_rel_l2": 1.2013906240463257
+        },
+        "test_ood_boundary": {
+          "median_rel_l2": 0.0014619395369663835,
+          "p90_rel_l2": 0.013079026713967323,
+          "max_rel_l2": 0.2969432473182678
+        },
+        "test_ood_highmodes": {
+          "median_rel_l2": 1.2150626182556152,
+          "p90_rel_l2": 6.938859462738037,
+          "max_rel_l2": 12.03877067565918
+        },
+        "manufactured_case": 0.00020723769557662308
+      }
+    },
+    "N_1000": {
+      "n_samples": 1000,
+      "train_time_s": 0.24186134338378906,
+      "metrics": {
+        "test_interp": {
+          "median_rel_l2": 1.1557215202628868e-06,
+          "p90_rel_l2": 3.7349993817770155e-06,
+          "max_rel_l2": 8.272962440969422e-05
+        },
+        "test_ood_narrow": {
+          "median_rel_l2": 0.012665729969739914,
+          "p90_rel_l2": 0.06298893690109253,
+          "max_rel_l2": 0.18041248619556427
+        },
+        "test_ood_boundary": {
+          "median_rel_l2": 2.9938004445284605e-05,
+          "p90_rel_l2": 0.0005302181234583259,
+          "max_rel_l2": 0.02280946634709835
+        },
+        "test_ood_highmodes": {
+          "median_rel_l2": 0.09150757640600204,
+          "p90_rel_l2": 0.4789939224720001,
+          "max_rel_l2": 1.444243311882019
+        },
+        "manufactured_case": 0.00020725009380839765
+      }
+    }
+  },
+  "explanation": "The Poisson problem -nabla^2 u = f with zero Dirichlet boundary conditions has an exact, strictly linear solution operator u = A^{-1} f (discrete Green's function). Because the source family consists of smooth functions (Gaussians and low-frequency sine modes), their spatial correlations produce an extremely rapid singular-value decay (99.9% energy in << 100 modes). Consequently, ridge regression with N=100-1000 samples spans the active subspace completely and directly inverts the discrete differential operator with near-machine precision."
+}

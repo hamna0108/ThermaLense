@@ -1,0 +1,53 @@
+=== 1. File existence and row counts ===
+Raw data: 240 rows (expected 240), duplicate reps: 0
+Summary data: 12 cells (expected 12), duplicate cells: 0
+
+=== 2. Seed integrity & formula verification ===
+Null values in raw: {'alpha_hat': 0, 'layout_seed': 0, 'noise_seed': 0}
+Layout seeds matching canonical formula: 240 of 240
+Noise seeds matching canonical formula: 240 of 240
+
+=== 3. Performance summary by alpha regime (Mode 1: Frozen PINN Surrogate Inversion) ===
+  alpha = 0.020: median rel err = 0.0737 | spread/CRB = 0.78 | mean fit time = 6.84 ms
+  alpha = 0.100: median rel err = 0.0404 | spread/CRB = 0.97 | mean fit time = 6.54 ms
+  alpha = 2.500: median rel err = 0.2199 | spread/CRB = 1.33 | mean fit time = 7.71 ms
+
+=== 4. Per-cell comparison: Mode 1 (Frozen PINN Surrogate) vs Mode 2 (Classical Solver) ===
+Alpha | N  | Sigma | M1 (PINN)  | M2 (Solver) | Err Ratio | M1 Time  | M2 Time  | Time Ratio
+--------------------------------------------------------------------------------------------
+0.020 |  5 |  0.01 |     0.0402 |      0.0450 |     0.89x |   6.19 ms |   0.96 ms |      6.47x
+0.020 |  5 |  0.05 |     0.1073 |      0.2223 |     0.48x |   5.93 ms |   2.03 ms |      2.91x
+0.020 | 20 |  0.01 |     0.0252 |      0.0257 |     0.98x |   8.15 ms |   2.41 ms |      3.39x
+0.020 | 20 |  0.05 |     0.1155 |      0.1268 |     0.91x |   7.11 ms |   2.47 ms |      2.88x
+0.100 |  5 |  0.01 |     0.0322 |      0.0174 |     1.85x |   5.92 ms |   0.81 ms |      7.32x
+0.100 |  5 |  0.05 |     0.0773 |      0.0962 |     0.80x |   5.75 ms |   0.73 ms |      7.83x
+0.100 | 20 |  0.01 |     0.0080 |      0.0097 |     0.83x |   6.99 ms |   2.48 ms |      2.82x
+0.100 | 20 |  0.05 |     0.0487 |      0.0470 |     1.04x |   7.49 ms |   2.55 ms |      2.93x
+2.500 |  5 |  0.01 |     0.2560 |      0.0187 |    13.69x |   7.48 ms |   1.80 ms |      4.17x
+2.500 |  5 |  0.05 |     0.2801 |      0.0855 |     3.28x |   7.16 ms |   1.81 ms |      3.95x
+2.500 | 20 |  0.01 |     0.1684 |      0.0083 |    20.19x |   8.64 ms |   1.11 ms |      7.76x
+2.500 | 20 |  0.05 |     0.1838 |      0.0345 |     5.33x |   7.57 ms |   1.15 ms |      6.59x
+--------------------------------------------------------------------------------------------
+Summary: Error Ratio (PINN / Solver): median 1.01x (range 0.48x - 20.19x)
+Summary: Wall Time Ratio (PINN / Solver): median 4.06x (PINN ~7.03 ms vs Solver ~1.69 ms)
+Conclusion: Comparable in range, much worse out of range (not simply worse everywhere).
+  - In-range (alpha in {0.02, 0.1}): PINN matches or beats Mode 2 in 6 of 8 cells (0.48x - 0.98x error ratio).
+    The 0.48x cell reflects inductive shrinkage toward typical values (spread-to-bound ratio 0.63).
+  - Out-of-range (alpha = 2.5): PINN degrades severely to 16.8% - 28.0% error (3.3x - 20.2x worse than solver at 0.8% - 8.6%).
+  - Wall time: Solver is ~4x faster per fit (~1.7 ms vs ~7.0 ms for PINN surrogate).
+
+=== 5. Complete cell listing with CRB Spread (Mode 1) ===
+Alpha | N  | Sigma | MedRelErr  | SpreadLog  | CRB(log)  | Sprd/CRB  | FitTime(ms)
+----------------------------------------------------------------------------------
+0.020 |  5 |  0.01 |     0.0402 |     0.0249 |    0.0296 |      0.84 |        6.19
+0.020 |  5 |  0.05 |     0.1073 |     0.0935 |    0.1479 |      0.63 |        5.93
+0.020 | 20 |  0.01 |     0.0252 |     0.0133 |    0.0185 |      0.72 |        8.15
+0.020 | 20 |  0.05 |     0.1155 |     0.0800 |    0.0926 |      0.86 |        7.11
+0.100 |  5 |  0.01 |     0.0322 |     0.0126 |    0.0116 |      1.09 |        5.92
+0.100 |  5 |  0.05 |     0.0773 |     0.0532 |    0.0582 |      0.91 |        5.75
+0.100 | 20 |  0.01 |     0.0080 |     0.0055 |    0.0062 |      0.89 |        6.99
+0.100 | 20 |  0.05 |     0.0487 |     0.0320 |    0.0310 |      1.03 |        7.49
+2.500 |  5 |  0.01 |     0.2560 |     0.0159 |    0.0112 |      1.43 |        7.48
+2.500 |  5 |  0.05 |     0.2801 |     0.0506 |    0.0558 |      0.91 |        7.16
+2.500 | 20 |  0.01 |     0.1684 |     0.0094 |    0.0052 |      1.81 |        8.64
+2.500 | 20 |  0.05 |     0.1838 |     0.0318 |    0.0259 |      1.23 |        7.57

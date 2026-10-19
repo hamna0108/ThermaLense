@@ -1,0 +1,12 @@
+{
+  "solver_prefact_single_ms": 0.5010920000495389,
+  "solver_prefact_batch_per_query_ms": 0.2554520833352095,
+  "solver_fresh_fact_single_ms": 10.924970000147974,
+  "fno_single_ms": 20.477236000006087,
+  "fno_batch_per_query_ms": 5.590178437500981,
+  "linear_single_ms": 3.3329900000535417,
+  "linear_batch_per_query_ms": 0.3894923125017158,
+  "speedup_solver_vs_fno_single": 40.86522235035017,
+  "speedup_solver_vs_fno_batch": 21.883471704419154,
+  "honest_statement": "At 64x64 resolution, the classical sparse direct solver is vastly faster than FNO on CPU: 0.501 ms vs 20.477 ms single-query (40.9x faster), and 0.255 ms vs 5.590 ms batched (21.9x faster). Even rebuilding and re-factorizing the sparse matrix from scratch on every query (10.925 ms) matches FNO forward inference latency. The classical solver is faster, exact, and zero-parameter at this scale."
+}

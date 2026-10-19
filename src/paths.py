@@ -13,6 +13,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # Primary Top-Level Directories
 SRC = REPO_ROOT / "src"
 EXPERIMENTS = REPO_ROOT / "experiments"
+EXP_MODELS = EXPERIMENTS / "models"
 TOOLS = REPO_ROOT / "tools"
 TESTS = REPO_ROOT / "tests"
 MODELS = REPO_ROOT / "models"

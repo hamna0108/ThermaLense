@@ -88,7 +88,7 @@ def main():
         if (epoch+1) % 10 == 0 or epoch == 0:
             print(f"Epoch {epoch+1}/{epochs} | Train Rel-L2: {train_l2:.4f} | Val Rel-L2: {val_l2:.4f}")
             
-    model_dir = os.path.join(base_dir, 'models')
+    model_dir = str(MODELS)
     os.makedirs(model_dir, exist_ok=True)
     torch.save({
         'model_state_dict': model.state_dict(),

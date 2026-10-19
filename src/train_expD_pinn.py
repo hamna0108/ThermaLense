@@ -4,6 +4,11 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 
+try:
+    from paths import MODELS
+except ImportError:
+    from src.paths import MODELS
+
 from models.pinn import PINN
 
 def compute_pde_loss(model, x, t, alpha, alpha_raw):
@@ -42,9 +47,7 @@ class BoundedReparametrizedPINN(nn.Module):
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    base_dir = os.path.dirname(os.path.dirname(__file__))
-    model_dir = os.path.join(base_dir, 'models')
-    fno_path = os.path.join(model_dir, 'fno2d_heat.pt')
+    fno_path = str(MODELS / 'fno2d_heat.pt')
     
     checkpoint = torch.load(fno_path, map_location=device)
     log_alpha_mean = checkpoint['log_alpha_mean']
@@ -96,7 +99,7 @@ def main():
         'model_state_dict': model.state_dict(),
         'log_alpha_mean': log_alpha_mean,
         'log_alpha_std': log_alpha_std
-    }, os.path.join(model_dir, 'pinn_expD.pt'))
+    }, str(MODELS / 'pinn_expD.pt'))
     print("PINN ExpD model saved.")
     
 if __name__ == '__main__':

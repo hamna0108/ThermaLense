@@ -1,8 +1,12 @@
-try:
-    from paths import DATASETS, PLOTS
-except ImportError:
-    from src.paths import DATASETS, PLOTS
-import os
+import sys, os
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+src_dir = os.path.join(base_dir, "src")
+exp_dir = os.path.abspath(os.path.dirname(__file__))
+for p in [base_dir, src_dir, exp_dir]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+from paths import DATASETS, MODELS, EXP_MODELS, PLOTS
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -20,12 +24,9 @@ def relative_l2_per_timestep(pred, target):
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    base_dir = os.path.dirname(os.path.dirname(__file__))
     data_dir = str(DATASETS)
-    model_dir = os.path.join(base_dir, 'models')
-    
-    pinn_path = os.path.join(model_dir, 'pinn_heat.pt')
-    fno_path = os.path.join(model_dir, 'fno2d_heat.pt')
+    pinn_path = str(EXP_MODELS / 'pinn_heat.pt')
+    fno_path = str(MODELS / 'fno2d_heat.pt')
     
     checkpoint_pinn = torch.load(pinn_path, map_location=device)
     checkpoint_fno = torch.load(fno_path, map_location=device)

@@ -1,8 +1,12 @@
-try:
-    from paths import DATASETS, PLOTS
-except ImportError:
-    from src.paths import DATASETS, PLOTS
-import os
+import sys, os
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+src_dir = os.path.join(base_dir, "src")
+exp_dir = os.path.abspath(os.path.dirname(__file__))
+for p in [base_dir, src_dir, exp_dir]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+from paths import DATASETS, MODELS, EXP_MODELS, PLOTS
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,11 +27,8 @@ def absolute_l2_per_timestep(pred, target):
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    base_dir = os.path.dirname(os.path.dirname(__file__))
     data_dir = str(DATASETS)
-    model_dir = os.path.join(base_dir, 'models')
-    
-    fno_chkpt = torch.load(os.path.join(model_dir, 'fno2d_heat.pt'), map_location=device)
+    fno_chkpt = torch.load(str(MODELS / 'fno2d_heat.pt'), map_location=device)
     log_mean = fno_chkpt['log_alpha_mean']
     log_std = fno_chkpt['log_alpha_std']
     
@@ -45,28 +46,28 @@ def main():
 
     # PINN Models
     pinn_base = NormalizedPINN(log_mean, log_std).to(device)
-    pinn_base.load_state_dict(torch.load(os.path.join(model_dir, 'pinn_heat.pt'), map_location=device)['model_state_dict'])
+    pinn_base.load_state_dict(torch.load(str(EXP_MODELS / 'pinn_heat.pt'), map_location=device)['model_state_dict'])
     pinn_base.eval()
 
     pinn_expB = ReparametrizedPINN(log_mean, log_std).to(device)
-    pinn_expB.load_state_dict(torch.load(os.path.join(model_dir, 'pinn_expB.pt'), map_location=device)['model_state_dict'])
+    pinn_expB.load_state_dict(torch.load(str(EXP_MODELS / 'pinn_expB.pt'), map_location=device)['model_state_dict'])
     pinn_expB.eval()
     
     pinn_expD = BoundedReparametrizedPINN(log_mean, log_std).to(device)
-    pinn_expD.load_state_dict(torch.load(os.path.join(model_dir, 'pinn_expD.pt'), map_location=device)['model_state_dict'])
+    pinn_expD.load_state_dict(torch.load(str(MODELS / 'pinn_expD.pt'), map_location=device)['model_state_dict'])
     pinn_expD.eval()
 
     # FNO Models
     fno_base = FNO2d(modes1=16, modes2=12, width=32).to(device)
-    fno_base.load_state_dict(torch.load(os.path.join(model_dir, 'fno2d_heat.pt'), map_location=device)['model_state_dict'])
+    fno_base.load_state_dict(torch.load(str(MODELS / 'fno2d_heat.pt'), map_location=device)['model_state_dict'])
     fno_base.eval()
 
     fno_expC = ReparametrizedFNO2d(modes1=16, modes2=12, width=32).to(device)
-    fno_expC.load_state_dict(torch.load(os.path.join(model_dir, 'fno2d_expC.pt'), map_location=device)['model_state_dict'])
+    fno_expC.load_state_dict(torch.load(str(EXP_MODELS / 'fno2d_expC.pt'), map_location=device)['model_state_dict'])
     fno_expC.eval()
     
     fno_expD = BoundedReparametrizedFNO2d(modes1=16, modes2=12, width=32).to(device)
-    fno_expD.load_state_dict(torch.load(os.path.join(model_dir, 'fno2d_expD.pt'), map_location=device)['model_state_dict'])
+    fno_expD.load_state_dict(torch.load(str(MODELS / 'fno2d_expD.pt'), map_location=device)['model_state_dict'])
     fno_expD.eval()
 
     def get_fno_errors(model):

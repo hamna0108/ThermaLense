@@ -3,13 +3,22 @@ import numpy as np
 import sys
 import os
 
-# Add the src directory to path so imports work
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+src_dir = os.path.join(base_dir, "src")
+exp_dir = os.path.dirname(os.path.abspath(__file__))
+for p in [base_dir, src_dir, exp_dir]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
-from envs.heat_env import HeatEnv
+from paths import MODELS, EXP_MODELS
+try:
+    from envs.heat_env import HeatEnv
+except ImportError:
+    HeatEnv = None
+
 from models.fno2d import FNO2d
 from models.pinn import PINN
-from train_expC import HardConstraintFNO2d
+from train_expC import ReparametrizedFNO2d as HardConstraintFNO2d
 from train_pinn_expB import ReparametrizedPINN
 from train_expD_fno import BoundedReparametrizedFNO2d
 from train_expD_pinn import BoundedReparametrizedPINN
@@ -57,13 +66,16 @@ def evaluate_model(model_class, path, env, rollout_steps=100, is_fno=True):
     return np.median(errors)
 
 def main():
+    if HeatEnv is None:
+        print("Note: HeatEnv is not available in the repository. Skipping live environment rollout.")
+        return
     env = HeatEnv(resolution=64)
     print("--- Median Absolute Error Summary ---")
     
     # FNO variants
-    fno_base = evaluate_model(FNO2d, "models/fno2d_heat.pt", env, is_fno=True)
-    fno_expC = evaluate_model(HardConstraintFNO2d, "models/fno2d_expC.pt", env, is_fno=True)
-    fno_expD = evaluate_model(BoundedReparametrizedFNO2d, "models/fno2d_expD.pt", env, is_fno=True)
+    fno_base = evaluate_model(FNO2d, str(MODELS / "fno2d_heat.pt"), env, is_fno=True)
+    fno_expC = evaluate_model(HardConstraintFNO2d, str(EXP_MODELS / "fno2d_expC.pt"), env, is_fno=True)
+    fno_expD = evaluate_model(BoundedReparametrizedFNO2d, str(MODELS / "fno2d_expD.pt"), env, is_fno=True)
     
     print("FNO Baseline: {:.6f}".format(fno_base))
     print("FNO Exp C:    {:.6f}".format(fno_expC))
@@ -71,9 +83,9 @@ def main():
     print("-" * 30)
     
     # PINN variants
-    pinn_base = evaluate_model(PINN, "models/pinn_heat.pt", env, is_fno=False)
-    pinn_expB = evaluate_model(ReparametrizedPINN, "models/pinn_expB.pt", env, is_fno=False)
-    pinn_expD = evaluate_model(BoundedReparametrizedPINN, "models/pinn_expD.pt", env, is_fno=False)
+    pinn_base = evaluate_model(PINN, str(EXP_MODELS / "pinn_heat.pt"), env, is_fno=False)
+    pinn_expB = evaluate_model(ReparametrizedPINN, str(EXP_MODELS / "pinn_expB.pt"), env, is_fno=False)
+    pinn_expD = evaluate_model(BoundedReparametrizedPINN, str(MODELS / "pinn_expD.pt"), env, is_fno=False)
     
     print("PINN Baseline: {:.6f}".format(pinn_base))
     print("PINN Exp B:    {:.6f}".format(pinn_expB))

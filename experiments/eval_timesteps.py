@@ -1,8 +1,12 @@
-try:
-    from paths import DATASETS, PLOTS
-except ImportError:
-    from src.paths import DATASETS, PLOTS
-import os
+import sys, os
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+src_dir = os.path.join(base_dir, "src")
+if base_dir not in sys.path:
+    sys.path.insert(0, base_dir)
+if src_dir not in sys.path:
+    sys.path.insert(0, src_dir)
+
+from paths import DATASETS, MODELS, EXP_MODELS, PLOTS
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,9 +31,7 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     base_dir = os.path.dirname(os.path.dirname(__file__))
     data_dir = str(DATASETS)
-    model_dir = os.path.join(base_dir, 'models')
-    
-    model_path = os.path.join(model_dir, 'fno2d_heat.pt')
+    model_path = str(MODELS / 'fno2d_heat.pt')
     checkpoint = torch.load(model_path, map_location=device)
     
     test_ood_dataset = HeatEquationDataset(os.path.join(data_dir, 'test_ood.npz'), 

@@ -121,7 +121,7 @@ def train_pinn_single_source(n_collocation=1000, adam_epochs=600, lbfgs_iters=60
     }
     
     # Save model and metrics
-    torch.save(model.state_dict(), "models/pinn_poisson.pt")
+    torch.save(model.state_dict(), str(MODELS / "pinn_poisson.pt"))
     with open(str(RESULTS / "pinn_poisson_summary.json"), "w") as f:
         json.dump(metrics, f, indent=2)
         

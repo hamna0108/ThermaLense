@@ -3,9 +3,19 @@ import numpy as np
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+src_dir = os.path.join(base_dir, "src")
+exp_dir = os.path.dirname(os.path.abspath(__file__))
+for p in [base_dir, src_dir, exp_dir]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
-from envs.heat_env import HeatEnv
+from paths import MODELS
+try:
+    from envs.heat_env import HeatEnv
+except ImportError:
+    HeatEnv = None
+
 from models.fno2d import FNO2d
 from train_expD_fno import BoundedReparametrizedFNO2d
 
@@ -42,12 +52,15 @@ def evaluate_model_t1_99(model_class, path, env, rollout_steps=100):
     return np.mean(errors)
 
 def main():
+    if HeatEnv is None:
+        print("Note: HeatEnv is not available in the repository. Skipping live environment rollout.")
+        return
     env = HeatEnv(resolution=64)
     print("--- Mean Absolute Error (t=1 to 99) ---")
     
     # FNO variants
-    fno_base = evaluate_model_t1_99(FNO2d, "models/fno2d_heat.pt", env)
-    fno_expD = evaluate_model_t1_99(BoundedReparametrizedFNO2d, "models/fno2d_expD.pt", env)
+    fno_base = evaluate_model_t1_99(FNO2d, str(MODELS / "fno2d_heat.pt"), env)
+    fno_expD = evaluate_model_t1_99(BoundedReparametrizedFNO2d, str(MODELS / "fno2d_expD.pt"), env)
     
     print(f"FNO Baseline (t=1-99): {fno_base:.6f}")
     print(f"FNO Exp D (t=1-99):    {fno_expD:.6f}")

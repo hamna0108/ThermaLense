@@ -1,8 +1,12 @@
-try:
-    from paths import DATASETS, PLOTS
-except ImportError:
-    from src.paths import DATASETS, PLOTS
-import os
+import sys, os
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+src_dir = os.path.join(base_dir, "src")
+exp_dir = os.path.abspath(os.path.dirname(__file__))
+for p in [base_dir, src_dir, exp_dir]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+from paths import DATASETS, MODELS, EXP_MODELS, PLOTS
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -98,7 +102,7 @@ def main():
             print(f"Epoch {epoch+1}/{epochs} | Train Rel-L2: {train_l2:.4f} | Val Rel-L2: {val_l2:.4f}")
             
     # Save the model
-    model_dir = os.path.join(base_dir, 'models')
+    model_dir = str(EXP_MODELS)
     os.makedirs(model_dir, exist_ok=True)
     torch.save({
         'model_state_dict': model.state_dict(),

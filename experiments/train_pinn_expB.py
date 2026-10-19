@@ -1,4 +1,12 @@
-import os
+import sys, os
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+src_dir = os.path.join(base_dir, "src")
+exp_dir = os.path.abspath(os.path.dirname(__file__))
+for p in [base_dir, src_dir, exp_dir]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+from paths import DATASETS, MODELS, EXP_MODELS, PLOTS
 import torch
 import torch.nn as nn
 import numpy as np
@@ -50,9 +58,7 @@ class ReparametrizedPINN(nn.Module):
 
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    base_dir = os.path.dirname(os.path.dirname(__file__))
-    model_dir = os.path.join(base_dir, 'models')
-    fno_path = os.path.join(model_dir, 'fno2d_heat.pt')
+    fno_path = str(MODELS / 'fno2d_heat.pt')
     
     checkpoint = torch.load(fno_path, map_location=device)
     log_alpha_mean = checkpoint['log_alpha_mean']
@@ -117,11 +123,12 @@ def main():
     print("L-BFGS finished.")
     
     # Save Model
+    os.makedirs(str(EXP_MODELS), exist_ok=True)
     torch.save({
         'model_state_dict': model.state_dict(),
         'log_alpha_mean': log_alpha_mean,
         'log_alpha_std': log_alpha_std
-    }, os.path.join(model_dir, 'pinn_expB.pt'))
+    }, str(EXP_MODELS / 'pinn_expB.pt'))
     print("PINN ExpB model saved.")
     
 if __name__ == '__main__':

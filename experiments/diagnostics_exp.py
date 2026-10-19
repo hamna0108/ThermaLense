@@ -1,8 +1,12 @@
-try:
-    from paths import DATASETS, PLOTS
-except ImportError:
-    from src.paths import DATASETS, PLOTS
-import os
+import sys, os
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+src_dir = os.path.join(base_dir, "src")
+exp_dir = os.path.abspath(os.path.dirname(__file__))
+for p in [base_dir, src_dir, exp_dir]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+from paths import DATASETS, MODELS, EXP_MODELS, PLOTS
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -51,10 +55,8 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     base_dir = os.path.dirname(os.path.dirname(__file__))
     data_dir = str(DATASETS)
-    model_dir = os.path.join(base_dir, 'models')
-    
     # Load dataset to get alphas
-    checkpoint_pinn = torch.load(os.path.join(model_dir, 'pinn_heat.pt'), map_location=device)
+    checkpoint_pinn = torch.load(str(EXP_MODELS / 'pinn_heat.pt'), map_location=device)
     log_alpha_mean = checkpoint_pinn['log_alpha_mean']
     log_alpha_std = checkpoint_pinn['log_alpha_std']
     
@@ -73,31 +75,31 @@ def main():
     
     # Baseline PINN
     pinn_base = NormalizedPINN(log_alpha_mean, log_alpha_std).to(device)
-    pinn_base.load_state_dict(torch.load(os.path.join(model_dir, 'pinn_heat.pt'), map_location=device)['model_state_dict'])
+    pinn_base.load_state_dict(torch.load(str(EXP_MODELS / 'pinn_heat.pt'), map_location=device)['model_state_dict'])
     pinn_base.eval()
     pinn_base_err = evaluate_pinn(pinn_base, test_ood_dataset, device, t_flat, x_flat)
     
     # Exp A PINN (Loss weighted)
     pinn_expA = NormalizedPINN(log_alpha_mean, log_alpha_std).to(device)
-    pinn_expA.load_state_dict(torch.load(os.path.join(model_dir, 'pinn_expA.pt'), map_location=device)['model_state_dict'])
+    pinn_expA.load_state_dict(torch.load(str(EXP_MODELS / 'pinn_expA.pt'), map_location=device)['model_state_dict'])
     pinn_expA.eval()
     pinn_expA_err = evaluate_pinn(pinn_expA, test_ood_dataset, device, t_flat, x_flat)
     
     # Exp B PINN (Hard IC/BC)
     pinn_expB = ReparametrizedPINN(log_alpha_mean, log_alpha_std).to(device)
-    pinn_expB.load_state_dict(torch.load(os.path.join(model_dir, 'pinn_expB.pt'), map_location=device)['model_state_dict'])
+    pinn_expB.load_state_dict(torch.load(str(EXP_MODELS / 'pinn_expB.pt'), map_location=device)['model_state_dict'])
     pinn_expB.eval()
     pinn_expB_err = evaluate_pinn(pinn_expB, test_ood_dataset, device, t_flat, x_flat)
     
     # Baseline FNO
     fno_base = FNO2d(modes1=16, modes2=12, width=32).to(device)
-    fno_base.load_state_dict(torch.load(os.path.join(model_dir, 'fno2d_heat.pt'), map_location=device)['model_state_dict'])
+    fno_base.load_state_dict(torch.load(str(MODELS / 'fno2d_heat.pt'), map_location=device)['model_state_dict'])
     fno_base.eval()
     fno_base_err = evaluate_fno(fno_base, ood_loader, device)
     
     # Exp C FNO (Hard IC/BC)
     fno_expC = ReparametrizedFNO2d(modes1=16, modes2=12, width=32).to(device)
-    fno_expC.load_state_dict(torch.load(os.path.join(model_dir, 'fno2d_expC.pt'), map_location=device)['model_state_dict'])
+    fno_expC.load_state_dict(torch.load(str(EXP_MODELS / 'fno2d_expC.pt'), map_location=device)['model_state_dict'])
     fno_expC.eval()
     fno_expC_err = evaluate_fno(fno_expC, ood_loader, device)
     

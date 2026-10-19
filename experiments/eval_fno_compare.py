@@ -1,8 +1,12 @@
-try:
-    from paths import DATASETS
-except ImportError:
-    from src.paths import DATASETS
-import os
+import sys, os
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+src_dir = os.path.join(base_dir, "src")
+exp_dir = os.path.abspath(os.path.dirname(__file__))
+for p in [base_dir, src_dir, exp_dir]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+from paths import DATASETS, MODELS
 import torch
 import numpy as np
 from torch.utils.data import DataLoader
@@ -12,7 +16,7 @@ from models.fno2d import FNO2d
 from train_expD_fno import BoundedReparametrizedFNO2d
 
 def get_errors_for_model(model_class, model_name, dataloader, device, is_expD=False):
-    model_path = os.path.join('models', model_name)
+    model_path = str(MODELS / model_name)
     checkpoint = torch.load(model_path, map_location=device)
     
     if is_expD:
@@ -49,7 +53,7 @@ def get_errors_for_model(model_class, model_name, dataloader, device, is_expD=Fa
 def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
-    checkpoint = torch.load('models/fno2d_heat.pt', map_location=device)
+    checkpoint = torch.load(str(MODELS / 'fno2d_heat.pt'), map_location=device)
     test_ood_dataset = HeatEquationDataset(str(DATASETS / 'test_ood.npz'), 
                                            log_alpha_mean=checkpoint['log_alpha_mean'], 
                                            log_alpha_std=checkpoint['log_alpha_std'])

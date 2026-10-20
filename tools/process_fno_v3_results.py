@@ -63,6 +63,7 @@ def main():
 
     for seed_entry in report["per_seed_results"]:
         seed = seed_entry["seed"]
+        best_ep = seed_entry.get("best_epoch", None)
         metrics = seed_entry["metrics"]
         for s in splits:
             if s in metrics:
@@ -72,6 +73,7 @@ def main():
                 res = metrics[s]["res_median"]
                 per_seed_rows.append({
                     "seed": seed,
+                    "best_epoch": best_ep,
                     "split": s,
                     "rel_l2_median": med,
                     "rel_l2_p90": p90,
@@ -82,9 +84,10 @@ def main():
 
     out_csv = os.path.join(base_dir, "data", "results", "poisson_fno_v3_per_seed.csv")
     with open(out_csv, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["seed", "split", "rel_l2_median", "rel_l2_p90", "rel_l2_max", "pde_residual_median"])
+        writer = csv.DictWriter(f, fieldnames=["seed", "best_epoch", "split", "rel_l2_median", "rel_l2_p90", "rel_l2_max", "pde_residual_median"])
         writer.writeheader()
         writer.writerows(per_seed_rows)
+
     print(f"Saved per-seed metrics to {out_csv}")
 
     # 5. Compute improvement factor & seed spread per split

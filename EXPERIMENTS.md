@@ -50,4 +50,7 @@ A comprehensive registry of every script in the repository detailing its purpose
 | `experiments/train_fno_poisson_v3.py` | Poisson Round 2: 5-seed FNO retraining study on GPU with extended budget | `data/datasets/poisson_v2_*.npz` | `data/results/poisson_fno_v3/`, `curves_v3_seed*.csv`, `fno_v3_acceptance_report.json` | `DECISIONS.md` (Decision 7) | **EXPERIMENT** |
 | `experiments/extract_failure_cases.py` | Extracts and visualizes worst-case failure modes on Poisson splits | `data/datasets/poisson_v2_*.npz`, `models/fno2d_poisson_v2.pt` | `data/results/poisson_v2_failure_cases.json`, `plots/fno_v2_highmodes_failure.png` | `DECISIONS.md` (Decision 7) | **EXPERIMENT** |
 | `tools/process_fno_v3_results.py` | Extracts per-seed metrics, computes improvement factors, and calculates seed spreads | `data/results/poisson_fno_v3/fno_v3_acceptance_report.json` | `data/results/poisson_fno_v3_per_seed.csv`, `split_analysis.json` | `DECISIONS.md` (Decision 7) | **TOOL** |
+| `tools/verify_v3_checkpoints.py` | Re-evaluates downloaded Colab v3 checkpoints on local Poisson datasets | `models/fno_v3/*.pt`, `data/datasets/poisson_v2_*.npz` | `data/results/poisson_fno_v3/local_vs_colab_verification.json` | `DECISIONS.md` (Decision 7) | **TOOL** |
+| `experiments/train_heat_fno_seeds.py` | 1D Heat FNO 5-seed stability study runner with Mode 3 bias floor evaluation | `data/datasets/train.npz`, `val.npz`, `test_*.npz` | `models/fno_heat_seeds/`, `curves_heat_seed*.csv`, `metrics_heat_seed*.json` | `DECISIONS.md` (Decision 2, 3) | **EXPERIMENT** |
+
 

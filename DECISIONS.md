@@ -132,3 +132,21 @@ This document records the foundational architectural decisions made across the D
     4. *Timing Honesty Disclosures:* At 64x64 resolution on CPU (`data/results/timing_honesty.json`), the classical sparse direct solver is vastly faster than FNO on CPU: 0.501 ms vs 20.477 ms single-query (40.9x faster), and 0.255 ms vs 5.590 ms batched (21.9x faster). Even rebuilding and re-factorizing the sparse matrix from scratch on every query (10.925 ms) is $\sim 1.9\times$ faster than FNO forward inference latency (CPU, 64x64). GPU inference not measured. (See `data/results/timing_honesty.json`, `data/audits/audit_poisson.txt` Section 6).
 - **Status:** **Decided by evidence**
 - **Evidence File:** `archive/superseded/train_fno_poisson.py` (lines 14, 31, 52), `src/train_fno_poisson_v2.py` (lines 36–58), `archive/superseded/generate_poisson_dataset.py`, `src/data/generate_poisson_dataset_v2.py`, `data/results/poisson_v2_benchmark_table.csv`, `data/results/timing_honesty.json`, `data/audits/audit_poisson.txt` (Sections 1–7).
+
+---
+
+### Limitations & Reproducibility Notes
+
+1. **FNO Boundary Masking & Inference State (Mode 3 Reproducibility):**
+   - *Historical State:* In the pre-cleanup codebase, `FNO2d.__init__` had `use_hard_mask=True` by default, which zeroed all four borders (spatial $x=0, 1$ and temporal $t=0, 1$). Zeroing $t=0$ and $t=1$ is unphysical for time-dependent heat diffusion where $t=0$ is the non-zero initial condition $u_0(x) = \sin(\pi x)$.
+   - *Frozen Results Match Unmasked Inference:* Comparing empirical re-evaluations against `data/results/mode3_pipeline_results_v2.csv` on deterministic $\sigma=0$ bias floors shows that frozen Mode 3 results match unmasked inference ($0.0357$ vs $0.0336$ unmasked vs $0.1592$ masked at $\alpha=0.005$; $0.0021$ vs $0.0021$ unmasked vs $0.0078$ masked at $\alpha=0.100$). The $\sigma=0.01$ rows (evaluated over 20 episodes) are inconclusive due to a separate noise stream (e.g. $\alpha=2.5$ is numerically closer to masked in that particular 20-episode sample).
+   - *Fix & Safeguards:* The default is explicitly passed everywhere in pipeline scripts, stored in checkpoint metadata, and strictly enforced via regression tests (`tests/test_fno_mask.py`). Final confirmation will be established during the Day-4 one-command pipeline re-run with fixed per-cell seeds.
+
+2. **Global RNG State & Benchmark Noise Dependency:**
+   - In earlier evaluation loops, sensor noise streams were drawn sequentially from the global NumPy random state (`np.random`), making individual cell realizations dependent on loop execution order and earlier cell sampling counts.
+   - The Day-4 one-command benchmark evaluation must enforce deterministic, independent seeds per cell (e.g., `seed = base_seed + cell_idx`) so each cell's noisy episodes are strictly reproducible in isolation.
+
+3. **Anomaly Detection Cascade Model Mismatch Limitation:**
+   - In `src/study_anomaly.py`, synthetic sensor observations for healthy and anomalous runs are generated using the exact series solution (`solve_heat_1d_exact`), and both the baseline and change-point hypotheses are fitted using that same analytic forward solution.
+   - *Zero Model Mismatch:* Consequently, this study tests temporal change-point estimation and hypothesis separation under zero model mismatch; it does not evaluate how surrogate approximation errors (such as PINN or FNO surrogate residuals) propagate into false alarm rates or change-point localization errors.
+

@@ -13,3 +13,9 @@ htmlcov/
 
 # Scratch scripts
 scratch/
+
+# Large model checkpoints outside frozen release
+models/fno_v3/
+*v3*.pt
+*.pt.tmp
+*.zip

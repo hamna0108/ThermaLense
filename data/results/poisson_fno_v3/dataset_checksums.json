@@ -1,0 +1,34 @@
+{
+  "poisson_v2_train.npz": {
+    "sha256": "ce8416076cdefcf9d660fd3cf7b4689585409890f7026f6178a8694add125b92",
+    "bytes": 24343601
+  },
+  "poisson_v2_val.npz": {
+    "sha256": "157c0e1dfb32c2702800efa8fa0c5580edd301f46d86e5d50c4a77fe0d5e53ca",
+    "bytes": 2434274
+  },
+  "poisson_v2_test_interp.npz": {
+    "sha256": "732bc0e5a7a926530f0b768debb92944ec7f9543b3983b4381ce4ad27d15c8f8",
+    "bytes": 5009487
+  },
+  "poisson_v2_test_ood_narrow.npz": {
+    "sha256": "8fdc6549e85590a44cb6cf155487729c87bec5e00c4a9b1be81bc1207ef3b3f3",
+    "bytes": 5907420
+  },
+  "poisson_v2_test_ood_count.npz": {
+    "sha256": "0954654346b581e0dc29a3395f611e8586f7a2a35858ee2cad93952a951fe69d",
+    "bytes": 5814855
+  },
+  "poisson_v2_test_ood_boundary.npz": {
+    "sha256": "5331b8e1158afe4aba12b36d890776d572805fc46e74903758f97903ad9fd681",
+    "bytes": 5938831
+  },
+  "poisson_v2_test_ood_highmodes.npz": {
+    "sha256": "08fa260d6ccd62159aee78394b2802334a727506b98a51128c1294b3d32ea13c",
+    "bytes": 3494246
+  },
+  "poisson_v2_manufactured_sanity.npz": {
+    "sha256": "08a221ff662a7865affe97a5044ac3a983f9be7065fb1ab73fa3c273e5e8830f",
+    "bytes": 14884
+  }
+}

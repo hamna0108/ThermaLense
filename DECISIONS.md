@@ -130,6 +130,27 @@ This document records the foundational architectural decisions made across the D
 
 ---
 
+### Decision 7: Poisson Round 2: v2 Frozen
+- **Options Tried:**
+  1. *Poisson v2 (Frozen Baseline):* FNO-2D (modes 16, width 32, 4 layers, ~466k params) trained on Poisson v2 dataset with $L_2 + 0.1 H^1$ loss.
+  2. *Poisson v3 (Colab 5-Seed Retraining Study):* FNO-2D retrained across 5 seeds (42, 43, 44, 45, 46) on GPU (Tesla T4) with extended training budget (up to 300 epochs, patience 25, delta 1e-4) to test whether scaling training epochs and testing seed sensitivity unlocks $\ge 2\times$ error reduction on validation/interpolation and closes OOD failure modes.
+- **Option Selected:** Poisson v2 frozen (`models/fno2d_poisson_v2.pt` retained as official final model; v3 rejected).
+- **Why:**
+  - *Pre-Registered Acceptance Rule:* Fixed strictly before launching the Colab v3 run: v3 is accepted if and only if (1) Validation median relative $L_2$ error achieves $\ge 2.0\times$ improvement over v2 ($v_2 / v_3 \ge 2.0$, requiring val median $\le 0.01673$), AND (2) all 4 OOD split medians (`test_ood_narrow`, `test_ood_count`, `test_ood_boundary`, `test_ood_highmodes`) are no worse than v2.
+  - *Outcome & Rejection:*
+    - *Validation/Interpolation Improvement:* The mean of medians across the 5 seeds achieved val median 0.02750 (improvement factor $0.03346 / 0.02750 = 1.216\times$) and interpolation median 0.02703 ($1.237\times$), falling well short of the $2.0\times$ pre-registered bar.
+    - *OOD Generalization:* While the 4 OOD medians were on average better than v2 (narrow: 0.0792 vs 0.0900; count: 0.0221 vs 0.0277; boundary: 0.0834 vs 0.1418; highmodes: 0.5247 vs 0.8042), the failure to hit the required $2\times$ validation threshold led to strict rejection.
+  - *Large Seed Spread (~6x–7x):* Model performance exhibits substantial seed sensitivity across identical training configurations:
+    - On validation: min 0.00681, max 0.04119 ($\mathbf{6.05\times}$ spread).
+    - On test interpolation: min 0.00631, max 0.04251 ($\mathbf{6.74\times}$ spread).
+    - Selecting the single best seed (seed 46, which reached 0.0063 on interpolation) after inspecting test set outcomes would be post-hoc cherry-picking; evaluating across the full 5-seed cohort reflects true expected performance.
+  - *Persistent High-Modes Truncation Failure:* High-frequency harmonic modes ($m, n \in \{5..8\}$) remain a severe failure mode across all seeds, with median relative errors between $37.3\%$ and $59.2\%$ (p90 error $62.3\%\text{--}101.1\%$, max error up to $171.5\%$), confirming that spectral truncation at modes=16 creates a hard frequency cutoff that cannot be overcome by extended training alone.
+  - *Reproducibility Note on GPU Non-Determinism:* Re-running the identical 5 seeds on the GPU yielded different numbers (interp mean 0.0247 in an initial unrecorded run vs 0.0270 in the official recorded run; seed range 0.0061–0.0365 vs 0.0063–0.0425). Due to non-deterministic CUDA atomic operations and cuFFT execution kernels, GPU runs are not bit-reproducible; consequently, all conclusions are stated with seed spread rather than single-point estimates.
+- **Status:** **Decided by evidence; v2 frozen, v3 rejected**
+- **Evidence File:** `data/results/poisson_fno_v3/fno_v3_acceptance_report.json`, `data/results/poisson_fno_v3/fno_v3_manifest.json`, `data/results/poisson_fno_v3_per_seed.csv`, `data/results/poisson_fno_v3/split_analysis.json`, `data/results/poisson_fno_v3/dataset_checksums.json`.
+
+---
+
 
 ### Limitations & Reproducibility Notes
 

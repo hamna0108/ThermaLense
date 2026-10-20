@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import pytest
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from src.solvers.heat_1d import solve_heat_1d_exact, solve_heat_1d_numerical
 

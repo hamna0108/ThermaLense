@@ -1,6 +1,8 @@
 import os
 import numpy as np
 import pytest
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from src.solvers.poisson_2d import solve_poisson_2d_exact, solve_poisson_2d_numerical
 

@@ -84,6 +84,13 @@ def evaluate_model_comprehensive(model, log_alpha_mean, log_alpha_std, data_dir,
     3. Sensor layout interior MAE (x in [0.2, 0.8], t in [0.01, 1.0])
     4. Deterministic Mode 3 sigma=0 bias floor at alpha in {0.005, 0.100, 2.500}
     """
+    if torch.is_tensor(log_alpha_mean):
+        log_alpha_mean = log_alpha_mean.item()
+    if torch.is_tensor(log_alpha_std):
+        log_alpha_std = log_alpha_std.item()
+    log_alpha_mean = float(log_alpha_mean)
+    log_alpha_std = float(log_alpha_std)
+
     model.eval()
     
     # Grid specification
@@ -93,6 +100,7 @@ def evaluate_model_comprehensive(model, log_alpha_mean, log_alpha_std, data_dir,
     t_mesh, x_mesh = np.meshgrid(t_grid, x_grid, indexing='ij')
     t_tensor = torch.tensor(2 * t_mesh - 1, dtype=torch.float32).to(device)
     x_tensor = torch.tensor(2 * x_mesh - 1, dtype=torch.float32).to(device)
+
     
     # 1. Evaluate test splits
     def eval_npz(filepath):
@@ -220,10 +228,26 @@ def train_single_seed(seed, epochs, batch_size, lr, weight_decay, device, data_d
     curves_path = os.path.join(out_dir, f"curves_heat_seed{seed}.csv")
     metrics_path = os.path.join(out_dir, f"metrics_heat_seed{seed}.json")
     
-    if resume and os.path.exists(metrics_path) and os.path.exists(best_model_path):
-        print(f"Seed {seed} already completed. Resuming (skipping training).")
-        with open(metrics_path, "r") as f:
-            return json.load(f)
+    if resume and os.path.exists(best_model_path):
+        if os.path.exists(metrics_path):
+            print(f"Seed {seed} already evaluated. Resuming (skipping).")
+            with open(metrics_path, "r") as f:
+                return json.load(f)
+        else:
+            print(f"Seed {seed} checkpoint found from previous run. Skipping re-training, evaluating now...")
+            train_dataset = HeatEquationDataset(os.path.join(data_dir, 'train.npz'))
+            best_ckpt = torch.load(best_model_path, map_location=device)
+            model = FNO2d(modes1=16, modes2=12, width=32, in_channels=3, out_channels=1, use_hard_mask=False).to(device)
+            model.load_state_dict(best_ckpt["model_state_dict"])
+            metrics = evaluate_model_comprehensive(model, train_dataset.log_alpha_mean, train_dataset.log_alpha_std, data_dir, device)
+            metrics["seed"] = seed
+            metrics["best_epoch"] = best_ckpt.get("epoch", 0)
+            metrics["best_val_rel_l2"] = best_ckpt.get("val_rel_l2", 0.0)
+            metrics["total_train_sec"] = 0.0
+            with open(metrics_path, "w") as f:
+                json.dump(metrics, f, indent=2)
+            print(f"Saved metrics to {metrics_path}")
+            return metrics
             
     # Set seeds
     torch.manual_seed(seed)

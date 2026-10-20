@@ -198,17 +198,25 @@ def train_fno_v2(
         writer.writeheader()
         writer.writerows(curves)
         
-    # Analyze overfitting vs plateau
-    final_train_l2 = curves[-1]["train_rel_l2"]
-    final_val_l2 = curves[-1]["val_rel_l2"]
-    gap_ratio = (final_val_l2 - final_train_l2) / (final_train_l2 + 1e-8)
+    # Analyze overfitting vs plateau at best epoch (where checkpoint was saved)
+    best_curve = [c for c in curves if c["epoch"] == best_epoch][0]
+    best_train_l2 = best_curve["train_rel_l2"]
+    best_val_l2 = best_curve["val_rel_l2"]
+    gap_ratio = (best_val_l2 - best_train_l2) / (best_train_l2 + 1e-8)
     
     if gap_ratio > 0.5:
-        generalization_diagnosis = "Mild overfitting observed (val loss gap > 50% above train loss)."
+        generalization_diagnosis = f"Mild overfitting observed (val loss gap {gap_ratio*100:.1f}% above train loss)."
     elif patience_counter >= patience:
-        generalization_diagnosis = "Validation plateau reached without catastrophic overfitting; early stopping preserved optimal generalization."
+        generalization_diagnosis = (
+            f"Validation plateau reached without overfitting (best epoch {best_epoch}: "
+            f"train rel L2 {best_train_l2*100:.2f}%, val rel L2 {best_val_l2*100:.2f}%); "
+            f"early stopping preserved optimal generalization."
+        )
     else:
-        generalization_diagnosis = "Smooth monotonic convergence across both train and val curves."
+        generalization_diagnosis = (
+            f"Smooth monotonic convergence across both train and val curves "
+            f"(best epoch {best_epoch}: train rel L2 {best_train_l2*100:.2f}%, val rel L2 {best_val_l2*100:.2f}%)."
+        )
         
     print(f"\nTraining summary:")
     print(f"  Total Duration   : {total_train_sec:.1f}s ({total_train_sec/60:.2f} min)")

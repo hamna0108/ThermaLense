@@ -157,7 +157,8 @@ def run_timing_honesty_benchmark(N=64, batch_size=32, fno_path=None):
             f"{solver_prefact_single_ms:.3f} ms vs {fno_single_ms:.3f} ms single-query ({fno_single_ms/solver_prefact_single_ms:.1f}x faster), "
             f"and {solver_batch_per_query_ms:.3f} ms vs {fno_batch_per_query_ms:.3f} ms batched ({fno_batch_per_query_ms/solver_batch_per_query_ms:.1f}x faster). "
             f"Even rebuilding and re-factorizing the sparse matrix from scratch on every query ({solver_fresh_fact_single_ms:.3f} ms) "
-            f"matches FNO forward inference latency. The classical solver is faster, exact, and zero-parameter at this scale."
+            f"is ~{fno_single_ms/solver_fresh_fact_single_ms:.1f}x faster than FNO ({fno_single_ms:.3f} ms) on CPU, 64x64. "
+            f"The classical solver is faster, exact, and zero-parameter at this scale."
         )
     }
     

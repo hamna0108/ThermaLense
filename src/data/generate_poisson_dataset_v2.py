@@ -8,7 +8,10 @@ import time
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 import numpy as np
 from src.solvers.poisson_2d import Poisson2DSolver, manufactured_source_2d, solve_poisson_2d_exact
-from src.data.generate_poisson_dataset import sample_gaussian_source
+try:
+    from src.data.generate_poisson_dataset import sample_gaussian_source
+except ImportError:
+    from archive.superseded.generate_poisson_dataset import sample_gaussian_source
 
 def sample_sine_mode_source(rng, X, Y, is_highmodes=False):
     """

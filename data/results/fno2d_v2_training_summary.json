@@ -5,5 +5,5 @@
   "best_epoch": 47,
   "best_val_rel_l2": 0.04421946942806244,
   "status": "early_stopped_plateau (patience 15 reached at epoch 62, best epoch 47)",
-  "diagnosis": "Mild overfitting observed (val loss gap > 50% above train loss)."
+  "diagnosis": "Validation plateau reached without overfitting (best epoch 47: train rel L2 5.32%, val rel L2 4.42%); early stopping preserved optimal generalization."
 }

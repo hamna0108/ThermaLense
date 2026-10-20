@@ -34,22 +34,17 @@ This document records the foundational architectural decisions made across the D
   5. *Exp D (Bounded Reparametrization Axis):* PINN and FNO reparametrized with bounded exponential temporal enforcement: $u(x, t) = \sin(\pi x) + x(1-x)(1 - e^{-5t}) N(x, t)$ (`src/train_expD_pinn.py`, `src/train_expD_fno.py`).
 - **Option Selected:** Exp D (Bounded Reparametrization) for PINN (`models/pinn_expD.pt`); Base unmasked FNO (`models/fno2d_heat.pt`) for Mode 3 production pipeline, with Exp D (`models/fno2d_expD.pt`) retained as an exact boundary enforcement baseline.
 - **Why:**
-  - *Construction vs Learned Accuracy ($t = 0$):* By mathematical construction, at $t = 0$ the temporal factor $(1 - e^0) = 0$ in Exp D (and $t = 0$ in Exp B/C), identically collapsing $u(x, 0) \equiv \sin(\pi x)$ down to float precision ($4.79 \times 10^{-8}$ for PINN, $5.06 \times 10^{-8}$ for FNO). Because initial condition error is eliminated by algebraic construction rather than learned optimization, comparing $t=0$ error alone evaluates the mathematical formula, not surrogate accuracy.
-  - *Learned Accuracy ($t > 0$ and Full Field):*
-    - *PINN Models:* Baseline unconstrained PINN (`pinn_base`) achieves interpolation median relative $L_2$ error of 0.02753 (P90: 0.21474). Exp B achieves 0.00775 (P90: 0.05087). Exp D achieves 0.00882 with a dramatically tighter tail (P90: 0.01303, a $3.9\times$ reduction in 90th-percentile error over Exp B). In Low-$\alpha$ OOD, Exp D achieves 0.04084 vs 0.09631 for base.
-    - *FNO Models (Accuracy Trade-off):* The historical apparent degradation of FNO base (0.1655) and FNO Exp C/D (0.1047) was caused entirely by `use_hard_mask=True` in `src/models/fno2d.py`, which zeroed time boundaries ($t=0$ and $t=1$). When evaluated under the correct unmasked configuration (`use_hard_mask=False`):
-      - `fno_expC` achieves the lowest interpolation error at **0.23%** (0.00228, P90: 0.01710), with $t=1.0$ MAE of $0.00054$.
-      - `fno_expD` achieves **0.31%** (0.00306, P90: 0.01043) on interpolation, the lowest Low-$\alpha$ OOD error at **0.28%** (0.00280), and $t=1.0$ MAE of $0.00096$.
-      - `fno_base` achieves **0.45%** (0.00448, P90: 0.00582) on interpolation and **0.46%** (0.00455) on Low-$\alpha$ OOD, but delivers superior High-$\alpha$ OOD robustness at **12.8%** (0.12772) vs 34.6% for Exp D and 42.9% for Exp C. Its unconstrained $t=0$ MAE is already very small ($0.00213$).
-      Because `fno_base` avoids high-alpha failure while remaining within 0.15%–0.22% of Exp C/D in-distribution, it is chosen as the standard for Mode 3, while `fno_expD` provides an exact hard-boundary alternative ($0.31\%$ in-range error).
-  - *FNO Training Specifications & Budgets:*
-    | Model | Training Samples | Epochs | Batch Size | Optimizer / LR Schedule | Dataset Seed |
-    | :--- | :--- | :--- | :--- | :--- | :--- |
-    | `fno_base` | 1,000 | 100 | 20 (50 steps/epoch) | Adam ($10^{-3}$, decay $10^{-4}$), StepLR(50, 0.5) | 42 |
-    | `fno_expC` | 1,000 | 100 | 20 (50 steps/epoch) | Adam ($10^{-3}$, decay $10^{-4}$), StepLR(50, 0.5) | 42 |
-    | `fno_expD` | 1,000 | 100 | 20 (50 steps/epoch) | Adam ($10^{-3}$, decay $10^{-4}$), StepLR(50, 0.5) | 42 |
+  - *Origin of Exact-IC Motivation:* The historical large $t=0$ error that originally motivated the exact-IC reparametrization came entirely from the erroneous boundary mask zeroing the time rows (committed diagnostic plots showed FNO base $t=0$ error artificially clamped at **0.62**; whereas unmasked base FNO achieves $t=0$ error of $\mathbf{\sim 0.0021}$).
+  - *PINN Surrogate Selection:* Exp D is kept for the PINN surrogate (`models/pinn_expD.pt`) because unconstrained/soft-penalty PINNs suffer substantial learned boundary errors (soft-IC PINN $t=0$ relative error ranges from **1.4% to 22.0%**, whereas Exp D enforces exact initial and boundary conditions by algebraic construction with median relative $L_2$ error 0.00882 and tight tail P90 0.01303).
+  - *FNO Surrogate Selection (Extrapolation vs In-Range Accuracy):* For the FNO, base (unmasked) is selected as the definitive pipeline model because it extrapolates much better to high diffusion rates (**12.8%** at high $\alpha = 2.5$ vs **34.6%** for Exp D and **42.9%** for Exp C). Exp C and Exp D are only slightly better in-range (**0.228%** for Exp C and **0.306%** for Exp D vs **0.448%** for base FNO), meaning the slight in-range gain of reparametrization is heavily outweighed by severe OOD extrapolation breakdown.
+  - *FNO Training Specifications, Budgets & Historical Mask State:*
+    | Model | Training Samples | Epochs | Batch Size | Optimizer / LR Schedule | Dataset Seed | Training-Time Mask State |
+    | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+    | `fno_base` | 1,000 | 100 | 20 (50 steps/epoch) | Adam ($10^{-3}$, decay $10^{-4}$), StepLR(50, 0.5) | 42 | unknown (checkpoint has no flag) |
+    | `fno_expC` | 1,000 | 100 | 20 (50 steps/epoch) | Adam ($10^{-3}$, decay $10^{-4}$), StepLR(50, 0.5) | 42 | pre-cleanup default = masked |
+    | `fno_expD` | 1,000 | 100 | 20 (50 steps/epoch) | Adam ($10^{-3}$, decay $10^{-4}$), StepLR(50, 0.5) | 42 | pre-cleanup default = masked |
 
-    *Note on Training Budgets:* All three FNO variants (`fno_base`, `fno_expC`, `fno_expD`) share the identical training budget of 1,000 training trajectories from `data/datasets/train.npz` (evaluated on 200 validation trajectories from `val.npz`), 100 epochs, and 5,000 gradient updates. Historical notes referencing "80 samples" reflected early exploratory sub-splits or a 80/20 train/val percentage, whereas all finalized benchmark checkpoints were trained on the complete 1,000-sample dataset.
+    *Note on Mask State & Validation:* At pre-cleanup training time (`git show pre-cleanup:src/train.py`, `src/train_expC.py`, `src/train_expD_fno.py`), `FNO2d` defaulted to `use_hard_mask=True`. While `fno_base` saved no flag in its checkpoint dictionary (mask state strictly unknown at training time), Exp C and Exp D inherited the masked default. Crucially, all model weights have been validated at unmasked inference (`use_hard_mask=False`) and are verified by unit regression tests (`tests/test_fno_mask.py` and `tests/test_heat_1d.py`). All three share the identical training budget of 1,000 training trajectories from `data/datasets/train.npz` (evaluated on 200 validation trajectories from `val.npz`), 100 epochs, and 5,000 gradient updates. Historical notes referencing "80 samples" reflected early exploratory sub-splits or a 80/20 train/val percentage, whereas all finalized benchmark checkpoints were trained on the complete 1,000-sample dataset.
   - *Coverage of Brief Ablation Axes:*
     - *Covered:* **Loss weighting** is systematically tested in Exp A via normalized residual loss scaling $f = (u_t - \alpha u_{xx}) / \alpha$.
     - *Missing:* **Activation function** variation is missing (standard Tanh activation is fixed across all PINN architectures, and GeLU across all FNOs). **Collocation sampling strategies** are missing (uniform random interior sampling is kept constant across all runs without testing adaptive or residual-based resampling).
@@ -134,6 +129,7 @@ This document records the foundational architectural decisions made across the D
 - **Evidence File:** `archive/superseded/train_fno_poisson.py` (lines 14, 31, 52), `src/train_fno_poisson_v2.py` (lines 36–58), `archive/superseded/generate_poisson_dataset.py`, `src/data/generate_poisson_dataset_v2.py`, `data/results/poisson_v2_benchmark_table.csv`, `data/results/timing_honesty.json`, `data/audits/audit_poisson.txt` (Sections 1–7).
 
 ---
+
 
 ### Limitations & Reproducibility Notes
 

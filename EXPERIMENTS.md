@@ -57,6 +57,8 @@ A comprehensive registry of every script in the repository detailing its purpose
 | `tools/build_heat_fno_seeds_summary.py` | Builds structured heat FNO multi-seed summary table from JSON metrics | `data/results/heat_fno_seeds/*.json` | `data/results/heat_fno_seeds_summary.csv` | `DECISIONS.md` (Decision 8) | **TOOL** |
 | `tools/run_stress_matrix_v2.py` | Week 5 stress matrix powered rerun (100 seeds/cell) across 13 scenarios x 3 severities with multiprocessing | Ground truth solvers, model checkpoints | `data/results/stress_matrix_v2.csv`, `stress_summary_v2.csv`, `reports/stress_matrix_v2.md` | `reports/stress_matrix_v2.md` | **FINAL/TOOL** |
 | `tools/rescore_stress_matrix_v2b.py` | Task C2: Rescores stress matrix v2 under ground-truth anomaly rules and matching clean/CRB benchmarks | `data/results/stress_matrix_v2.csv` | `data/results/stress_summary_v2b.csv`, `reports/stress_matrix_v2b.md` | `reports/stress_matrix_v2b.md`, `DECISIONS.md` | **FINAL/TOOL** |
+| `tools/calibrate_v2_thresholds.py` | Task D: Pre-calibrates V2 goodness-of-fit gate threshold tau_gof on separate seed range (1300000+) | Healthy synthetic episodes | `data/results/v2_calibration_record.json` | `reports/v2_evaluation_report.md` | **TOOL** |
+| `tools/evaluate_v2_before_after.py` | Task D: Evaluates Week 6 V2 wrappers (D1-D5) with before/after comparisons against stress_summary_v2b.csv | `data/results/stress_summary_v2b.csv`, matrix seeds | `data/results/v2_before_after_summary.csv`, `reports/v2_evaluation_report.md` | `reports/v2_evaluation_report.md` | **FINAL/TOOL** |
 
 ---
 
@@ -96,6 +98,8 @@ A unified, complete registry of every random seed and seed range employed across
 | **Heat FNO Colab Study** | 5-Seed Stability | Multi-seed surrogate training verifying Mode 3 bias floor stability | `42, 43, 44, 45, 46` | 5 distinct training RNG seeds | **Disjoint** |
 | **Week 5 Stress Matrix v1** | 13 Scenarios x 3 Severities (v1: 5 seeds/cell) | Initial stress testing on frozen models (Mode 2, Mode 3, Mode 3+, Two-Stage, Anomaly) | `[850000, 851334]` | `seed = 850000 + scen_idx * 100 + sev_idx * 10 + s_idx` (clean: 850000..850019) | **Disjoint** |
 | **Week 5 Stress Matrix v2** | 13 Scenarios x 3 Severities (v2: 100 seeds/cell) | Powered rerun on frozen models with Wilson 95% CIs and multiprocessing | `[1200000, 1213399]` | `seed = 1200000 + scen_idx * 1000 + sev_idx * 100 + s_idx` (clean: 1200000..1200099) | **Disjoint** ($\ge 1200000$) |
+| **Week 6 V2 Pre-Calibration** | Healthy Calibration Cohort (1,000 episodes) | Pre-calibration of goodness-of-fit gate threshold $\tau_{\text{gof}} = 1.878$ for $\le 5\%$ healthy false-flag ceiling | `[1300000, 1300999]` | `seed = 1300000 + s_idx` | **Disjoint** ($\ge 1300000$) |
+
 
 
 

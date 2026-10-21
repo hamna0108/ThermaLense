@@ -1,0 +1,19 @@
+{
+  "seed_range_description": "1300000..1300999 (1000 healthy episodes)",
+  "base_seed": 1300000,
+  "num_reps": 1000,
+  "nominal_parameters": {
+    "alpha": 0.1,
+    "sigma": 0.01,
+    "N": 10,
+    "baseline_k": 20
+  },
+  "tau_gof_calibrated": 1.878,
+  "tau_gof_p95": 1.878355619240464,
+  "tau_gof_p90": 1.630544838057751,
+  "tau_gof_p99": 2.3711578230126804,
+  "healthy_false_flag_rate_pct": 5.0,
+  "baseline_sigma_mean": 0.009890343139231567,
+  "baseline_sigma_std": 0.0015807439538986104,
+  "baseline_sigma_bias_pct": 1.096568607684336
+}

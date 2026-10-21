@@ -1,0 +1,10 @@
+# Pinned CPU-only service dependencies
+fastapi==0.115.8
+uvicorn[standard]==0.34.0
+pydantic==2.10.6
+numpy==2.2.3
+scipy==1.15.2
+torch==2.6.0+cpu
+pandas==2.2.3
+httpx==0.28.1
+pytest==8.3.4

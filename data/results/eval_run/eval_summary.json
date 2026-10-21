@@ -1,0 +1,175 @@
+{
+  "timestamp": 1792590385.668742,
+  "base_seed": 20260101,
+  "quick_mode": true,
+  "runtime_seconds": 10.77,
+  "overall_status": "PASS",
+  "checks": [
+    {
+      "check_id": "CHK_M3_MEDIAN_ERROR",
+      "description": "Mode 3 Inversion Median Relative Error within 5% of frozen baseline",
+      "status": "PASS",
+      "value": "2.04% diff"
+    },
+    {
+      "check_id": "CHK_M3_COVERAGE",
+      "description": "Mode 3 95% CI Coverage within 2 percentage points of frozen baseline",
+      "status": "PASS",
+      "value": "1.38 pts diff"
+    },
+    {
+      "check_id": "CHK_ANOMALY_FAR",
+      "description": "Anomaly Cascade Healthy False Alarm Rate within Wilson CI",
+      "status": "PASS",
+      "value": "4.0%"
+    },
+    {
+      "check_id": "CHK_ANOMALY_RECALL",
+      "description": "Anomaly Cascade Per-Class Recall (H, A, F, C >= thresholds)",
+      "status": "PASS",
+      "value": "H:96%, A:96%, F:100%, C:100%"
+    },
+    {
+      "check_id": "CHK_POISSON_OPERATOR",
+      "description": "Poisson 2D FNO and Linear baseline errors match frozen table",
+      "status": "PASS",
+      "value": "test_interp FNO=0.0326"
+    }
+  ],
+  "details": {
+    "mode3": {
+      "results": [
+        {
+          "cell": "alpha=0.1_N=10_sig=0.01",
+          "alpha": 0.1,
+          "N": 10,
+          "sigma": 0.01,
+          "eval_med_err": 0.014510615828012066,
+          "frozen_med_err": 0.013609,
+          "err_diff_pct": 6.625143860282277,
+          "eval_cov": 98.0,
+          "frozen_cov": 95.0,
+          "cov_diff": 3.0
+        },
+        {
+          "cell": "alpha=0.1_N=20_sig=0.01",
+          "alpha": 0.1,
+          "N": 20,
+          "sigma": 0.01,
+          "eval_med_err": 0.009825554362132907,
+          "frozen_med_err": 0.009364,
+          "err_diff_pct": 4.929029924002735,
+          "eval_cov": 98.0,
+          "frozen_cov": 97.5,
+          "cov_diff": 0.5
+        },
+        {
+          "cell": "alpha=0.05_N=20_sig=0.01",
+          "alpha": 0.05,
+          "N": 20,
+          "sigma": 0.01,
+          "eval_med_err": 0.013803081220151725,
+          "frozen_med_err": 0.013571,
+          "err_diff_pct": 1.7101261523441456,
+          "eval_cov": 97.0,
+          "frozen_cov": 93.0,
+          "cov_diff": 4.0
+        },
+        {
+          "cell": "alpha=0.2_N=20_sig=0.05",
+          "alpha": 0.2,
+          "N": 20,
+          "sigma": 0.05,
+          "eval_med_err": 0.04038773340809293,
+          "frozen_med_err": 0.040414,
+          "err_diff_pct": 0.06499379399816659,
+          "eval_cov": 94.0,
+          "frozen_cov": 96.0,
+          "cov_diff": 2.0
+        }
+      ],
+      "mean_eval_err": 0.019631746204597407,
+      "mean_froz_err": 0.0192395,
+      "err_diff_pct": 2.04,
+      "mean_eval_cov": 96.75,
+      "mean_froz_cov": 95.38,
+      "cov_diff_pts": 1.38,
+      "err_pass": true,
+      "cov_pass": true,
+      "next_cell_idx": 4
+    },
+    "anomaly": {
+      "confusion_matrix": {
+        "H": {
+          "H": 24,
+          "A": 0,
+          "F": 1,
+          "C": 0
+        },
+        "A": {
+          "H": 0,
+          "A": 24,
+          "F": 0,
+          "C": 1
+        },
+        "F": {
+          "H": 0,
+          "A": 0,
+          "F": 25,
+          "C": 0
+        },
+        "C": {
+          "H": 0,
+          "A": 0,
+          "F": 0,
+          "C": 25
+        }
+      },
+      "healthy_far_pct": 4.0,
+      "healthy_far_ci": [
+        0.71,
+        19.54
+      ],
+      "frozen_far_pct": 5.5,
+      "recalls": {
+        "H": 96.0,
+        "A": 96.0,
+        "F": 100.0,
+        "C": 100.0
+      },
+      "frozen_recalls": {
+        "H": 94.5,
+        "A": 97.0,
+        "F": 80.0,
+        "C": 94.0
+      },
+      "far_pass": true,
+      "recalls_pass": true,
+      "overall_pass": true,
+      "next_cell_idx": 8
+    },
+    "poisson": {
+      "splits": [
+        {
+          "split": "test_interp",
+          "eval_fno_l2": 0.03257576376199722,
+          "frozen_fno_l2": 0.033425360918045,
+          "fno_diff_pct": 2.54,
+          "fno_pass": true,
+          "eval_lin_l2": 0.0321270152926445,
+          "lin_pass": true
+        },
+        {
+          "split": "test_ood_narrow",
+          "eval_fno_l2": 0.08933286368846893,
+          "frozen_fno_l2": 0.0900192186236381,
+          "fno_diff_pct": 0.76,
+          "fno_pass": true,
+          "eval_lin_l2": 0.046238526701927185,
+          "lin_pass": true
+        }
+      ],
+      "overall_pass": true
+    }
+  }
+}

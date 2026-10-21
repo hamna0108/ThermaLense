@@ -1,0 +1,6 @@
+check_id,description,status,value
+CHK_M3_MEDIAN_ERROR,Mode 3 Inversion Median Relative Error within 5% of frozen baseline,PASS,2.04% diff
+CHK_M3_COVERAGE,Mode 3 95% CI Coverage within 2 percentage points of frozen baseline,PASS,1.38 pts diff
+CHK_ANOMALY_FAR,Anomaly Cascade Healthy False Alarm Rate within Wilson CI,PASS,4.0%
+CHK_ANOMALY_RECALL,"Anomaly Cascade Per-Class Recall (H, A, F, C >= thresholds)",PASS,"H:96%, A:96%, F:100%, C:100%"
+CHK_POISSON_OPERATOR,Poisson 2D FNO and Linear baseline errors match frozen table,PASS,test_interp FNO=0.0326

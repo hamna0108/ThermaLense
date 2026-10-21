@@ -59,6 +59,7 @@ A comprehensive registry of every script in the repository detailing its purpose
 | `tools/rescore_stress_matrix_v2b.py` | Task C2: Rescores stress matrix v2 under ground-truth anomaly rules and matching clean/CRB benchmarks | `data/results/stress_matrix_v2.csv` | `data/results/stress_summary_v2b.csv`, `reports/stress_matrix_v2b.md` | `reports/stress_matrix_v2b.md`, `DECISIONS.md` | **FINAL/TOOL** |
 | `tools/calibrate_v2_thresholds.py` | Task D: Pre-calibrates V2 goodness-of-fit gate threshold tau_gof on separate seed range (1300000+) | Healthy synthetic episodes | `data/results/v2_calibration_record.json` | `reports/v2_evaluation_report.md` | **TOOL** |
 | `tools/evaluate_v2_before_after.py` | Task D: Evaluates Week 6 V2 wrappers (D1-D5) with before/after comparisons against stress_summary_v2b.csv | `data/results/stress_summary_v2b.csv`, matrix seeds | `data/results/v2_before_after_summary.csv`, `reports/v2_evaluation_report.md` | `reports/v2_evaluation_report.md` | **FINAL/TOOL** |
+| `experiments/train_pinn_ablation.py` | Task G: PINN single-factor ablation study runner (activation, collocation, loss weighting, optimizer) | `data/datasets/*.npz`, `models/pinn_expD.pt` | `pinn_ablation_summary.csv`, `pinn_ablation_metrics.json`, `pinn_ablation_manifest.json` | `reports/` | **EXPERIMENT** |
 
 ---
 
@@ -99,6 +100,7 @@ A unified, complete registry of every random seed and seed range employed across
 | **Week 5 Stress Matrix v1** | 13 Scenarios x 3 Severities (v1: 5 seeds/cell) | Initial stress testing on frozen models (Mode 2, Mode 3, Mode 3+, Two-Stage, Anomaly) | `[850000, 851334]` | `seed = 850000 + scen_idx * 100 + sev_idx * 10 + s_idx` (clean: 850000..850019) | **Disjoint** |
 | **Week 5 Stress Matrix v2** | 13 Scenarios x 3 Severities (v2: 100 seeds/cell) | Powered rerun on frozen models with Wilson 95% CIs and multiprocessing | `[1200000, 1213399]` | `seed = 1200000 + scen_idx * 1000 + sev_idx * 100 + s_idx` (clean: 1200000..1200099) | **Disjoint** ($\ge 1200000$) |
 | **Week 6 V2 Pre-Calibration** | Healthy Calibration Cohort (1,000 episodes) | Pre-calibration of goodness-of-fit gate threshold $\tau_{\text{gof}} = 1.878$ for $\le 5\%$ healthy false-flag ceiling | `[1300000, 1300999]` | `seed = 1300000 + s_idx` | **Disjoint** ($\ge 1300000$) |
+| **Task G PINN Ablation Study** | Single-Factor Ablations (3 seeds) | Systematic ablation across activation, sampling, loss weighting, and optimizer | `42, 43, 44` | 3 distinct training RNG seeds paired across all ablation variants | **Paired** across variants |
 
 
 

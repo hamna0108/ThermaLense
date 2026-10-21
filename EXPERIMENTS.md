@@ -56,6 +56,7 @@ A comprehensive registry of every script in the repository detailing its purpose
 | `tools/run_stress_matrix.py` | Week 5 stress matrix testing across 13 scenarios x 3 severities on 5 frozen modules (v1: 5 seeds/cell) | Ground truth solvers, model checkpoints | `data/results/stress_matrix.csv`, `stress_summary.csv`, `reports/stress_matrix.md` | `reports/stress_matrix.md` | **FINAL/TOOL** |
 | `tools/build_heat_fno_seeds_summary.py` | Builds structured heat FNO multi-seed summary table from JSON metrics | `data/results/heat_fno_seeds/*.json` | `data/results/heat_fno_seeds_summary.csv` | `DECISIONS.md` (Decision 8) | **TOOL** |
 | `tools/run_stress_matrix_v2.py` | Week 5 stress matrix powered rerun (100 seeds/cell) across 13 scenarios x 3 severities with multiprocessing | Ground truth solvers, model checkpoints | `data/results/stress_matrix_v2.csv`, `stress_summary_v2.csv`, `reports/stress_matrix_v2.md` | `reports/stress_matrix_v2.md` | **FINAL/TOOL** |
+| `tools/rescore_stress_matrix_v2b.py` | Task C2: Rescores stress matrix v2 under ground-truth anomaly rules and matching clean/CRB benchmarks | `data/results/stress_matrix_v2.csv` | `data/results/stress_summary_v2b.csv`, `reports/stress_matrix_v2b.md` | `reports/stress_matrix_v2b.md`, `DECISIONS.md` | **FINAL/TOOL** |
 
 ---
 

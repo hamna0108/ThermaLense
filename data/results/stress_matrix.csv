@@ -1,0 +1,976 @@
+scenario_idx,scenario_name,severity_idx,severity_level,module,seed,alpha_true,alpha_hat,rel_error,in_ci_95,anomaly_pred,anomaly_is_healthy_fa
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 2,850110,0.1,0.1043827204944863,0.04383,0,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 3,850110,0.1,0.10440488856076975,0.04405,0,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 3+,850110,0.1,0.1043833911870078,0.04383,0,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Two-Stage Placement,850110,0.1,0.10138184078728743,0.01382,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Anomaly Cascade,850110,0.1,N/A,N/A,N/A,F,1
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 2,850111,0.1,0.10178343713050506,0.01783,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 3,850111,0.1,0.10184134699640579,0.01841,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 3+,850111,0.1,0.10178395502774852,0.01784,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Two-Stage Placement,850111,0.1,0.0989714055319131,0.01029,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Anomaly Cascade,850111,0.1,N/A,N/A,N/A,F,1
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 2,850112,0.1,0.09682227441696664,0.03178,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 3,850112,0.1,0.09655727588277048,0.03443,0,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 3+,850112,0.1,0.09682234477402285,0.03178,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Two-Stage Placement,850112,0.1,0.10159169862856449,0.01592,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Anomaly Cascade,850112,0.1,N/A,N/A,N/A,F,1
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 2,850113,0.1,0.09535206728458394,0.04648,0,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 3,850113,0.1,0.09533377189924482,0.04666,0,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 3+,850113,0.1,0.09535277132656877,0.04647,0,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Two-Stage Placement,850113,0.1,0.09909492206703034,0.00905,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Anomaly Cascade,850113,0.1,N/A,N/A,N/A,H,0
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 2,850114,0.1,0.09676323475800512,0.03237,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 3,850114,0.1,0.09646403673166769,0.03536,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Mode 3+,850114,0.1,0.09676380168839666,0.03236,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Two-Stage Placement,850114,0.1,0.09889837831293037,0.01102,1,N/A,N/A
+1,Misspecified noise sigma,1,"Mild under-specified: true=0.02, assumed=0.01",Anomaly Cascade,850114,0.1,N/A,N/A,N/A,H,0
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 2,850120,0.1,0.11569852865297771,0.15699,0,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 3,850120,0.1,0.11548141050391258,0.15481,0,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 3+,850120,0.1,0.11569856174960477,0.15699,0,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Two-Stage Placement,850120,0.1,0.10224772957013999,0.02248,1,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Anomaly Cascade,850120,0.1,N/A,N/A,N/A,F,1
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 2,850121,0.1,0.112741449515898,0.12741,0,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 3,850121,0.1,0.11270595524017232,0.12706,0,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 3+,850121,0.1,0.11274174786995111,0.12742,0,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Two-Stage Placement,850121,0.1,0.0976268699671519,0.02373,0,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Anomaly Cascade,850121,0.1,N/A,N/A,N/A,F,1
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 2,850122,0.1,0.09747718020131182,0.02523,1,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 3,850122,0.1,0.0970712670271036,0.02929,1,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 3+,850122,0.1,0.09747777153746788,0.02522,1,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Two-Stage Placement,850122,0.1,0.10004732940570152,0.00047,1,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Anomaly Cascade,850122,0.1,N/A,N/A,N/A,F,1
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 2,850123,0.1,0.1070121235206431,0.07012,0,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 3,850123,0.1,0.10704231321810592,0.07042,0,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 3+,850123,0.1,0.1070124920357187,0.07012,0,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Two-Stage Placement,850123,0.1,0.09991215250660365,0.00088,1,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Anomaly Cascade,850123,0.1,N/A,N/A,N/A,F,1
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 2,850124,0.1,0.09595473433561409,0.04045,1,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 3,850124,0.1,0.09628810137449527,0.03712,1,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Mode 3+,850124,0.1,0.09595593793547391,0.04044,1,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Two-Stage Placement,850124,0.1,0.09993625006110143,0.00064,1,N/A,N/A
+1,Misspecified noise sigma,2,"Severe under-specified: true=0.05, assumed=0.01",Anomaly Cascade,850124,0.1,N/A,N/A,N/A,F,1
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 2,850130,0.1,0.10164447756342748,0.01644,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 3,850130,0.1,0.10154301423231504,0.01543,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 3+,850130,0.1,0.10164495857961771,0.01645,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Two-Stage Placement,850130,0.1,0.10213674130513499,0.02137,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Anomaly Cascade,850130,0.1,N/A,N/A,N/A,H,0
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 2,850131,0.1,0.10054409658582643,0.00544,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 3,850131,0.1,0.1006983494259004,0.00698,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 3+,850131,0.1,0.10054469561699586,0.00545,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Two-Stage Placement,850131,0.1,0.09637601899638505,0.03624,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Anomaly Cascade,850131,0.1,N/A,N/A,N/A,H,0
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 2,850132,0.1,0.1002975106387101,0.00298,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 3,850132,0.1,0.10018313387723295,0.00183,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 3+,850132,0.1,0.10029830847356716,0.00298,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Two-Stage Placement,850132,0.1,0.11182853011404373,0.11829,0,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Anomaly Cascade,850132,0.1,N/A,N/A,N/A,H,0
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 2,850133,0.1,0.09811866212452164,0.01881,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 3,850133,0.1,0.09786525916731062,0.02135,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 3+,850133,0.1,0.09811935438430237,0.01881,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Two-Stage Placement,850133,0.1,0.11502113366146437,0.15021,0,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Anomaly Cascade,850133,0.1,N/A,N/A,N/A,H,0
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 2,850134,0.1,0.09861827767037272,0.01382,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 3,850134,0.1,0.09864575017388978,0.01354,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Mode 3+,850134,0.1,0.09861849225048729,0.01382,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Two-Stage Placement,850134,0.1,0.10311670245367016,0.03117,1,N/A,N/A
+1,Misspecified noise sigma,3,"Severe over-specified: true=0.01, assumed=0.05",Anomaly Cascade,850134,0.1,N/A,N/A,N/A,H,0
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 2,850210,0.1,0.10226067930204782,0.02261,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 3,850210,0.1,0.10277707235392045,0.02777,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 3+,850210,0.1,0.10226138160773526,0.02261,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Two-Stage Placement,850210,0.1,0.09847922356492572,0.01521,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Anomaly Cascade,850210,0.1,N/A,N/A,N/A,F,1
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 2,850211,0.1,0.09684437775317388,0.03156,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 3,850211,0.1,0.09761337298959233,0.02387,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 3+,850211,0.1,0.09684539079746786,0.03155,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Two-Stage Placement,850211,0.1,0.09966584923718225,0.00334,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Anomaly Cascade,850211,0.1,N/A,N/A,N/A,H,0
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 2,850212,0.1,0.0984526447277382,0.01547,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 3,850212,0.1,0.09893488876317683,0.01065,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 3+,850212,0.1,0.09845352596391271,0.01546,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Two-Stage Placement,850212,0.1,0.10149813734569488,0.01498,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Anomaly Cascade,850212,0.1,N/A,N/A,N/A,H,0
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 2,850213,0.1,0.09994061377477412,0.00059,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 3,850213,0.1,0.09951166200307056,0.00488,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 3+,850213,0.1,0.09994109191033414,0.00059,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Two-Stage Placement,850213,0.1,0.10114122707302443,0.01141,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Anomaly Cascade,850213,0.1,N/A,N/A,N/A,H,0
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 2,850214,0.1,0.0996268611570593,0.00373,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 3,850214,0.1,0.09936571088350118,0.00634,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Mode 3+,850214,0.1,0.09962749381267211,0.00373,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Two-Stage Placement,850214,0.1,0.09885479584144011,0.01145,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),1,Standardized Student-t (df=5),Anomaly Cascade,850214,0.1,N/A,N/A,N/A,H,0
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 2,850220,0.1,0.09846613797470356,0.01534,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 3,850220,0.1,0.09830385371855369,0.01696,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 3+,850220,0.1,0.09846658373967457,0.01533,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Two-Stage Placement,850220,0.1,0.09969599580665214,0.00304,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Anomaly Cascade,850220,0.1,N/A,N/A,N/A,F,1
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 2,850221,0.1,0.10057683853766429,0.00577,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 3,850221,0.1,0.10108569714313931,0.01086,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 3+,850221,0.1,0.10057757986493134,0.00578,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Two-Stage Placement,850221,0.1,0.10052661956943218,0.00527,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Anomaly Cascade,850221,0.1,N/A,N/A,N/A,H,0
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 2,850222,0.1,0.10071449621360468,0.00714,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 3,850222,0.1,0.10030678499186,0.00307,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 3+,850222,0.1,0.10071503297921128,0.00715,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Two-Stage Placement,850222,0.1,0.09998865149075042,0.00011,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Anomaly Cascade,850222,0.1,N/A,N/A,N/A,H,0
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 2,850223,0.1,0.09984448557530283,0.00156,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 3,850223,0.1,0.09973599947631288,0.00264,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 3+,850223,0.1,0.09984474977364022,0.00155,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Two-Stage Placement,850223,0.1,0.0996294800962941,0.00371,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Anomaly Cascade,850223,0.1,N/A,N/A,N/A,H,0
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 2,850224,0.1,0.09975214337762392,0.00248,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 3,850224,0.1,0.099596650334974,0.00403,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Mode 3+,850224,0.1,0.09975287350812818,0.00247,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Two-Stage Placement,850224,0.1,0.09792595378246557,0.02074,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),2,Standardized Student-t (df=3),Anomaly Cascade,850224,0.1,N/A,N/A,N/A,H,0
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 2,850230,0.1,0.0910451990485865,0.08955,0,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 3,850230,0.1,0.09098919511175715,0.09011,0,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 3+,850230,0.1,0.09104548147091222,0.08955,0,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Two-Stage Placement,850230,0.1,0.10060284300998834,0.00603,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Anomaly Cascade,850230,0.1,N/A,N/A,N/A,C,1
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 2,850231,0.1,0.09953380779683503,0.00466,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 3,850231,0.1,0.09944403879921115,0.00556,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 3+,850231,0.1,0.09953401301505513,0.00466,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Two-Stage Placement,850231,0.1,0.09885997296645264,0.0114,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Anomaly Cascade,850231,0.1,N/A,N/A,N/A,F,1
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 2,850232,0.1,0.09726000289263625,0.0274,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 3,850232,0.1,0.09694551577995113,0.03054,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 3+,850232,0.1,0.09726058122322415,0.02739,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Two-Stage Placement,850232,0.1,0.09981774520899912,0.00182,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Anomaly Cascade,850232,0.1,N/A,N/A,N/A,F,1
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 2,850233,0.1,0.09635946225101011,0.03641,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 3,850233,0.1,0.09627741306496276,0.03723,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 3+,850233,0.1,0.09636011504421804,0.0364,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Two-Stage Placement,850233,0.1,0.09827403841962554,0.01726,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Anomaly Cascade,850233,0.1,N/A,N/A,N/A,F,1
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 2,850234,0.1,0.09982059803369421,0.00179,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 3,850234,0.1,0.10043420327686062,0.00434,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Mode 3+,850234,0.1,0.09982173864273387,0.00178,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Two-Stage Placement,850234,0.1,0.10117178856020537,0.01172,1,N/A,N/A
+2,Heavy-tailed noise (Student-t),3,Contaminated Student-t (df=3) with 10% 5-sigma outliers,Anomaly Cascade,850234,0.1,N/A,N/A,N/A,F,1
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 2,850310,0.1,0.09811529496813531,0.01885,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 3,850310,0.1,0.09776932724510216,0.02231,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 3+,850310,0.1,0.09811601708364298,0.01884,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Two-Stage Placement,850310,0.1,0.09897286045607694,0.01027,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Anomaly Cascade,850310,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 2,850311,0.1,0.09712871267210038,0.02871,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 3,850311,0.1,0.09725143245299168,0.02749,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 3+,850311,0.1,0.0971294538770127,0.02871,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Two-Stage Placement,850311,0.1,0.10158828321896421,0.01588,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Anomaly Cascade,850311,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 2,850312,0.1,0.09802555680465393,0.01974,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 3,850312,0.1,0.0980353074648122,0.01965,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 3+,850312,0.1,0.09802562074465215,0.01974,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Two-Stage Placement,850312,0.1,0.09910386683735532,0.00896,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Anomaly Cascade,850312,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 2,850313,0.1,0.09188531653881882,0.08115,0,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 3,850313,0.1,0.09171519310845527,0.08285,0,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 3+,850313,0.1,0.09188597321689533,0.08114,0,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Two-Stage Placement,850313,0.1,0.09863186719128053,0.01368,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Anomaly Cascade,850313,0.1,N/A,N/A,N/A,C,1
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 2,850314,0.1,0.1023503886049356,0.0235,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 3,850314,0.1,0.10240655610394696,0.02407,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Mode 3+,850314,0.1,0.10235069050916926,0.02351,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Two-Stage Placement,850314,0.1,0.10077432536998787,0.00774,1,N/A,N/A
+3,Correlated noise (AR(1)),1,Temporal AR(1) rho = 0.50,Anomaly Cascade,850314,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 2,850320,0.1,0.09710024090553954,0.029,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 3,850320,0.1,0.09706261950638449,0.02937,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 3+,850320,0.1,0.09710087569294838,0.02899,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Two-Stage Placement,850320,0.1,0.0999856061842277,0.00014,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Anomaly Cascade,850320,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 2,850321,0.1,0.09409629686644622,0.05904,0,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 3,850321,0.1,0.09402449779831362,0.05976,0,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 3+,850321,0.1,0.0940969984775504,0.05903,0,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Two-Stage Placement,850321,0.1,0.09951487203557642,0.00485,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Anomaly Cascade,850321,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 2,850322,0.1,0.09852498394747478,0.01475,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 3,850322,0.1,0.09821380233983582,0.01786,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 3+,850322,0.1,0.09852548372240766,0.01475,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Two-Stage Placement,850322,0.1,0.1020057190925491,0.02006,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Anomaly Cascade,850322,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 2,850323,0.1,0.10250286004520971,0.02503,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 3,850323,0.1,0.1024136979081611,0.02414,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 3+,850323,0.1,0.1025037219120191,0.02504,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Two-Stage Placement,850323,0.1,0.09842999951748056,0.0157,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Anomaly Cascade,850323,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 2,850324,0.1,0.09615181026758199,0.03848,0,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 3,850324,0.1,0.09537039934291018,0.0463,0,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Mode 3+,850324,0.1,0.09615250991024338,0.03847,0,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Two-Stage Placement,850324,0.1,0.09953360097271022,0.00466,1,N/A,N/A
+3,Correlated noise (AR(1)),2,Temporal AR(1) rho = 0.80,Anomaly Cascade,850324,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 2,850330,0.1,0.10249401639030976,0.02494,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 3,850330,0.1,0.10328360954995285,0.03284,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 3+,850330,0.1,0.10249493702128121,0.02495,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Two-Stage Placement,850330,0.1,0.10004061995394535,0.00041,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Anomaly Cascade,850330,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 2,850331,0.1,0.09712587358098164,0.02874,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 3,850331,0.1,0.09691135697236371,0.03089,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 3+,850331,0.1,0.09712631085817851,0.02874,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Two-Stage Placement,850331,0.1,0.09883235032983718,0.01168,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Anomaly Cascade,850331,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 2,850332,0.1,0.0987552783167208,0.01245,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 3,850332,0.1,0.0983172328705663,0.01683,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 3+,850332,0.1,0.09875559266274843,0.01244,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Two-Stage Placement,850332,0.1,0.10071656917561679,0.00717,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Anomaly Cascade,850332,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 2,850333,0.1,0.09690354986693953,0.03096,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 3,850333,0.1,0.09669913994420709,0.03301,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 3+,850333,0.1,0.09690421242303081,0.03096,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Two-Stage Placement,850333,0.1,0.09745563557625901,0.02544,0,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Anomaly Cascade,850333,0.1,N/A,N/A,N/A,H,0
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 2,850334,0.1,0.09738312272388523,0.02617,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 3,850334,0.1,0.09716562754705026,0.02834,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Mode 3+,850334,0.1,0.09738373697033374,0.02616,1,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Two-Stage Placement,850334,0.1,0.09723420790107028,0.02766,0,N/A,N/A
+3,Correlated noise (AR(1)),3,Temporal AR(1) rho = 0.95,Anomaly Cascade,850334,0.1,N/A,N/A,N/A,H,0
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 2,850410,0.1,8.869605725865677,87.69606,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 3,850410,0.1,9.999855992863251,98.99856,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 3+,850410,0.1,8.869567771870358,87.69568,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Two-Stage Placement,850410,0.1,9.999870395840873,98.9987,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Anomaly Cascade,850410,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 2,850411,0.1,6.968014995116598,68.68015,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 3,850411,0.1,9.365954796058316,92.65955,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 3+,850411,0.1,6.9679948761389285,68.67995,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Two-Stage Placement,850411,0.1,9.999870395840873,98.9987,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Anomaly Cascade,850411,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 2,850412,0.1,7.762461593827724,76.62462,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 3,850412,0.1,9.057995977397047,89.57996,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 3+,850412,0.1,7.762460050440475,76.6246,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Two-Stage Placement,850412,0.1,9.999870395840873,98.9987,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Anomaly Cascade,850412,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 2,850413,0.1,4.734940167247744,46.3494,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 3,850413,0.1,8.452269593968056,83.5227,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 3+,850413,0.1,4.734939025410105,46.34939,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Two-Stage Placement,850413,0.1,9.999870395840873,98.9987,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Anomaly Cascade,850413,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 2,850414,0.1,8.286255461429295,81.86255,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 3,850414,0.1,9.999898971881182,98.99899,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Mode 3+,850414,0.1,8.286393258563898,81.86393,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Two-Stage Placement,850414,0.1,9.999870395840873,98.9987,0,N/A,N/A
+4,Different initial condition,1,Second harmonic: sin(2 pi x),Anomaly Cascade,850414,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 2,850420,0.1,0.11872618131989682,0.18726,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 3,850420,0.1,0.11983065471874031,0.19831,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 3+,850420,0.1,0.11872646653941572,0.18726,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Two-Stage Placement,850420,0.1,0.1067464096284625,0.06746,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Anomaly Cascade,850420,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 2,850421,0.1,0.10844171750333624,0.08442,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 3,850421,0.1,0.1084004436106596,0.084,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 3+,850421,0.1,0.1084424722652859,0.08442,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Two-Stage Placement,850421,0.1,0.10568641535263935,0.05686,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Anomaly Cascade,850421,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 2,850422,0.1,0.10801052312944152,0.08011,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 3,850422,0.1,0.1081520029537636,0.08152,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 3+,850422,0.1,0.10801088715501939,0.08011,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Two-Stage Placement,850422,0.1,0.10813161543763174,0.08132,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Anomaly Cascade,850422,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 2,850423,0.1,0.10709490338571503,0.07095,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 3,850423,0.1,0.10677568656483458,0.06776,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 3+,850423,0.1,0.10709513883143684,0.07095,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Two-Stage Placement,850423,0.1,0.10560950954527488,0.0561,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Anomaly Cascade,850423,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 2,850424,0.1,0.10738803053960848,0.07388,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 3,850424,0.1,0.10732395249400063,0.07324,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Mode 3+,850424,0.1,0.10738832796859762,0.07388,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Two-Stage Placement,850424,0.1,0.10835522078477808,0.08355,0,N/A,N/A
+4,Different initial condition,2,Two-mode sum: sin(pi x) + 0.5 sin(3 pi x),Anomaly Cascade,850424,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,3,Gaussian bump IC,Mode 2,850430,0.1,0.3887041802187271,2.88704,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Mode 3,850430,0.1,0.38764769119795994,2.87648,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Mode 3+,850430,0.1,0.3886985872626359,2.88699,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Two-Stage Placement,850430,0.1,0.24653994231535892,1.4654,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Anomaly Cascade,850430,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,3,Gaussian bump IC,Mode 2,850431,0.1,0.5063089992925677,4.06309,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Mode 3,850431,0.1,0.49594089695989907,3.95941,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Mode 3+,850431,0.1,0.5062957372283388,4.06296,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Two-Stage Placement,850431,0.1,0.24842988220630213,1.4843,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Anomaly Cascade,850431,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,3,Gaussian bump IC,Mode 2,850432,0.1,0.4421600838453503,3.4216,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Mode 3,850432,0.1,0.4374448429262385,3.37445,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Mode 3+,850432,0.1,0.442159313284973,3.42159,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Two-Stage Placement,850432,0.1,0.23859054480862757,1.38591,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Anomaly Cascade,850432,0.1,N/A,N/A,N/A,F,1
+4,Different initial condition,3,Gaussian bump IC,Mode 2,850433,0.1,0.5891251342598304,4.89125,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Mode 3,850433,0.1,0.5880341819057062,4.88034,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Mode 3+,850433,0.1,0.5891240439714285,4.89124,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Two-Stage Placement,850433,0.1,0.24861087058675524,1.48611,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Anomaly Cascade,850433,0.1,N/A,N/A,N/A,C,1
+4,Different initial condition,3,Gaussian bump IC,Mode 2,850434,0.1,0.4873629984627081,3.87363,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Mode 3,850434,0.1,0.4771215631377757,3.77122,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Mode 3+,850434,0.1,0.4873592919563434,3.87359,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Two-Stage Placement,850434,0.1,0.24105019354866036,1.4105,0,N/A,N/A
+4,Different initial condition,3,Gaussian bump IC,Anomaly Cascade,850434,0.1,N/A,N/A,N/A,F,1
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 2,850510,0.1,0.0889070517548868,0.11093,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 3,850510,0.1,0.08887122412704615,0.11129,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 3+,850510,0.1,0.08890757736789619,0.11092,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Two-Stage Placement,850510,0.1,0.09707928547520678,0.02921,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Anomaly Cascade,850510,0.1,N/A,N/A,N/A,C,1
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 2,850511,0.1,0.10137443998084268,0.01374,1,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 3,850511,0.1,0.10090396217326648,0.00904,1,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 3+,850511,0.1,0.10137494177523633,0.01375,1,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Two-Stage Placement,850511,0.1,0.09825085479608317,0.01749,1,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Anomaly Cascade,850511,0.1,N/A,N/A,N/A,H,0
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 2,850512,0.1,0.09414820534687525,0.05852,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 3,850512,0.1,0.09413234340551943,0.05868,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 3+,850512,0.1,0.09414861683187006,0.05851,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Two-Stage Placement,850512,0.1,0.09513929307491996,0.04861,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Anomaly Cascade,850512,0.1,N/A,N/A,N/A,C,1
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 2,850513,0.1,0.09360167782659676,0.06398,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 3,850513,0.1,0.09356525682722819,0.06435,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 3+,850513,0.1,0.09360222839143714,0.06398,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Two-Stage Placement,850513,0.1,0.09577766273178831,0.04222,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Anomaly Cascade,850513,0.1,N/A,N/A,N/A,H,0
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 2,850514,0.1,0.09849698962528054,0.01503,1,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 3,850514,0.1,0.09814806930034939,0.01852,1,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Mode 3+,850514,0.1,0.09849744788546738,0.01503,1,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Two-Stage Placement,850514,0.1,0.09765462562584624,0.02345,0,N/A,N/A
+5,Boundary mismatch,1,Constant offset BC = 0.05,Anomaly Cascade,850514,0.1,N/A,N/A,N/A,H,0
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 2,850520,0.1,0.08782960577684076,0.1217,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 3,850520,0.1,0.08772021280699674,0.1228,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 3+,850520,0.1,0.08782973601345345,0.1217,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Two-Stage Placement,850520,0.1,0.09244051677835478,0.07559,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Anomaly Cascade,850520,0.1,N/A,N/A,N/A,C,1
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 2,850521,0.1,0.08842013329072966,0.1158,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 3,850521,0.1,0.0878423568918461,0.12158,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 3+,850521,0.1,0.088420655105799,0.11579,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Two-Stage Placement,850521,0.1,0.09275538424356183,0.07245,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Anomaly Cascade,850521,0.1,N/A,N/A,N/A,C,1
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 2,850522,0.1,0.08881812485038303,0.11182,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 3,850522,0.1,0.08857158483869505,0.11428,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 3+,850522,0.1,0.08881861902487617,0.11181,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Two-Stage Placement,850522,0.1,0.09237414867395838,0.07626,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Anomaly Cascade,850522,0.1,N/A,N/A,N/A,C,1
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 2,850523,0.1,0.08793368255504977,0.12066,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 3,850523,0.1,0.08809922226084474,0.11901,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 3+,850523,0.1,0.08793445249944233,0.12066,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Two-Stage Placement,850523,0.1,0.09193507201015558,0.08065,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Anomaly Cascade,850523,0.1,N/A,N/A,N/A,C,1
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 2,850524,0.1,0.0837944972995406,0.16206,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 3,850524,0.1,0.08322959749016014,0.1677,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Mode 3+,850524,0.1,0.08379547971485095,0.16205,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Two-Stage Placement,850524,0.1,0.09358433378349784,0.06416,0,N/A,N/A
+5,Boundary mismatch,2,Moderate constant BC = 0.15,Anomaly Cascade,850524,0.1,N/A,N/A,N/A,C,1
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 2,850530,0.1,0.09883707760316858,0.01163,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 3,850530,0.1,0.09862984178229792,0.0137,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 3+,850530,0.1,0.09883758077068582,0.01162,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Two-Stage Placement,850530,0.1,0.09743179180540261,0.02568,0,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Anomaly Cascade,850530,0.1,N/A,N/A,N/A,H,0
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 2,850531,0.1,0.10325799690341757,0.03258,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 3,850531,0.1,0.10332702517873833,0.03327,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 3+,850531,0.1,0.10325851089389002,0.03259,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Two-Stage Placement,850531,0.1,0.10048774812657381,0.00488,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Anomaly Cascade,850531,0.1,N/A,N/A,N/A,H,0
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 2,850532,0.1,0.0992195407805129,0.0078,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 3,850532,0.1,0.0994446596339791,0.00555,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 3+,850532,0.1,0.09922030274954177,0.0078,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Two-Stage Placement,850532,0.1,0.09749630980803674,0.02504,0,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Anomaly Cascade,850532,0.1,N/A,N/A,N/A,H,0
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 2,850533,0.1,0.10027594723598288,0.00276,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 3,850533,0.1,0.10041901547856721,0.00419,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 3+,850533,0.1,0.10027675625982957,0.00277,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Two-Stage Placement,850533,0.1,0.09852501314352459,0.01475,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Anomaly Cascade,850533,0.1,N/A,N/A,N/A,H,0
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 2,850534,0.1,0.09903819559423195,0.00962,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 3,850534,0.1,0.09879442704111156,0.01206,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Mode 3+,850534,0.1,0.09903858623255235,0.00961,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Two-Stage Placement,850534,0.1,0.10019005969517193,0.0019,1,N/A,N/A
+5,Boundary mismatch,3,Time-drifting oscillating BC,Anomaly Cascade,850534,0.1,N/A,N/A,N/A,H,0
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 2,850610,0.1,0.08526235008884998,0.14738,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 3,850610,0.1,0.0855746430834771,0.14425,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 3+,850610,0.1,0.08526337113180478,0.14737,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Two-Stage Placement,850610,0.1,0.08181491255165498,0.18185,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Anomaly Cascade,850610,0.1,N/A,N/A,N/A,C,1
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 2,850611,0.1,0.08313399993302639,0.16866,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 3,850611,0.1,0.08291521250977332,0.17085,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 3+,850611,0.1,0.0831345069765665,0.16865,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Two-Stage Placement,850611,0.1,0.08326160777248251,0.16738,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Anomaly Cascade,850611,0.1,N/A,N/A,N/A,C,1
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 2,850612,0.1,0.08398845463983212,0.16012,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 3,850612,0.1,0.08356418459307423,0.16436,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 3+,850612,0.1,0.08398889609702774,0.16011,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Two-Stage Placement,850612,0.1,0.08291030336432453,0.1709,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Anomaly Cascade,850612,0.1,N/A,N/A,N/A,C,1
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 2,850613,0.1,0.08147908536730578,0.18521,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 3,850613,0.1,0.08135372015705084,0.18646,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 3+,850613,0.1,0.08147959396116419,0.1852,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Two-Stage Placement,850613,0.1,0.08375994931387792,0.1624,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Anomaly Cascade,850613,0.1,N/A,N/A,N/A,C,1
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 2,850614,0.1,0.08458280476011319,0.15417,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 3,850614,0.1,0.08462672933205123,0.15373,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Mode 3+,850614,0.1,0.08458338890541764,0.15417,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Two-Stage Placement,850614,0.1,0.08339496228341513,0.16605,0,N/A,N/A
+6,Source-term / heating mismatch,1,Weak constant source s = 0.10,Anomaly Cascade,850614,0.1,N/A,N/A,N/A,C,1
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 2,850620,0.1,0.028889882021632392,0.7111,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 3,850620,0.1,0.028752727825672775,0.71247,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 3+,850620,0.1,0.028891005821875326,0.71109,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Two-Stage Placement,850620,0.1,0.030830007314957067,0.6917,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Anomaly Cascade,850620,0.1,N/A,N/A,N/A,C,1
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 2,850621,0.1,0.030549550323903815,0.6945,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 3,850621,0.1,0.030525458733924708,0.69475,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 3+,850621,0.1,0.03054848809904769,0.69452,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Two-Stage Placement,850621,0.1,0.030018153363082264,0.69982,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Anomaly Cascade,850621,0.1,N/A,N/A,N/A,C,1
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 2,850622,0.1,0.02769151176270585,0.72308,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 3,850622,0.1,0.02788451930331014,0.72115,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 3+,850622,0.1,0.027690766660524405,0.72309,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Two-Stage Placement,850622,0.1,0.030555781645676298,0.69444,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Anomaly Cascade,850622,0.1,N/A,N/A,N/A,C,1
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 2,850623,0.1,0.02579774407516908,0.74202,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 3,850623,0.1,0.02593070027348268,0.74069,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 3+,850623,0.1,0.025797038579079095,0.74203,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Two-Stage Placement,850623,0.1,0.030018256515099977,0.69982,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Anomaly Cascade,850623,0.1,N/A,N/A,N/A,C,1
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 2,850624,0.1,0.028665334665720844,0.71335,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 3,850624,0.1,0.02835502392605194,0.71645,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Mode 3+,850624,0.1,0.028664575789173516,0.71335,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Two-Stage Placement,850624,0.1,0.029440125843872737,0.7056,0,N/A,N/A
+6,Source-term / heating mismatch,2,Moderate constant source s = 0.50,Anomaly Cascade,850624,0.1,N/A,N/A,N/A,C,1
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 2,850630,0.1,0.001000013001106424,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 3,850630,0.1,0.0010000093471230446,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 3+,850630,0.1,0.0010001165944674554,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Two-Stage Placement,850630,0.1,0.0010000127524153275,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Anomaly Cascade,850630,0.1,N/A,N/A,N/A,F,1
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 2,850631,0.1,0.001000014190118932,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 3,850631,0.1,0.001000010590770468,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 3+,850631,0.1,0.0010001165948157551,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Two-Stage Placement,850631,0.1,0.0010000124946705766,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Anomaly Cascade,850631,0.1,N/A,N/A,N/A,F,1
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 2,850632,0.1,0.006847216753332925,0.93153,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 3,850632,0.1,0.006306754360305806,0.93693,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 3+,850632,0.1,0.006847260992521153,0.93153,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Two-Stage Placement,850632,0.1,0.0010000126455068177,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Anomaly Cascade,850632,0.1,N/A,N/A,N/A,C,1
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 2,850633,0.1,0.0010000131761427017,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 3,850633,0.1,0.0010000137014688916,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 3+,850633,0.1,0.001000116595686946,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Two-Stage Placement,850633,0.1,0.0010000126870928815,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Anomaly Cascade,850633,0.1,N/A,N/A,N/A,F,1
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 2,850634,0.1,0.001000015509201782,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 3,850634,0.1,0.0010000082518629597,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Mode 3+,850634,0.1,0.001000116594160713,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Two-Stage Placement,850634,0.1,0.0010000125573128003,0.99,0,N/A,N/A
+6,Source-term / heating mismatch,3,Strong localized heating s = 2.0 at core,Anomaly Cascade,850634,0.1,N/A,N/A,N/A,F,1
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 2,850710,0.1,0.10300006607812447,0.03,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 3,850710,0.1,0.10305011445244715,0.0305,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 3+,850710,0.1,0.10300022804890169,0.03,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Two-Stage Placement,850710,0.1,0.0996585440510487,0.00341,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Anomaly Cascade,850710,0.1,N/A,N/A,N/A,H,0
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 2,850711,0.1,0.09840255870058814,0.01597,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 3,850711,0.1,0.09839461708717241,0.01605,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 3+,850711,0.1,0.09840296950018597,0.01597,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Two-Stage Placement,850711,0.1,0.09937261217204475,0.00627,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Anomaly Cascade,850711,0.1,N/A,N/A,N/A,F,1
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 2,850712,0.1,0.09811290959286621,0.01887,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 3,850712,0.1,0.09786852534669742,0.02131,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 3+,850712,0.1,0.09811344074951768,0.01887,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Two-Stage Placement,850712,0.1,0.09946678557116896,0.00533,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Anomaly Cascade,850712,0.1,N/A,N/A,N/A,F,1
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 2,850713,0.1,0.10517500381774156,0.05175,0,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 3,850713,0.1,0.10509604208128936,0.05096,0,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 3+,850713,0.1,0.10517579107875201,0.05176,0,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Two-Stage Placement,850713,0.1,0.09948820125602795,0.00512,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Anomaly Cascade,850713,0.1,N/A,N/A,N/A,H,0
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 2,850714,0.1,0.09753135310811674,0.02469,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 3,850714,0.1,0.09742198087558056,0.02578,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Mode 3+,850714,0.1,0.0975317193936853,0.02468,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Two-Stage Placement,850714,0.1,0.10225731666711015,0.02257,1,N/A,N/A
+7,Variable diffusivity alpha(x),1,Linear gradient +/- 20%,Anomaly Cascade,850714,0.1,N/A,N/A,N/A,H,0
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 2,850720,0.1,0.09384754644124065,0.06152,0,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 3,850720,0.1,0.09400230722302344,0.05998,0,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 3+,850720,0.1,0.09384831700449547,0.06152,0,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Two-Stage Placement,850720,0.1,0.10183418979058385,0.01834,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Anomaly Cascade,850720,0.1,N/A,N/A,N/A,F,1
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 2,850721,0.1,0.09409015888411427,0.0591,0,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 3,850721,0.1,0.09413522699446779,0.05865,0,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 3+,850721,0.1,0.09409052276451829,0.05909,0,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Two-Stage Placement,850721,0.1,0.10066587861369533,0.00666,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Anomaly Cascade,850721,0.1,N/A,N/A,N/A,C,1
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 2,850722,0.1,0.09789404636717525,0.02106,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 3,850722,0.1,0.0976534080375885,0.02347,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 3+,850722,0.1,0.09789446913376333,0.02106,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Two-Stage Placement,850722,0.1,0.09917195405703702,0.00828,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Anomaly Cascade,850722,0.1,N/A,N/A,N/A,F,1
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 2,850723,0.1,0.09949766733457395,0.00502,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 3,850723,0.1,0.0994585010837376,0.00541,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 3+,850723,0.1,0.09949842185702022,0.00502,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Two-Stage Placement,850723,0.1,0.0980051181437368,0.01995,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Anomaly Cascade,850723,0.1,N/A,N/A,N/A,F,1
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 2,850724,0.1,0.09849598549350418,0.01504,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 3,850724,0.1,0.09844354574184547,0.01556,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Mode 3+,850724,0.1,0.09849673245945646,0.01503,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Two-Stage Placement,850724,0.1,0.09789303181668461,0.02107,1,N/A,N/A
+7,Variable diffusivity alpha(x),2,Linear gradient +/- 50%,Anomaly Cascade,850724,0.1,N/A,N/A,N/A,F,1
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 2,850730,0.1,0.14406943634175054,0.44069,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 3,850730,0.1,0.1446644256433618,0.44664,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 3+,850730,0.1,0.14406970673351674,0.4407,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Two-Stage Placement,850730,0.1,0.15010112277099824,0.50101,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Anomaly Cascade,850730,0.1,N/A,N/A,N/A,C,1
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 2,850731,0.1,0.13667865931036363,0.36679,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 3,850731,0.1,0.1371633185724914,0.37163,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 3+,850731,0.1,0.13667844993001158,0.36678,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Two-Stage Placement,850731,0.1,0.14946307565096353,0.49463,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Anomaly Cascade,850731,0.1,N/A,N/A,N/A,F,1
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 2,850732,0.1,0.1549367994259457,0.54937,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 3,850732,0.1,0.15481959583110988,0.5482,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 3+,850732,0.1,0.1549426658571781,0.54943,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Two-Stage Placement,850732,0.1,0.15240409553868206,0.52404,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Anomaly Cascade,850732,0.1,N/A,N/A,N/A,F,1
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 2,850733,0.1,0.14347520912361972,0.43475,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 3,850733,0.1,0.14390255326961954,0.43903,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 3+,850733,0.1,0.14347531702831656,0.43475,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Two-Stage Placement,850733,0.1,0.14947231627431987,0.49472,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Anomaly Cascade,850733,0.1,N/A,N/A,N/A,C,1
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 2,850734,0.1,0.13738283608051785,0.37383,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 3,850734,0.1,0.1380171163054625,0.38017,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Mode 3+,850734,0.1,0.13738297418929213,0.37383,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Two-Stage Placement,850734,0.1,0.15184857926065276,0.51849,0,N/A,N/A
+7,Variable diffusivity alpha(x),3,Discontinuous step (alpha to 2.0 alpha),Anomaly Cascade,850734,0.1,N/A,N/A,N/A,F,1
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 2,850810,0.1,0.09846868149059743,0.01531,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 3,850810,0.1,0.09864920466993025,0.01351,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 3+,850810,0.1,0.09846899410523498,0.01531,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Two-Stage Placement,850810,0.1,0.09918154650727563,0.00818,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Anomaly Cascade,850810,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 2,850811,0.1,0.09968487476159203,0.00315,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 3,850811,0.1,0.09929148091816864,0.00709,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 3+,850811,0.1,0.09968525833485613,0.00315,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Two-Stage Placement,850811,0.1,0.10030487613150216,0.00305,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Anomaly Cascade,850811,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 2,850812,0.1,0.09967474666666994,0.00325,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 3,850812,0.1,0.09946934754608967,0.00531,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 3+,850812,0.1,0.09967521668948748,0.00325,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Two-Stage Placement,850812,0.1,0.10091343340161638,0.00913,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Anomaly Cascade,850812,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 2,850813,0.1,0.09730243020068452,0.02698,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 3,850813,0.1,0.09719008832192158,0.0281,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 3+,850813,0.1,0.09730312222754048,0.02697,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Two-Stage Placement,850813,0.1,0.10119124847175233,0.01191,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Anomaly Cascade,850813,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 2,850814,0.1,0.10203340036103456,0.02033,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 3,850814,0.1,0.10167931493482114,0.01679,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Mode 3+,850814,0.1,0.10203372133985596,0.02034,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Two-Stage Placement,850814,0.1,0.09938077290269297,0.00619,1,N/A,N/A
+8,Sensor dropout,1,10% readings missing (1 sensor dropped),Anomaly Cascade,850814,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 2,850820,0.1,0.09757361719753327,0.02426,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 3,850820,0.1,0.09718168305631543,0.02818,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 3+,850820,0.1,0.09757376768829838,0.02426,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Two-Stage Placement,850820,0.1,0.10159799014662557,0.01598,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Anomaly Cascade,850820,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 2,850821,0.1,0.09756875500224428,0.02431,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 3,850821,0.1,0.09754234581810305,0.02458,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 3+,850821,0.1,0.09757039821573492,0.0243,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Two-Stage Placement,850821,0.1,0.09941924822994526,0.00581,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Anomaly Cascade,850821,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 2,850822,0.1,0.10076112407776285,0.00761,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 3,850822,0.1,0.10032187413639487,0.00322,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 3+,850822,0.1,0.10076155005900399,0.00762,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Two-Stage Placement,850822,0.1,0.10124213917005473,0.01242,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Anomaly Cascade,850822,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 2,850823,0.1,0.09552648585477143,0.04474,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 3,850823,0.1,0.09587307451504265,0.04127,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 3+,850823,0.1,0.09552791055166897,0.04472,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Two-Stage Placement,850823,0.1,0.09825742569394003,0.01743,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Anomaly Cascade,850823,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 2,850824,0.1,0.10106519848722777,0.01065,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 3,850824,0.1,0.10126340252453525,0.01263,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Mode 3+,850824,0.1,0.10106577415090469,0.01066,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Two-Stage Placement,850824,0.1,0.10104853174999719,0.01049,1,N/A,N/A
+8,Sensor dropout,2,30% readings missing (3 sensors dropped),Anomaly Cascade,850824,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 2,850830,0.1,0.10131628394842795,0.01316,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 3,850830,0.1,0.10206797323364966,0.02068,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 3+,850830,0.1,0.10131782962741949,0.01318,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Two-Stage Placement,850830,0.1,0.09944282113473583,0.00557,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Anomaly Cascade,850830,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 2,850831,0.1,0.09512680548770881,0.04873,0,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 3,850831,0.1,0.09559617284006827,0.04404,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 3+,850831,0.1,0.09512831064373903,0.04872,0,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Two-Stage Placement,850831,0.1,0.0992143489946757,0.00786,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Anomaly Cascade,850831,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 2,850832,0.1,0.10416287185691032,0.04163,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 3,850832,0.1,0.10404789410959898,0.04048,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 3+,850832,0.1,0.1041635698190707,0.04164,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Two-Stage Placement,850832,0.1,0.09923179246242816,0.00768,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Anomaly Cascade,850832,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 2,850833,0.1,0.0989354890320863,0.01065,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 3,850833,0.1,0.09902227345966308,0.00978,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 3+,850833,0.1,0.09893677690357149,0.01063,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Two-Stage Placement,850833,0.1,0.10047037797996855,0.0047,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Anomaly Cascade,850833,0.1,N/A,N/A,N/A,H,0
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 2,850834,0.1,0.10399644334181121,0.03996,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 3,850834,0.1,0.1032185049048696,0.03219,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Mode 3+,850834,0.1,0.10399994227269457,0.04,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Two-Stage Placement,850834,0.1,0.09875212623658841,0.01248,1,N/A,N/A
+8,Sensor dropout,3,50% readings missing (5 sensors dropped),Anomaly Cascade,850834,0.1,N/A,N/A,N/A,H,0
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 2,850910,0.1,0.1020173922592554,0.02017,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 3,850910,0.1,0.10195902799398975,0.01959,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 3+,850910,0.1,0.10201797868160706,0.02018,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Two-Stage Placement,850910,0.1,0.09976298096784343,0.00237,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Anomaly Cascade,850910,0.1,N/A,N/A,N/A,F,1
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 2,850911,0.1,0.09924782298406595,0.00752,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 3,850911,0.1,0.09912529619692406,0.00875,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 3+,850911,0.1,0.09924817645356691,0.00752,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Two-Stage Placement,850911,0.1,0.10052870476998584,0.00529,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Anomaly Cascade,850911,0.1,N/A,N/A,N/A,H,0
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 2,850912,0.1,0.10177139107816173,0.01771,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 3,850912,0.1,0.1017286817276179,0.01729,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 3+,850912,0.1,0.10177207663539937,0.01772,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Two-Stage Placement,850912,0.1,0.09934246904948948,0.00658,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Anomaly Cascade,850912,0.1,N/A,N/A,N/A,F,1
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 2,850913,0.1,0.10178110174879625,0.01781,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 3,850913,0.1,0.10194476878134814,0.01945,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 3+,850913,0.1,0.1017819012344537,0.01782,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Two-Stage Placement,850913,0.1,0.09941995428642778,0.0058,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Anomaly Cascade,850913,0.1,N/A,N/A,N/A,H,0
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 2,850914,0.1,0.09873544656537521,0.01265,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 3,850914,0.1,0.09852219163547017,0.01478,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Mode 3+,850914,0.1,0.09873586639082238,0.01264,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Two-Stage Placement,850914,0.1,0.09939544337550467,0.00605,1,N/A,N/A
+9,Sensor position error and time jitter,1,Small jitter sigma_jitter = 0.01,Anomaly Cascade,850914,0.1,N/A,N/A,N/A,H,0
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 2,850920,0.1,0.10278750655625617,0.02788,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 3,850920,0.1,0.10287654321126959,0.02877,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 3+,850920,0.1,0.10278799290882422,0.02788,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Two-Stage Placement,850920,0.1,0.10077949032988369,0.00779,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Anomaly Cascade,850920,0.1,N/A,N/A,N/A,F,1
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 2,850921,0.1,0.11689795249890439,0.16898,0,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 3,850921,0.1,0.11691497668422578,0.16915,0,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 3+,850921,0.1,0.11689794475789939,0.16898,0,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Two-Stage Placement,850921,0.1,0.09985618926297775,0.00144,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Anomaly Cascade,850921,0.1,N/A,N/A,N/A,F,1
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 2,850922,0.1,0.09718416014315268,0.02816,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 3,850922,0.1,0.09730093462076604,0.02699,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 3+,850922,0.1,0.0971851898322603,0.02815,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Two-Stage Placement,850922,0.1,0.09991313157027656,0.00087,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Anomaly Cascade,850922,0.1,N/A,N/A,N/A,F,1
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 2,850923,0.1,0.10107552315765848,0.01076,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 3,850923,0.1,0.10083062488295177,0.00831,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 3+,850923,0.1,0.10107560461604222,0.01076,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Two-Stage Placement,850923,0.1,0.10053155751873698,0.00532,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Anomaly Cascade,850923,0.1,N/A,N/A,N/A,F,1
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 2,850924,0.1,0.10107830490852376,0.01078,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 3,850924,0.1,0.10111120516940497,0.01111,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Mode 3+,850924,0.1,0.10107863038300419,0.01079,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Two-Stage Placement,850924,0.1,0.09891016166668151,0.0109,1,N/A,N/A
+9,Sensor position error and time jitter,2,Moderate jitter sigma_jitter = 0.03,Anomaly Cascade,850924,0.1,N/A,N/A,N/A,F,1
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 2,850930,0.1,0.11488007867515952,0.1488,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 3,850930,0.1,0.11477627896085457,0.14776,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 3+,850930,0.1,0.11488072905681063,0.14881,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Two-Stage Placement,850930,0.1,0.10018234381022822,0.00182,1,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Anomaly Cascade,850930,0.1,N/A,N/A,N/A,F,1
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 2,850931,0.1,0.10416442402799443,0.04164,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 3,850931,0.1,0.10429498896221337,0.04295,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 3+,850931,0.1,0.10416510171864082,0.04165,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Two-Stage Placement,850931,0.1,0.10157522555160198,0.01575,1,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Anomaly Cascade,850931,0.1,N/A,N/A,N/A,F,1
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 2,850932,0.1,0.12510302988172875,0.25103,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 3,850932,0.1,0.12533610699278647,0.25336,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 3+,850932,0.1,0.1251031943848096,0.25103,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Two-Stage Placement,850932,0.1,0.09909941843051716,0.00901,1,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Anomaly Cascade,850932,0.1,N/A,N/A,N/A,C,1
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 2,850933,0.1,0.1064432903283058,0.06443,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 3,850933,0.1,0.10637681846292077,0.06377,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 3+,850933,0.1,0.10644375939654666,0.06444,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Two-Stage Placement,850933,0.1,0.10191425504902125,0.01914,1,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Anomaly Cascade,850933,0.1,N/A,N/A,N/A,F,1
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 2,850934,0.1,0.11227048278865157,0.1227,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 3,850934,0.1,0.11217327828236377,0.12173,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Mode 3+,850934,0.1,0.11227079002710853,0.12271,0,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Two-Stage Placement,850934,0.1,0.10056995894095194,0.0057,1,N/A,N/A
+9,Sensor position error and time jitter,3,Large jitter sigma_jitter = 0.06,Anomaly Cascade,850934,0.1,N/A,N/A,N/A,F,1
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 2,851010,0.1,0.10272390020180516,0.02724,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 3,851010,0.1,0.10284141844031269,0.02841,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 3+,851010,0.1,0.10272444029047095,0.02724,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Two-Stage Placement,851010,0.1,0.10131564772141262,0.01316,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Anomaly Cascade,851010,0.1,N/A,N/A,N/A,H,0
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 2,851011,0.1,0.10070349295804852,0.00703,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 3,851011,0.1,0.1006370017268395,0.00637,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 3+,851011,0.1,0.10070427610140166,0.00704,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Two-Stage Placement,851011,0.1,0.10003472767443117,0.00035,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Anomaly Cascade,851011,0.1,N/A,N/A,N/A,F,1
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 2,851012,0.1,0.09980116410504043,0.00199,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 3,851012,0.1,0.09965900892867639,0.00341,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 3+,851012,0.1,0.09980180434426832,0.00198,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Two-Stage Placement,851012,0.1,0.10134782017288278,0.01348,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Anomaly Cascade,851012,0.1,N/A,N/A,N/A,H,0
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 2,851013,0.1,0.10099867822888528,0.00999,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 3,851013,0.1,0.10124598399891727,0.01246,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 3+,851013,0.1,0.10099949308125622,0.00999,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Two-Stage Placement,851013,0.1,0.10216224765218924,0.02162,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Anomaly Cascade,851013,0.1,N/A,N/A,N/A,H,0
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 2,851014,0.1,0.10220505138036985,0.02205,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 3,851014,0.1,0.10206068122001961,0.02061,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Mode 3+,851014,0.1,0.10220550937907161,0.02206,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Two-Stage Placement,851014,0.1,0.0988650804254124,0.01135,1,N/A,N/A
+10,Constant sensor bias,1,Small sensor bias b = 3 sigma (0.03),Anomaly Cascade,851014,0.1,N/A,N/A,N/A,H,0
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 2,851020,0.1,0.1005909211201619,0.00591,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 3,851020,0.1,0.09973758998281292,0.00262,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 3+,851020,0.1,0.10059125159195109,0.00591,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Two-Stage Placement,851020,0.1,0.09782926737238323,0.02171,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Anomaly Cascade,851020,0.1,N/A,N/A,N/A,F,1
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 2,851021,0.1,0.09897960530358824,0.0102,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 3,851021,0.1,0.09937586230159384,0.00624,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 3+,851021,0.1,0.09898035705867761,0.0102,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Two-Stage Placement,851021,0.1,0.10085089871978509,0.00851,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Anomaly Cascade,851021,0.1,N/A,N/A,N/A,F,1
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 2,851022,0.1,0.10285560367765108,0.02856,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 3,851022,0.1,0.10225539541374065,0.02255,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 3+,851022,0.1,0.10285612933085644,0.02856,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Two-Stage Placement,851022,0.1,0.0998312307210323,0.00169,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Anomaly Cascade,851022,0.1,N/A,N/A,N/A,F,1
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 2,851023,0.1,0.10265539602957911,0.02655,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 3,851023,0.1,0.1027013436182997,0.02701,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 3+,851023,0.1,0.10265573410744748,0.02656,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Two-Stage Placement,851023,0.1,0.10023515439684563,0.00235,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Anomaly Cascade,851023,0.1,N/A,N/A,N/A,F,1
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 2,851024,0.1,0.10033032362267892,0.0033,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 3,851024,0.1,0.10024923353143696,0.00249,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Mode 3+,851024,0.1,0.10033090390750173,0.00331,1,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Two-Stage Placement,851024,0.1,0.10253921832301871,0.02539,0,N/A,N/A
+10,Constant sensor bias,2,Medium sensor bias b = 6 sigma (0.06),Anomaly Cascade,851024,0.1,N/A,N/A,N/A,F,1
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 2,851030,0.1,0.10380396081750623,0.03804,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 3,851030,0.1,0.10437598204174985,0.04376,0,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 3+,851030,0.1,0.10380480221668961,0.03805,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Two-Stage Placement,851030,0.1,0.09981595802906403,0.00184,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Anomaly Cascade,851030,0.1,N/A,N/A,N/A,F,1
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 2,851031,0.1,0.09845350952231392,0.01546,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 3,851031,0.1,0.09816633355352442,0.01834,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 3+,851031,0.1,0.09845425509403631,0.01546,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Two-Stage Placement,851031,0.1,0.10032174768343323,0.00322,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Anomaly Cascade,851031,0.1,N/A,N/A,N/A,F,1
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 2,851032,0.1,0.10366451282745102,0.03665,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 3,851032,0.1,0.10367625962533453,0.03676,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 3+,851032,0.1,0.10366505800559961,0.03665,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Two-Stage Placement,851032,0.1,0.10079093939166366,0.00791,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Anomaly Cascade,851032,0.1,N/A,N/A,N/A,F,1
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 2,851033,0.1,0.10152195908721326,0.01522,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 3,851033,0.1,0.10209229406022333,0.02092,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 3+,851033,0.1,0.10152291425132687,0.01523,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Two-Stage Placement,851033,0.1,0.09923134773650501,0.00769,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Anomaly Cascade,851033,0.1,N/A,N/A,N/A,F,1
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 2,851034,0.1,0.09890488072530436,0.01095,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 3,851034,0.1,0.09917029498846978,0.0083,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Mode 3+,851034,0.1,0.09890518377777494,0.01095,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Two-Stage Placement,851034,0.1,0.0995236162643086,0.00476,1,N/A,N/A
+10,Constant sensor bias,3,Strong sensor bias b = 15 sigma (0.15),Anomaly Cascade,851034,0.1,N/A,N/A,N/A,F,1
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 2,851110,0.1,0.10686151361617997,0.06862,0,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 3,851110,0.1,0.10725348854837174,0.07253,0,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 3+,851110,0.1,0.10686218700532284,0.06862,0,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Two-Stage Placement,851110,0.1,0.10250149511129705,0.02501,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Anomaly Cascade,851110,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 2,851111,0.1,0.10118986128663046,0.0119,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 3,851111,0.1,0.100920400949583,0.0092,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 3+,851111,0.1,0.10119011579249051,0.0119,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Two-Stage Placement,851111,0.1,0.09900546012858522,0.00995,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Anomaly Cascade,851111,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 2,851112,0.1,0.1033366077745338,0.03337,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 3,851112,0.1,0.10241908002951713,0.02419,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 3+,851112,0.1,0.10333748418727105,0.03337,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Two-Stage Placement,851112,0.1,0.09780388367752763,0.02196,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Anomaly Cascade,851112,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 2,851113,0.1,0.09658737299003409,0.03413,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 3,851113,0.1,0.09553368914216943,0.04466,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 3+,851113,0.1,0.09658762200578996,0.03412,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Two-Stage Placement,851113,0.1,0.1004595408782296,0.0046,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Anomaly Cascade,851113,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 2,851114,0.1,0.10259795871243121,0.02598,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 3,851114,0.1,0.10224042084611352,0.0224,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Mode 3+,851114,0.1,0.10259815330734628,0.02598,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Two-Stage Placement,851114,0.1,0.09831529075203126,0.01685,1,N/A,N/A
+11,Very few sensors,1,Sparse array N = 5 sensors,Anomaly Cascade,851114,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 2,851120,0.1,0.09823694751328525,0.01763,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 3,851120,0.1,0.0982189788615137,0.01781,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 3+,851120,0.1,0.09823355620918572,0.01766,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Two-Stage Placement,851120,0.1,0.09889767638233748,0.01102,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Anomaly Cascade,851120,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 2,851121,0.1,0.10644076506173251,0.06441,0,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 3,851121,0.1,0.10549612974701351,0.05496,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 3+,851121,0.1,0.10644059489536122,0.06441,0,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Two-Stage Placement,851121,0.1,0.1059600323807958,0.0596,0,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Anomaly Cascade,851121,0.1,N/A,N/A,N/A,C,1
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 2,851122,0.1,0.10419726592421487,0.04197,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 3,851122,0.1,0.10259295499923636,0.02593,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 3+,851122,0.1,0.10419586123530124,0.04196,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Two-Stage Placement,851122,0.1,0.09851467035874877,0.01485,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Anomaly Cascade,851122,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 2,851123,0.1,0.10487158489345567,0.04872,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 3,851123,0.1,0.1035696859418288,0.0357,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 3+,851123,0.1,0.10487490757594242,0.04875,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Two-Stage Placement,851123,0.1,0.09992394162069913,0.00076,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Anomaly Cascade,851123,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 2,851124,0.1,0.1020453459764428,0.02045,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 3,851124,0.1,0.10050276857026423,0.00503,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Mode 3+,851124,0.1,0.10204570967275622,0.02046,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Two-Stage Placement,851124,0.1,0.1005379231525049,0.00538,1,N/A,N/A
+11,Very few sensors,2,Very sparse array N = 3 sensors,Anomaly Cascade,851124,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 2,851130,0.1,0.09739065544216166,0.02609,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 3,851130,0.1,0.095700174734654,0.043,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 3+,851130,0.1,0.09739053707764196,0.02609,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Two-Stage Placement,851130,0.1,0.10056733390329388,0.00567,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Anomaly Cascade,851130,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 2,851131,0.1,0.10008585019452847,0.00086,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 3,851131,0.1,0.09878368060940285,0.01216,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 3+,851131,0.1,0.10008586045999553,0.00086,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Two-Stage Placement,851131,0.1,0.10311495067236906,0.03115,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Anomaly Cascade,851131,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 2,851132,0.1,0.10215575966991265,0.02156,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 3,851132,0.1,0.10035603166659829,0.00356,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 3+,851132,0.1,0.10215277243640136,0.02153,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Two-Stage Placement,851132,0.1,0.10324148861552011,0.03241,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Anomaly Cascade,851132,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 2,851133,0.1,0.09652099198151534,0.03479,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 3,851133,0.1,0.09482847246426569,0.05172,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 3+,851133,0.1,0.09652067314520056,0.03479,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Two-Stage Placement,851133,0.1,0.10235537991428115,0.02355,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Anomaly Cascade,851133,0.1,N/A,N/A,N/A,H,0
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 2,851134,0.1,0.09775957224291756,0.0224,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 3,851134,0.1,0.09619151463109188,0.03808,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Mode 3+,851134,0.1,0.09775964540717308,0.0224,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Two-Stage Placement,851134,0.1,0.10461185863365055,0.04612,1,N/A,N/A
+11,Very few sensors,3,Minimal array N = 2 sensors,Anomaly Cascade,851134,0.1,N/A,N/A,N/A,H,0
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 2,851210,0.0005,0.0010000117910595814,1.00002,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 3,851210,0.0005,0.0014459721717680644,1.89194,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 3+,851210,0.0005,0.00100009588162395,1.00019,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Two-Stage Placement,851210,0.0005,0.0010000116146599261,1.00002,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Anomaly Cascade,851210,0.0005,N/A,N/A,N/A,A,1
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 2,851211,0.0005,0.0010000146477034167,1.00003,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 3,851211,0.0005,0.0010729111243399782,1.14582,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 3+,851211,0.0005,0.0010001317413150246,1.00026,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Two-Stage Placement,851211,0.0005,0.00100001258341694,1.00003,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Anomaly Cascade,851211,0.0005,N/A,N/A,N/A,A,1
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 2,851212,0.0005,0.0010000124037709101,1.00002,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 3,851212,0.0005,0.0018771377991119336,2.75428,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 3+,851212,0.0005,0.0010001247316971178,1.00025,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Two-Stage Placement,851212,0.0005,0.001000012109204933,1.00002,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Anomaly Cascade,851212,0.0005,N/A,N/A,N/A,A,1
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 2,851213,0.0005,0.0010000097835557765,1.00002,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 3,851213,0.0005,0.0010000142044593755,1.00003,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 3+,851213,0.0005,0.0010001165958278162,1.00023,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Two-Stage Placement,851213,0.0005,0.0010000101103850734,1.00002,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Anomaly Cascade,851213,0.0005,N/A,N/A,N/A,A,1
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 2,851214,0.0005,0.0010000118864980244,1.00002,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 3,851214,0.0005,0.0017430349662596349,2.48607,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Mode 3+,851214,0.0005,0.0010001333283163468,1.00027,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Two-Stage Placement,851214,0.0005,0.0010000120892423988,1.00002,1,N/A,N/A
+12,True alpha beyond the grid,1,Sub-grid low diffusivity alpha = 5e-4,Anomaly Cascade,851214,0.0005,N/A,N/A,N/A,A,1
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 2,851220,5.0,4.32574106322964,0.13485,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 3,851220,5.0,4.573365798617337,0.08533,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 3+,851220,5.0,4.325771592359474,0.13485,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Two-Stage Placement,851220,5.0,5.072315127616165,0.01446,1,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Anomaly Cascade,851220,5.0,N/A,N/A,N/A,A,1
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 2,851221,5.0,4.307940521824172,0.13841,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 3,851221,5.0,4.439771983238257,0.11205,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 3+,851221,5.0,4.307991571248109,0.1384,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Two-Stage Placement,851221,5.0,5.025556452048749,0.00511,1,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Anomaly Cascade,851221,5.0,N/A,N/A,N/A,A,1
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 2,851222,5.0,4.3485851309673444,0.13028,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 3,851222,5.0,4.681326012455874,0.06373,1,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 3+,851222,5.0,4.348617760173196,0.13028,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Two-Stage Placement,851222,5.0,5.013358771919306,0.00267,1,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Anomaly Cascade,851222,5.0,N/A,N/A,N/A,A,1
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 2,851223,5.0,4.350473612046785,0.12991,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 3,851223,5.0,4.502631959998882,0.09947,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 3+,851223,5.0,4.350537076151936,0.12989,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Two-Stage Placement,851223,5.0,4.954302576882504,0.00914,1,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Anomaly Cascade,851223,5.0,N/A,N/A,N/A,A,1
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 2,851224,5.0,4.372001011165294,0.1256,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 3,851224,5.0,4.457989261979742,0.1084,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Mode 3+,851224,5.0,4.371765666510919,0.12565,0,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Two-Stage Placement,851224,5.0,5.026871648422853,0.00537,1,N/A,N/A
+12,True alpha beyond the grid,2,Super-grid high diffusivity alpha = 5.0,Anomaly Cascade,851224,5.0,N/A,N/A,N/A,A,1
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 2,851230,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 3,851230,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 3+,851230,20.0,9.998833498157211,0.50006,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Two-Stage Placement,851230,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Anomaly Cascade,851230,20.0,N/A,N/A,N/A,F,1
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 2,851231,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 3,851231,20.0,9.999874394536493,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 3+,851231,20.0,9.998833499276868,0.50006,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Two-Stage Placement,851231,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Anomaly Cascade,851231,20.0,N/A,N/A,N/A,F,1
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 2,851232,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 3,851232,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 3+,851232,20.0,9.998833498157211,0.50006,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Two-Stage Placement,851232,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Anomaly Cascade,851232,20.0,N/A,N/A,N/A,F,1
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 2,851233,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 3,851233,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 3+,851233,20.0,9.998833498157211,0.50006,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Two-Stage Placement,851233,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Anomaly Cascade,851233,20.0,N/A,N/A,N/A,F,1
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 2,851234,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 3,851234,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Mode 3+,851234,20.0,9.998833498157211,0.50006,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Two-Stage Placement,851234,20.0,9.999870395840873,0.50001,0,N/A,N/A
+12,True alpha beyond the grid,3,Super-grid extreme diffusivity alpha = 20.0,Anomaly Cascade,851234,20.0,N/A,N/A,N/A,F,1
+13,Baseline drift,1,Slow drift delta = 2%,Mode 2,851310,0.1,0.1001545658077916,0.00155,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Mode 3,851310,0.1,0.10026895311404273,0.00269,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Mode 3+,851310,0.1,0.10015505512167938,0.00155,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Two-Stage Placement,851310,0.1,0.0989477452595776,0.01052,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Anomaly Cascade,851310,0.1,N/A,N/A,N/A,H,0
+13,Baseline drift,1,Slow drift delta = 2%,Mode 2,851311,0.1,0.10012684915838499,0.00127,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Mode 3,851311,0.1,0.1005016025725587,0.00502,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Mode 3+,851311,0.1,0.10012768095572742,0.00128,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Two-Stage Placement,851311,0.1,0.10138931764746367,0.01389,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Anomaly Cascade,851311,0.1,N/A,N/A,N/A,H,0
+13,Baseline drift,1,Slow drift delta = 2%,Mode 2,851312,0.1,0.10272935518434793,0.02729,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Mode 3,851312,0.1,0.10271006548732561,0.0271,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Mode 3+,851312,0.1,0.10272988368314002,0.0273,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Two-Stage Placement,851312,0.1,0.10164535986763676,0.01645,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Anomaly Cascade,851312,0.1,N/A,N/A,N/A,H,0
+13,Baseline drift,1,Slow drift delta = 2%,Mode 2,851313,0.1,0.10115565340856365,0.01156,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Mode 3,851313,0.1,0.10100843678462869,0.01008,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Mode 3+,851313,0.1,0.1011565127329038,0.01157,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Two-Stage Placement,851313,0.1,0.09882917889108148,0.01171,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Anomaly Cascade,851313,0.1,N/A,N/A,N/A,H,0
+13,Baseline drift,1,Slow drift delta = 2%,Mode 2,851314,0.1,0.09664786621085432,0.03352,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Mode 3,851314,0.1,0.09665903919142828,0.03341,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Mode 3+,851314,0.1,0.0966485994059994,0.03351,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Two-Stage Placement,851314,0.1,0.10073213148755049,0.00732,1,N/A,N/A
+13,Baseline drift,1,Slow drift delta = 2%,Anomaly Cascade,851314,0.1,N/A,N/A,N/A,H,0
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 2,851320,0.1,0.09976020217002171,0.0024,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 3,851320,0.1,0.09996690354016267,0.00033,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 3+,851320,0.1,0.09976105979698595,0.00239,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Two-Stage Placement,851320,0.1,0.09945052477441078,0.00549,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Anomaly Cascade,851320,0.1,N/A,N/A,N/A,H,0
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 2,851321,0.1,0.10012420959956929,0.00124,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 3,851321,0.1,0.10015464702352687,0.00155,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 3+,851321,0.1,0.10012484108332304,0.00125,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Two-Stage Placement,851321,0.1,0.10090223443233881,0.00902,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Anomaly Cascade,851321,0.1,N/A,N/A,N/A,H,0
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 2,851322,0.1,0.09700593440569065,0.02994,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 3,851322,0.1,0.09688023828468079,0.0312,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 3+,851322,0.1,0.09700634506862693,0.02994,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Two-Stage Placement,851322,0.1,0.09835027313253648,0.0165,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Anomaly Cascade,851322,0.1,N/A,N/A,N/A,C,1
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 2,851323,0.1,0.10000295303518765,3e-05,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 3,851323,0.1,0.0999001235654168,0.001,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 3+,851323,0.1,0.10000372235777351,4e-05,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Two-Stage Placement,851323,0.1,0.10132363472846563,0.01324,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Anomaly Cascade,851323,0.1,N/A,N/A,N/A,H,0
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 2,851324,0.1,0.09812797239716735,0.01872,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 3,851324,0.1,0.09827602559953257,0.01724,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Mode 3+,851324,0.1,0.09812871231486187,0.01871,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Two-Stage Placement,851324,0.1,0.10013685566668322,0.00137,1,N/A,N/A
+13,Baseline drift,2,Moderate drift delta = 5%,Anomaly Cascade,851324,0.1,N/A,N/A,N/A,H,0
+13,Baseline drift,3,Severe drift delta = 10%,Mode 2,851330,0.1,0.09882413561661646,0.01176,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Mode 3,851330,0.1,0.09847423426407696,0.01526,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Mode 3+,851330,0.1,0.09882469091408073,0.01175,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Two-Stage Placement,851330,0.1,0.10074297411471761,0.00743,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Anomaly Cascade,851330,0.1,N/A,N/A,N/A,C,1
+13,Baseline drift,3,Severe drift delta = 10%,Mode 2,851331,0.1,0.09740047321497976,0.026,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Mode 3,851331,0.1,0.09696140194987629,0.03039,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Mode 3+,851331,0.1,0.09740107461206345,0.02599,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Two-Stage Placement,851331,0.1,0.09639040371555323,0.0361,0,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Anomaly Cascade,851331,0.1,N/A,N/A,N/A,H,0
+13,Baseline drift,3,Severe drift delta = 10%,Mode 2,851332,0.1,0.09967242705172831,0.00328,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Mode 3,851332,0.1,0.09927615823803727,0.00724,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Mode 3+,851332,0.1,0.0996729350266402,0.00327,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Two-Stage Placement,851332,0.1,0.10124046929707496,0.0124,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Anomaly Cascade,851332,0.1,N/A,N/A,N/A,C,1
+13,Baseline drift,3,Severe drift delta = 10%,Mode 2,851333,0.1,0.09819928967276888,0.01801,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Mode 3,851333,0.1,0.09765784119416457,0.02342,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Mode 3+,851333,0.1,0.09819951268382694,0.018,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Two-Stage Placement,851333,0.1,0.10156541527968013,0.01565,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Anomaly Cascade,851333,0.1,N/A,N/A,N/A,C,1
+13,Baseline drift,3,Severe drift delta = 10%,Mode 2,851334,0.1,0.10004642044044076,0.00046,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Mode 3,851334,0.1,0.09965517451688166,0.00345,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Mode 3+,851334,0.1,0.10004686992893662,0.00047,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Two-Stage Placement,851334,0.1,0.10059911339448745,0.00599,1,N/A,N/A
+13,Baseline drift,3,Severe drift delta = 10%,Anomaly Cascade,851334,0.1,N/A,N/A,N/A,H,0

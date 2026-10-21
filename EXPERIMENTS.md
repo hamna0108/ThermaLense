@@ -53,6 +53,7 @@ A comprehensive registry of every script in the repository detailing its purpose
 | `tools/verify_v3_checkpoints.py` | Re-evaluates downloaded Colab v3 checkpoints on local Poisson datasets | `models/fno_v3/*.pt`, `data/datasets/poisson_v2_*.npz` | `data/results/poisson_fno_v3/local_vs_colab_verification.json` | `DECISIONS.md` (Decision 7) | **TOOL** |
 | `experiments/train_heat_fno_seeds.py` | 1D Heat FNO 5-seed stability study runner with Mode 3 bias floor evaluation | `data/datasets/train.npz`, `val.npz`, `test_*.npz` | `models/fno_heat_seeds/`, `curves_heat_seed*.csv`, `metrics_heat_seed*.json` | `DECISIONS.md` (Decision 2, 3) | **EXPERIMENT** |
 | `tools/eval_baseline_robustness_drift.py` | Evaluates baseline window length robustness (k=3..20) and baseline drift sensitivity (0%..10%) | `data/raw/anomaly_raw.csv`, simulation seeds | `data/results/anomaly_baseline_robustness_*_summary.csv`, `drift_*_summary.csv` | `DECISIONS.md`, `EXPERIMENTS.md` | **FINAL/TOOL** |
+| `tools/run_stress_matrix.py` | Week 5 stress matrix testing across 13 scenarios x 3 severities on 5 frozen modules | Ground truth solvers, model checkpoints | `data/results/stress_matrix.csv`, `stress_summary.csv`, `reports/stress_matrix.md` | `reports/stress_matrix.md` | **FINAL/TOOL** |
 
 ---
 
@@ -75,6 +76,8 @@ A unified, complete registry of every random seed and seed range employed across
 | **Task B PINN Inversion** | Mode 1 vs Mode 2 | Hard-constrained PINN inverse parameter estimation vs Crank-Nicolson | Layout: `[505, 2520]`<br>Noise: `[1010, 12724]` | Exact layout and noise seed formula matching canonical inverse pipeline | **Paired** across models |
 | **Poisson FNO v3 Colab** | 5-Seed Retraining | GPU retraining study evaluating validation improvement and seed spread | `42, 43, 44, 45, 46` | 5 distinct training RNG seeds | **Disjoint** |
 | **Heat FNO Colab Study** | 5-Seed Stability | Multi-seed surrogate training verifying Mode 3 bias floor stability | `42, 43, 44, 45, 46` | 5 distinct training RNG seeds | **Disjoint** |
+| **Week 5 Stress Matrix** | 13 Scenarios x 3 Severities | Stress testing frozen models (Mode 2, Mode 3, Mode 3+, Two-Stage, Anomaly) under model mismatch | `[850000, 851334]` | `seed = 850000 + scen_idx * 100 + sev_idx * 10 + s_idx` (clean: 850000..850019) | **Disjoint** |
+
 
 
 

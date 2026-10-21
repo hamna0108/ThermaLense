@@ -1,0 +1,7 @@
+N,fault_category,total_episodes,misclassified_as_C,leakage_pct,ci_low,ci_high
+10,"Strong Class F (stuck, bias_5sig, bias_10sig, gain_1.5x)",320,24,7.5,5.09,10.92
+10,Class A (OOD physical regime),400,16,4.0,2.48,6.4
+20,"Strong Class F (stuck, bias_5sig, bias_10sig, gain_1.5x)",320,5,1.56,0.67,3.6
+20,Class A (OOD physical regime),400,1,0.25,0.04,1.4
+All (10 & 20),Strong Class F (Overall),640,29,4.53,3.17,6.43
+All (10 & 20),Class A (Overall),800,17,2.12,1.33,3.38

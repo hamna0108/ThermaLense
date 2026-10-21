@@ -163,7 +163,8 @@ This document records the foundational architectural decisions made across the D
    - In earlier evaluation loops, sensor noise streams were drawn sequentially from the global NumPy random state (`np.random`), making individual cell realizations dependent on loop execution order and earlier cell sampling counts.
    - The Day-4 one-command benchmark evaluation must enforce deterministic, independent seeds per cell (e.g., `seed = base_seed + cell_idx`) so each cell's noisy episodes are strictly reproducible in isolation.
 
-3. **Anomaly Detection Cascade Model Mismatch Limitation:**
+3. **Anomaly Detection Cascade Model Mismatch & Surrogate Scope Limitation:**
    - In `src/study_anomaly.py`, synthetic sensor observations for healthy and anomalous runs are generated using the exact series solution (`solve_heat_1d_exact`), and both the baseline and change-point hypotheses are fitted using that same analytic forward solution.
-   - *Zero Model Mismatch:* Consequently, this study tests temporal change-point estimation and hypothesis separation under zero model mismatch; it does not evaluate how surrogate approximation errors (such as PINN or FNO surrogate residuals) propagate into false alarm rates or change-point localization errors.
+   - *Zero Model Mismatch:* Consequently, the anomaly module generates data with the same exact solver it fits with (zero model mismatch) and does not use the FNO surrogate in the online cascade detection loop.
+   - *Stress Matrix Coverage:* This operational separation is deliberate and covered by the stress matrix: the forward surrogate approximation errors, parameter bias floors, and OOD generalization failure modes are independently audited in the inverse benchmark stress matrix (Modes 2, 3, and 3+), while the anomaly cascade isolates temporal change-point detection and hypothesis separation under controlled physical perturbations. Future online digital twin deployments must propagate surrogate residuals into the GLR threshold calibration.
 

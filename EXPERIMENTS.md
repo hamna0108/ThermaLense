@@ -52,5 +52,29 @@ A comprehensive registry of every script in the repository detailing its purpose
 | `tools/process_fno_v3_results.py` | Extracts per-seed metrics, computes improvement factors, and calculates seed spreads | `data/results/poisson_fno_v3/fno_v3_acceptance_report.json` | `data/results/poisson_fno_v3_per_seed.csv`, `split_analysis.json` | `DECISIONS.md` (Decision 7) | **TOOL** |
 | `tools/verify_v3_checkpoints.py` | Re-evaluates downloaded Colab v3 checkpoints on local Poisson datasets | `models/fno_v3/*.pt`, `data/datasets/poisson_v2_*.npz` | `data/results/poisson_fno_v3/local_vs_colab_verification.json` | `DECISIONS.md` (Decision 7) | **TOOL** |
 | `experiments/train_heat_fno_seeds.py` | 1D Heat FNO 5-seed stability study runner with Mode 3 bias floor evaluation | `data/datasets/train.npz`, `val.npz`, `test_*.npz` | `models/fno_heat_seeds/`, `curves_heat_seed*.csv`, `metrics_heat_seed*.json` | `DECISIONS.md` (Decision 2, 3) | **EXPERIMENT** |
+| `tools/eval_baseline_robustness_drift.py` | Evaluates baseline window length robustness (k=3..20) and baseline drift sensitivity (0%..10%) | `data/raw/anomaly_raw.csv`, simulation seeds | `data/results/anomaly_baseline_robustness_*_summary.csv`, `drift_*_summary.csv` | `DECISIONS.md`, `EXPERIMENTS.md` | **FINAL/TOOL** |
+
+---
+
+## Random Seed Discipline Registry
+
+A unified, complete registry of every random seed and seed range employed across the entire repository to ensure strict reproducibility, zero data-snooping, and clean train/validation/test/dev/fresh separation.
+
+| Scenario / Dataset / Pipeline | Stage / Split | Purpose | Seed Range / Value | Formula / Details | Disjoint Status |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Anomaly Calibration** | `seed_cal` | Whole-cascade healthy BIC margin calibration ($\gamma_F, \gamma_C$) and baseline GLR gating thresholds | `4242` | Single fixed calibration seed (1,000 ep/cell) | **Disjoint** |
+| **Anomaly Validation** | `seed_val` | Decision boundary and penalty margin verification | `5555` | Single fixed validation seed | **Disjoint** |
+| **Anomaly Development** | Dev Set | Feature vector extraction, threshold tuning, and Old Tree vs Old Cascade vs New Cascade comparison | Layout: `[300065, 505809]`<br>Noise: `[400215, 618233]` | `layout_seed = 300000 + ep*31 + N*13`<br>`noise_seed = 400000 + ep*97 + N*41 + int(sigma*1000)`<br>Preserved in `data/raw/anomaly_dev_raw.csv` | **Disjoint** |
+| **Anomaly Fresh Final Test** | Fresh Test Set (Primary & Limitation) | Frozen final test scoring: 4x4 confusion matrix, full factorial Class F recall, single-sensor LOO branch | Layout: `[900065, 907089]`<br>Noise: `[1000215, 1020288]` | `layout_seed = 900000 + ep*31 + N*13`<br>`noise_seed = 1000000 + ep*97 + N*41 + int(sigma*1000)`<br>Preserved in `data/raw/anomaly_raw.csv` | **Disjoint** ($\ge 900000$) |
+| **Anomaly Off-Grid Test** | Fresh Test Set (Off-Grid) | Change-point generalization on off-grid times ($t_c \in \{0.15, 0.35, 0.70\}$, $m \in \{0.7, 1.5, 3.0\}$) | Layout: `[950065, 955809]`<br>Noise: `[1050215, 1068233]` | `layout_seed = 950000 + ep*31 + N*13`<br>`noise_seed = 1050000 + ep*97 + N*41 + int(sigma*1000)`<br>Preserved in `data/raw/anomaly_raw.csv` | **Disjoint** ($\ge 950000$) |
+| **Anomaly New Range (Checks)** | New Fresh Seed Range | Post-freeze final verification: Baseline window robustness ($k \in \{3, 5, 8, 12, 20\}$) & Baseline drift ($0\%, 2\%, 5\%, 10\%$) | Layout: `[960065, 967089]`<br>Noise: `[1070215, 1078233]` | `layout_seed = 960000 + ep*31 + N*13`<br>`noise_seed = 1070000 + ep*97 + N*41 + int(sigma*1000)`<br>Evaluated via `tools/eval_baseline_robustness_drift.py` | **Disjoint** ($\ge 960000$) |
+| **1D Heat FNO Datasets** | Train, Val, Test | Fourier series ground-truth field generation across parameter ranges | `42, 43, 44, 45, 46` | train: 42, val: 43, test_interp: 44, test_ood: 45, test_ood_extended: 46 | **Disjoint** |
+| **2D Poisson v2 Datasets** | 7 Disjoint Splits | 64x64 Gaussian mixture & harmonic sine source-solution pairs | `[1100000, 1700199]` | train: 1100000..1100999, val: 1200000..1200099, test_interp: 1300000..1300199, ood_narrow: 1400000..1400199, ood_count: 1500000..1500199, ood_boundary: 1600000..1600199, ood_highmodes: 1700000..1700199 | **Disjoint** |
+| **Inverse Benchmark (Mode 2/3/3+)** | Factorial Grid | Deterministic per-cell replication pairing for Mode 2, Mode 3, Mode 3+ | Layout: `[5, 4020]`<br>Noise: `[11, 20205]` | `layout_seed = int(alpha_true * 1000) + num_sensors`<br>`noise_seed = int(alpha_true * 5000) + num_sensors * 10 + int(sigma * 100)` | **Paired** across models |
+| **Task A Sensor Placement** | 7 Strategies | Spatial-temporal placement strategy evaluation vs Cramér-Rao Bound | Layout: `[510, 2510]`<br>Noise: `[2500, 12804]` | 6 layout seeds across $(\alpha, N)$, 200 distinct noise seeds per cell paired across all 7 strategies | **Paired** across strategies |
+| **Task B PINN Inversion** | Mode 1 vs Mode 2 | Hard-constrained PINN inverse parameter estimation vs Crank-Nicolson | Layout: `[505, 2520]`<br>Noise: `[1010, 12724]` | Exact layout and noise seed formula matching canonical inverse pipeline | **Paired** across models |
+| **Poisson FNO v3 Colab** | 5-Seed Retraining | GPU retraining study evaluating validation improvement and seed spread | `42, 43, 44, 45, 46` | 5 distinct training RNG seeds | **Disjoint** |
+| **Heat FNO Colab Study** | 5-Seed Stability | Multi-seed surrogate training verifying Mode 3 bias floor stability | `42, 43, 44, 45, 46` | 5 distinct training RNG seeds | **Disjoint** |
+
 
 

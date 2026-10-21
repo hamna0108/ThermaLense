@@ -1,0 +1,628 @@
+{
+  "metadata": {
+    "test_seed_range_primary": "layout >= 900000, noise >= 1000000",
+    "robustness_drift_seed_range": "layout >= 960000, noise >= 1070000",
+    "detector_architecture": "Model-selection integrated cascade with baseline-informed GLR"
+  },
+  "table_1_calibration_confusion": {
+    "per_cell": [
+      {
+        "N": 10,
+        "sigma": 0.01,
+        "healthy_far_pct": 5.5,
+        "healthy_far_ci": [
+          3.1,
+          9.58
+        ],
+        "recalls": {
+          "H": {
+            "recall_pct": 94.5,
+            "ci": [
+              90.42,
+              96.9
+            ]
+          },
+          "A": {
+            "recall_pct": 97.0,
+            "ci": [
+              93.61,
+              98.62
+            ]
+          },
+          "F": {
+            "recall_pct": 80.0,
+            "ci": [
+              73.91,
+              84.95
+            ]
+          },
+          "C": {
+            "recall_pct": 94.0,
+            "ci": [
+              89.81,
+              96.53
+            ]
+          }
+        },
+        "confusion_matrix_counts": {
+          "H": {
+            "H": 189,
+            "A": 0,
+            "F": 17,
+            "C": 1
+          },
+          "A": {
+            "H": 0,
+            "A": 194,
+            "F": 1,
+            "C": 9
+          },
+          "F": {
+            "H": 3,
+            "A": 0,
+            "F": 160,
+            "C": 2
+          },
+          "C": {
+            "H": 8,
+            "A": 6,
+            "F": 22,
+            "C": 188
+          }
+        },
+        "confusion_matrix_pct": {
+          "H": {
+            "H": 94.5,
+            "A": 0.0,
+            "F": 8.5,
+            "C": 0.5
+          },
+          "A": {
+            "H": 0.0,
+            "A": 97.0,
+            "F": 0.5,
+            "C": 4.5
+          },
+          "F": {
+            "H": 1.5,
+            "A": 0.0,
+            "F": 80.0,
+            "C": 1.0
+          },
+          "C": {
+            "H": 4.0,
+            "A": 3.0,
+            "F": 11.0,
+            "C": 94.0
+          }
+        }
+      },
+      {
+        "N": 10,
+        "sigma": 0.05,
+        "healthy_far_pct": 7.5,
+        "healthy_far_ci": [
+          4.6,
+          12.0
+        ],
+        "recalls": {
+          "H": {
+            "recall_pct": 92.5,
+            "ci": [
+              88.0,
+              95.4
+            ]
+          },
+          "A": {
+            "recall_pct": 93.0,
+            "ci": [
+              88.59,
+              95.78
+            ]
+          },
+          "F": {
+            "recall_pct": 82.0,
+            "ci": [
+              76.09,
+              86.71
+            ]
+          },
+          "C": {
+            "recall_pct": 51.0,
+            "ci": [
+              44.12,
+              57.84
+            ]
+          }
+        },
+        "confusion_matrix_counts": {
+          "H": {
+            "H": 185,
+            "A": 0,
+            "F": 24,
+            "C": 78
+          },
+          "A": {
+            "H": 5,
+            "A": 186,
+            "F": 2,
+            "C": 10
+          },
+          "F": {
+            "H": 8,
+            "A": 4,
+            "F": 164,
+            "C": 10
+          },
+          "C": {
+            "H": 2,
+            "A": 10,
+            "F": 10,
+            "C": 102
+          }
+        },
+        "confusion_matrix_pct": {
+          "H": {
+            "H": 92.5,
+            "A": 0.0,
+            "F": 12.0,
+            "C": 39.0
+          },
+          "A": {
+            "H": 2.5,
+            "A": 93.0,
+            "F": 1.0,
+            "C": 5.0
+          },
+          "F": {
+            "H": 4.0,
+            "A": 2.0,
+            "F": 82.0,
+            "C": 5.0
+          },
+          "C": {
+            "H": 1.0,
+            "A": 5.0,
+            "F": 5.0,
+            "C": 51.0
+          }
+        }
+      },
+      {
+        "N": 20,
+        "sigma": 0.01,
+        "healthy_far_pct": 8.0,
+        "healthy_far_ci": [
+          4.98,
+          12.6
+        ],
+        "recalls": {
+          "H": {
+            "recall_pct": 92.0,
+            "ci": [
+              87.4,
+              95.02
+            ]
+          },
+          "A": {
+            "recall_pct": 100.0,
+            "ci": [
+              98.12,
+              100.0
+            ]
+          },
+          "F": {
+            "recall_pct": 90.5,
+            "ci": [
+              85.64,
+              93.83
+            ]
+          },
+          "C": {
+            "recall_pct": 92.0,
+            "ci": [
+              87.4,
+              95.02
+            ]
+          }
+        },
+        "confusion_matrix_counts": {
+          "H": {
+            "H": 184,
+            "A": 0,
+            "F": 16,
+            "C": 4
+          },
+          "A": {
+            "H": 0,
+            "A": 200,
+            "F": 0,
+            "C": 11
+          },
+          "F": {
+            "H": 5,
+            "A": 0,
+            "F": 181,
+            "C": 1
+          },
+          "C": {
+            "H": 11,
+            "A": 0,
+            "F": 3,
+            "C": 184
+          }
+        },
+        "confusion_matrix_pct": {
+          "H": {
+            "H": 92.0,
+            "A": 0.0,
+            "F": 8.0,
+            "C": 2.0
+          },
+          "A": {
+            "H": 0.0,
+            "A": 100.0,
+            "F": 0.0,
+            "C": 5.5
+          },
+          "F": {
+            "H": 2.5,
+            "A": 0.0,
+            "F": 90.5,
+            "C": 0.5
+          },
+          "C": {
+            "H": 5.5,
+            "A": 0.0,
+            "F": 1.5,
+            "C": 92.0
+          }
+        }
+      },
+      {
+        "N": 20,
+        "sigma": 0.05,
+        "healthy_far_pct": 5.0,
+        "healthy_far_ci": [
+          2.74,
+          8.96
+        ],
+        "recalls": {
+          "H": {
+            "recall_pct": 95.0,
+            "ci": [
+              91.04,
+              97.26
+            ]
+          },
+          "A": {
+            "recall_pct": 99.5,
+            "ci": [
+              97.22,
+              99.91
+            ]
+          },
+          "F": {
+            "recall_pct": 83.5,
+            "ci": [
+              77.73,
+              88.0
+            ]
+          },
+          "C": {
+            "recall_pct": 59.0,
+            "ci": [
+              52.08,
+              65.58
+            ]
+          }
+        },
+        "confusion_matrix_counts": {
+          "H": {
+            "H": 190,
+            "A": 0,
+            "F": 29,
+            "C": 69
+          },
+          "A": {
+            "H": 1,
+            "A": 199,
+            "F": 0,
+            "C": 6
+          },
+          "F": {
+            "H": 2,
+            "A": 0,
+            "F": 167,
+            "C": 7
+          },
+          "C": {
+            "H": 7,
+            "A": 1,
+            "F": 4,
+            "C": 118
+          }
+        },
+        "confusion_matrix_pct": {
+          "H": {
+            "H": 95.0,
+            "A": 0.0,
+            "F": 14.5,
+            "C": 34.5
+          },
+          "A": {
+            "H": 0.5,
+            "A": 99.5,
+            "F": 0.0,
+            "C": 3.0
+          },
+          "F": {
+            "H": 1.0,
+            "A": 0.0,
+            "F": 83.5,
+            "C": 3.5
+          },
+          "C": {
+            "H": 3.5,
+            "A": 0.5,
+            "F": 2.0,
+            "C": 59.0
+          }
+        }
+      }
+    ],
+    "overall": {
+      "total_episodes": 3200,
+      "healthy_far_pct": 6.5,
+      "healthy_far_ci": [
+        4.99,
+        8.42
+      ],
+      "recalls": {
+        "H": {
+          "recall_pct": 93.5,
+          "ci": [
+            91.58,
+            95.01
+          ]
+        },
+        "A": {
+          "recall_pct": 97.38,
+          "ci": [
+            96.02,
+            98.28
+          ]
+        },
+        "F": {
+          "recall_pct": 84.0,
+          "ci": [
+            81.3,
+            86.38
+          ]
+        },
+        "C": {
+          "recall_pct": 74.0,
+          "ci": [
+            70.85,
+            76.92
+          ]
+        }
+      },
+      "confusion_matrix_counts": {
+        "H": {
+          "H": 748,
+          "A": 0,
+          "F": 86,
+          "C": 152
+        },
+        "A": {
+          "H": 6,
+          "A": 779,
+          "F": 3,
+          "C": 36
+        },
+        "F": {
+          "H": 18,
+          "A": 4,
+          "F": 672,
+          "C": 20
+        },
+        "C": {
+          "H": 28,
+          "A": 17,
+          "F": 39,
+          "C": 592
+        }
+      },
+      "confusion_matrix_pct": {
+        "H": {
+          "H": 93.5,
+          "A": 0.0,
+          "F": 10.75,
+          "C": 19.0
+        },
+        "A": {
+          "H": 0.75,
+          "A": 97.38,
+          "F": 0.38,
+          "C": 4.5
+        },
+        "F": {
+          "H": 2.25,
+          "A": 0.5,
+          "F": 84.0,
+          "C": 2.5
+        },
+        "C": {
+          "H": 3.5,
+          "A": 2.12,
+          "F": 4.88,
+          "C": 74.0
+        }
+      }
+    }
+  },
+  "table_2_baseline_window_robustness": [
+    {
+      "k_baseline": 3,
+      "total_episodes_per_class": 800,
+      "healthy_far_pct": 23.25,
+      "healthy_far_ci_low": 20.45,
+      "healthy_far_ci_high": 26.3,
+      "h_to_c_pct": 20.5,
+      "class_c_recall_pct": 75.88,
+      "class_c_recall_ci_low": 72.79,
+      "class_c_recall_ci_high": 78.71
+    },
+    {
+      "k_baseline": 5,
+      "total_episodes_per_class": 800,
+      "healthy_far_pct": 15.88,
+      "healthy_far_ci_low": 13.51,
+      "healthy_far_ci_high": 18.57,
+      "h_to_c_pct": 13.12,
+      "class_c_recall_pct": 74.75,
+      "class_c_recall_ci_low": 71.63,
+      "class_c_recall_ci_high": 77.64
+    },
+    {
+      "k_baseline": 8,
+      "total_episodes_per_class": 800,
+      "healthy_far_pct": 11.62,
+      "healthy_far_ci_low": 9.59,
+      "healthy_far_ci_high": 14.03,
+      "h_to_c_pct": 8.75,
+      "class_c_recall_pct": 74.12,
+      "class_c_recall_ci_low": 70.98,
+      "class_c_recall_ci_high": 77.04
+    },
+    {
+      "k_baseline": 12,
+      "total_episodes_per_class": 800,
+      "healthy_far_pct": 8.5,
+      "healthy_far_ci_low": 6.76,
+      "healthy_far_ci_high": 10.64,
+      "h_to_c_pct": 5.75,
+      "class_c_recall_pct": 75.12,
+      "class_c_recall_ci_low": 72.01,
+      "class_c_recall_ci_high": 78.0
+    },
+    {
+      "k_baseline": 20,
+      "total_episodes_per_class": 800,
+      "healthy_far_pct": 5.62,
+      "healthy_far_ci_low": 4.23,
+      "healthy_far_ci_high": 7.44,
+      "h_to_c_pct": 2.75,
+      "class_c_recall_pct": 74.5,
+      "class_c_recall_ci_low": 71.37,
+      "class_c_recall_ci_high": 77.4
+    }
+  ],
+  "table_3_baseline_drift_sensitivity": [
+    {
+      "drift_pct": 0,
+      "total_episodes_per_class": 800,
+      "healthy_far_pct": 5.62,
+      "healthy_far_ci_low": 4.23,
+      "healthy_far_ci_high": 7.44,
+      "h_to_c_pct": 2.75,
+      "class_c_recall_pct": 74.5,
+      "class_c_recall_ci_low": 71.37,
+      "class_c_recall_ci_high": 77.4,
+      "c_to_h_pct": 19.12
+    },
+    {
+      "drift_pct": 2,
+      "total_episodes_per_class": 800,
+      "healthy_far_pct": 5.75,
+      "healthy_far_ci_low": 4.34,
+      "healthy_far_ci_high": 7.58,
+      "h_to_c_pct": 2.88,
+      "class_c_recall_pct": 74.88,
+      "class_c_recall_ci_low": 71.76,
+      "class_c_recall_ci_high": 77.76,
+      "c_to_h_pct": 18.75
+    },
+    {
+      "drift_pct": 5,
+      "total_episodes_per_class": 800,
+      "healthy_far_pct": 7.62,
+      "healthy_far_ci_low": 5.98,
+      "healthy_far_ci_high": 9.67,
+      "h_to_c_pct": 4.75,
+      "class_c_recall_pct": 75.38,
+      "class_c_recall_ci_low": 72.27,
+      "class_c_recall_ci_high": 78.23,
+      "c_to_h_pct": 18.25
+    },
+    {
+      "drift_pct": 10,
+      "total_episodes_per_class": 800,
+      "healthy_far_pct": 15.0,
+      "healthy_far_ci_low": 12.69,
+      "healthy_far_ci_high": 17.64,
+      "h_to_c_pct": 12.12,
+      "class_c_recall_pct": 75.75,
+      "class_c_recall_ci_low": 72.66,
+      "class_c_recall_ci_high": 78.59,
+      "c_to_h_pct": 17.88
+    }
+  ],
+  "table_4_strong_fault_leakage": [
+    {
+      "N": "10",
+      "fault_category": "Strong Class F (stuck, bias_5sig, bias_10sig, gain_1.5x)",
+      "total_episodes": 320,
+      "misclassified_as_C": 24,
+      "leakage_pct": 7.5,
+      "ci_low": 5.09,
+      "ci_high": 10.92
+    },
+    {
+      "N": "10",
+      "fault_category": "Class A (OOD physical regime)",
+      "total_episodes": 400,
+      "misclassified_as_C": 16,
+      "leakage_pct": 4.0,
+      "ci_low": 2.48,
+      "ci_high": 6.4
+    },
+    {
+      "N": "20",
+      "fault_category": "Strong Class F (stuck, bias_5sig, bias_10sig, gain_1.5x)",
+      "total_episodes": 320,
+      "misclassified_as_C": 5,
+      "leakage_pct": 1.56,
+      "ci_low": 0.67,
+      "ci_high": 3.6
+    },
+    {
+      "N": "20",
+      "fault_category": "Class A (OOD physical regime)",
+      "total_episodes": 400,
+      "misclassified_as_C": 1,
+      "leakage_pct": 0.25,
+      "ci_low": 0.04,
+      "ci_high": 1.4
+    },
+    {
+      "N": "All (10 & 20)",
+      "fault_category": "Strong Class F (Overall)",
+      "total_episodes": 640,
+      "misclassified_as_C": 29,
+      "leakage_pct": 4.53,
+      "ci_low": 3.17,
+      "ci_high": 6.43
+    },
+    {
+      "N": "All (10 & 20)",
+      "fault_category": "Class A (Overall)",
+      "total_episodes": 800,
+      "misclassified_as_C": 17,
+      "leakage_pct": 2.12,
+      "ci_low": 1.33,
+      "ci_high": 3.38
+    }
+  ]
+}

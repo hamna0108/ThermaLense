@@ -1,0 +1,6 @@
+k_baseline,total_episodes_per_class,healthy_far_pct,healthy_far_ci_low,healthy_far_ci_high,h_to_c_pct,class_c_recall_pct,class_c_recall_ci_low,class_c_recall_ci_high
+3,800,23.25,20.45,26.3,20.5,75.88,72.79,78.71
+5,800,15.88,13.51,18.57,13.12,74.75,71.63,77.64
+8,800,11.62,9.59,14.03,8.75,74.12,70.98,77.04
+12,800,8.5,6.76,10.64,5.75,75.12,72.01,78.0
+20,800,5.62,4.23,7.44,2.75,74.5,71.37,77.4

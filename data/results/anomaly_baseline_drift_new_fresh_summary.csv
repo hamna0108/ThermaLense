@@ -1,0 +1,5 @@
+drift_pct,total_episodes_per_class,healthy_far_pct,healthy_far_ci_low,healthy_far_ci_high,h_to_c_pct,class_c_recall_pct,class_c_recall_ci_low,class_c_recall_ci_high,c_to_h_pct
+0,800,5.62,4.23,7.44,2.75,74.5,71.37,77.4,19.12
+2,800,5.75,4.34,7.58,2.88,74.88,71.76,77.76,18.75
+5,800,7.62,5.98,9.67,4.75,75.38,72.27,78.23,18.25
+10,800,15.0,12.69,17.64,12.12,75.75,72.66,78.59,17.88

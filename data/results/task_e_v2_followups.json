@@ -1,0 +1,261 @@
+{
+  "part1_gof_gate": {
+    "N_5": {
+      "N": 5,
+      "dof": 4,
+      "tau_threshold": 2.3719,
+      "num_runs": 1000,
+      "false_flags": 54,
+      "false_flag_rate_pct": 5.4,
+      "ci_95": [
+        4.16,
+        6.98
+      ],
+      "median_chi2_dof": 0.8536,
+      "status": "MET"
+    },
+    "N_10": {
+      "N": 10,
+      "dof": 9,
+      "tau_threshold": 1.8799,
+      "num_runs": 1000,
+      "false_flags": 42,
+      "false_flag_rate_pct": 4.2,
+      "ci_95": [
+        3.12,
+        5.63
+      ],
+      "median_chi2_dof": 0.9237,
+      "status": "MET"
+    },
+    "N_20": {
+      "N": 20,
+      "dof": 19,
+      "tau_threshold": 1.5865,
+      "num_runs": 1000,
+      "false_flags": 59,
+      "false_flag_rate_pct": 5.9,
+      "ci_95": [
+        4.6,
+        7.54
+      ],
+      "median_chi2_dof": 0.9616,
+      "status": "MET"
+    }
+  },
+  "part2_ar1_verification": {
+    "rho_0.5": {
+      "rho": 0.5,
+      "expected_marginal_std": 0.01,
+      "empirical_marginal_std": 0.010042,
+      "std_discrepancy": 4.2e-05,
+      "is_generator_correct": true,
+      "mean_within_sequence_std": 0.008771,
+      "median_chi2_dof": 0.7715,
+      "min_position_std": 0.009989,
+      "max_position_std": 0.010109
+    },
+    "rho_0.8": {
+      "rho": 0.8,
+      "expected_marginal_std": 0.01,
+      "empirical_marginal_std": 0.009951,
+      "std_discrepancy": 4.9e-05,
+      "is_generator_correct": true,
+      "mean_within_sequence_std": 0.006711,
+      "median_chi2_dof": 0.4912,
+      "min_position_std": 0.009868,
+      "max_position_std": 0.010031
+    },
+    "rho_0.95": {
+      "rho": 0.95,
+      "expected_marginal_std": 0.01,
+      "empirical_marginal_std": 0.010002,
+      "std_discrepancy": 2e-06,
+      "is_generator_correct": true,
+      "mean_within_sequence_std": 0.003802,
+      "median_chi2_dof": 0.2754,
+      "min_position_std": 0.009888,
+      "max_position_std": 0.010102
+    }
+  },
+  "part3_d5_warnings": {
+    "healthy_false_warning_rates": {
+      "kurtosis_far": {
+        "rate_pct": 4.5,
+        "ci_95": [
+          3.38,
+          5.97
+        ]
+      },
+      "durbin_watson_far": {
+        "rate_pct": 4.9,
+        "ci_95": [
+          3.73,
+          6.42
+        ]
+      },
+      "drift_far": {
+        "rate_pct": 3.8,
+        "ci_95": [
+          2.78,
+          5.17
+        ]
+      }
+    },
+    "s2_kurtosis_detection": [
+      {
+        "sev_idx": 1,
+        "desc": "Student-t (df=5)",
+        "rate_pct": 9.8,
+        "ci_95": [
+          8.11,
+          11.8
+        ]
+      },
+      {
+        "sev_idx": 2,
+        "desc": "Student-t (df=3)",
+        "rate_pct": 17.1,
+        "ci_95": [
+          14.89,
+          19.56
+        ]
+      },
+      {
+        "sev_idx": 3,
+        "desc": "Student-t (df=3) + 10% 5-sigma outliers",
+        "rate_pct": 33.6,
+        "ci_95": [
+          30.74,
+          36.59
+        ]
+      }
+    ],
+    "s3_dw_detection": [
+      {
+        "sev_idx": 1,
+        "rho": 0.5,
+        "rate_pct": 23.9,
+        "ci_95": [
+          21.36,
+          26.64
+        ]
+      },
+      {
+        "sev_idx": 2,
+        "rho": 0.8,
+        "rate_pct": 60.4,
+        "ci_95": [
+          57.33,
+          63.39
+        ]
+      },
+      {
+        "sev_idx": 3,
+        "rho": 0.95,
+        "rate_pct": 80.5,
+        "ci_95": [
+          77.93,
+          82.84
+        ]
+      }
+    ],
+    "s13_drift_detection": [
+      {
+        "sev_idx": 1,
+        "drift": 0.02,
+        "desc": "Slow drift 2%",
+        "rate_pct": 3.3,
+        "ci_95": [
+          2.36,
+          4.6
+        ]
+      },
+      {
+        "sev_idx": 2,
+        "drift": 0.05,
+        "desc": "Moderate drift 5%",
+        "rate_pct": 4.2,
+        "ci_95": [
+          3.12,
+          5.63
+        ]
+      },
+      {
+        "sev_idx": 3,
+        "drift": 0.1,
+        "desc": "Severe drift 10%",
+        "rate_pct": 5.6,
+        "ci_95": [
+          4.34,
+          7.2
+        ]
+      }
+    ]
+  },
+  "part4_range_guard_s12": {
+    "s12_comparison": [
+      {
+        "sev_idx": 1,
+        "alpha_target": 0.0005,
+        "desc": "Sub-grid low diffusivity (alpha=5e-4)",
+        "rate_1pct": 65.0,
+        "ci_1pct": [
+          55.25,
+          73.64
+        ],
+        "rate_new": 90.0,
+        "ci_new": [
+          82.56,
+          94.48
+        ],
+        "routed_to_m3p_pct": 100.0,
+        "median_hat": 0.0010001165918496532
+      },
+      {
+        "sev_idx": 2,
+        "alpha_target": 5.0,
+        "desc": "Inside-grid high diffusivity (alpha=5.0)",
+        "rate_1pct": 0.0,
+        "ci_1pct": [
+          0.0,
+          3.7
+        ],
+        "rate_new": 0.0,
+        "ci_new": [
+          0.0,
+          3.7
+        ],
+        "routed_to_m3p_pct": 100.0,
+        "median_hat": 4.436824637445891
+      },
+      {
+        "sev_idx": 3,
+        "alpha_target": 20.0,
+        "desc": "Super-grid extreme diffusivity (alpha=20.0)",
+        "rate_1pct": 100.0,
+        "ci_1pct": [
+          96.3,
+          100.0
+        ],
+        "rate_new": 100.0,
+        "ci_new": [
+          96.3,
+          100.0
+        ],
+        "routed_to_m3p_pct": 100.0,
+        "median_hat": 9.998833474639438
+      }
+    ]
+  },
+  "part5_declared_physics_latency": {
+    "num_fits": 50,
+    "mean_ms": 71.88,
+    "median_ms": 71.61,
+    "std_ms": 13.75,
+    "min_ms": 54.9,
+    "max_ms": 140.48,
+    "solver_backend": "spla.splu pre-factorized Crank-Nicolson",
+    "grid_discretization": "Nx=51, Nt=201"
+  }
+}

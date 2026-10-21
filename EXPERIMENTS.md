@@ -60,8 +60,10 @@ A comprehensive registry of every script in the repository detailing its purpose
 | `tools/calibrate_v2_thresholds.py` | Task D: Pre-calibrates V2 goodness-of-fit gate threshold tau_gof on separate seed range (1300000+) | Healthy synthetic episodes | `data/results/v2_calibration_record.json` | `reports/v2_evaluation_report.md` | **TOOL** |
 | `tools/evaluate_v2_before_after.py` | Task D: Evaluates Week 6 V2 wrappers (D1-D5) with before/after comparisons against stress_summary_v2b.csv | `data/results/stress_summary_v2b.csv`, matrix seeds | `data/results/v2_before_after_summary.csv`, `reports/v2_evaluation_report.md` | `reports/v2_evaluation_report.md` | **FINAL/TOOL** |
 | `experiments/train_pinn_ablation.py` | Task G: PINN single-factor ablation study runner (activation, collocation, loss weighting, optimizer) | `data/datasets/*.npz`, `models/pinn_expD.pt` | `pinn_ablation_summary.csv`, `pinn_ablation_metrics.json`, `pinn_ablation_manifest.json` | `reports/` | **EXPERIMENT** |
+| `tools/run_task_e_followups.py` | Task E: V2 follow-up empirical evaluations (dynamic chi2/dof, AR(1) marginal std, D5 warnings, S12 range guard, splu latency) | Ground truth solvers, precomputed surrogates | `data/results/task_e_v2_followups.json`, `task_e_v2_followups.csv`, `reports/task_e_v2_followup_report.md` | `reports/task_e_v2_followup_report.md` | **FINAL/TOOL** |
 
 ---
+
 
 ## Heat FNO Multi-Seed Stability Study Summary (`data/results/heat_fno_seeds_summary.csv`)
 
@@ -101,6 +103,12 @@ A unified, complete registry of every random seed and seed range employed across
 | **Week 5 Stress Matrix v2** | 13 Scenarios x 3 Severities (v2: 100 seeds/cell) | Powered rerun on frozen models with Wilson 95% CIs and multiprocessing | `[1200000, 1213399]` | `seed = 1200000 + scen_idx * 1000 + sev_idx * 100 + s_idx` (clean: 1200000..1200099) | **Disjoint** ($\ge 1200000$) |
 | **Week 6 V2 Pre-Calibration** | Healthy Calibration Cohort (1,000 episodes) | Pre-calibration of goodness-of-fit gate threshold $\tau_{\text{gof}} = 1.878$ for $\le 5\%$ healthy false-flag ceiling | `[1300000, 1300999]` | `seed = 1300000 + s_idx` | **Disjoint** ($\ge 1300000$) |
 | **Task G PINN Ablation Study** | Single-Factor Ablations (3 seeds) | Systematic ablation across activation, sampling, loss weighting, and optimizer | `42, 43, 44` | 3 distinct training RNG seeds paired across all ablation variants | **Paired** across variants |
+| **Task E V2 Dynamic Threshold** | Healthy False-Flag Runs ($N \in \{5, 10, 20\}$, 1,000 runs each) | Dynamic $\chi^2_{0.95}(\text{dof})/\text{dof}$ calibration verification | `[1400000, 1420999]` | `seed = 1400000 + N * 10000 + rep` ($N=5$: 1400000..1400999; $N=10$: 1410000..1410999; $N=20$: 1420000..1420999) | **Disjoint** ($\ge 1400000$) |
+| **Task E AR(1) Marginal Std** | Marginal Std & $\chi^2/\text{dof}$ Verification (10,000 reps) | Empirical marginal std verification for $\rho \in \{0.5, 0.8, 0.95\}$ | `[1410050, 1410095]` | `seed = 1410000 + int(rho * 100)` | **Disjoint** ($\ge 1410000$) |
+| **Task E D5 Limitation Warnings** | D5 Warning Detection & FAR (1,000 runs per cell) | Kurtosis on S2, Durbin-Watson on S3, Baseline drift on S13, and healthy FAR | `[1420000, 1459999]` | Healthy: 1420000..1420999; S2: `1430000 + sev*10000 + rep`; S3: `1440000 + sev*10000 + rep`; S13: `1450000 + sev*10000 + rep` | **Disjoint** ($\ge 1420000$) |
+| **Task E Range Guard S12** | Side-by-Side S12 Verification (100 reps/cell) | Verification of 0.1-decade / CI-touch rule vs 1% rule on S12 Sev 1, 2, 3 | `[1461000, 1463099]` | `seed = 1460000 + sev_idx * 1000 + s_idx` | **Disjoint** ($\ge 1460000$) |
+| **Task E Declared Physics Latency** | Bounded-Brent Optimization Timing (50 fits) | Runtime latency per fit of generalized CN solver with `splu` factorization | `[1470000, 1470049]` | `seed = 1470000 + rep` | **Disjoint** ($\ge 1470000$) |
+
 
 
 

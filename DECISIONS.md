@@ -106,8 +106,10 @@ This document records the foundational architectural decisions made across the D
     - For $N=20$: Unanchored detector recall is 36.7%, Semi-Oracle power is 57.1%, and Baseline-Informed recall reaches 69.6% (+32.9% gain from baseline anchoring; Oracle LRT power is 85.5%). (See `data/audits/audit_anomaly.txt` Section 3 lines 110–125).
     - Fresh test set recall for baseline-informed cascade: $N=10, \sigma=0.01 \to 94.0\%$ (Oracle Power 99.7%); $N=10, \sigma=0.05 \to 51.0\%$ (Oracle Power 74.1%); $N=20, \sigma=0.01 \to 92.0\%$ (Oracle Power 99.9%); $N=20, \sigma=0.05 \to 59.0\%$ (Oracle Power 83.1%). (See `data/audits/audit_anomaly.txt` Section 5 lines 180–201).
   - *Oracle-Grid GLR Testing:* Evaluating change-point detection on synthetic on-grid times ($t_c \in \{0.1, 0.25, 0.5\}$, $m \in \{0.5, 2.0\}$) gives an artificial grid-matching advantage. Continuous 2D GLR evaluated on off-grid change-points ($t_c \in \{0.15, 0.35, 0.70\}$, $m \in \{0.7, 1.5, 3.0\}$) proves the detector generalizes without grid-matching bias, outperforming the rigid BIC tree across all 4 primary cells: $N=10, \sigma=0.01 \to +11.1\%$ delta; $N=10, \sigma=0.05 \to +15.0\%$ delta; $N=20, \sigma=0.01 \to +8.3\%$ delta; $N=20, \sigma=0.05 \to +16.1\%$ delta. (See `src/study_anomaly.py` lines 483–484 & 638–641, `data/audits/audit_anomaly.txt` Section 6 lines 203–218).
+  - *Healthy False Alarm Rate (FAR) Ceiling Non-Compliance:* On the fresh evaluation test set (3,200 episodes across 4 primary cells, `data/results/anomaly_frozen_final_tables.json` Table 1), overall healthy FAR is **6.5% [5.0, 8.4]**. It does **NOT** meet a 5.0% ceiling.
+  - *Baseline Window Length Calibration and Operational Requirement:* The detector is calibrated with $k=20$ baseline readings (yielding 5.62% FAR [4.23, 7.44] on healthy controls). Under window truncations, $k=12$ gives 8.5% FAR [6.76, 10.64], and $k \le 5$ degrades severely to $>15\%$ FAR ($k=5 \to 15.88\%$ [13.51, 18.57], $k=3 \to 23.25\%$ [20.45, 26.30]; see `data/results/anomaly_baseline_robustness_new_fresh_summary.csv`). Therefore, minimum supported baseline = 20 readings (the service must warn or refuse below that).
 - **Status:** **Decided by evidence**
-- **Evidence File:** `data/audits/audit_anomaly.txt` (Sections 3, 4, 5, 6), `data/results/anomaly_summary.csv`, `data/raw/anomaly_raw.csv`, `src/study_anomaly.py`.
+- **Evidence File:** `data/audits/audit_anomaly.txt` (Sections 3, 4, 5, 6), `data/results/anomaly_summary.csv`, `data/raw/anomaly_raw.csv`, `src/study_anomaly.py`, `data/results/anomaly_frozen_final_tables.json`, `data/results/anomaly_baseline_robustness_new_fresh_summary.csv`.
 
 ---
 
@@ -148,6 +150,26 @@ This document records the foundational architectural decisions made across the D
   - *Reproducibility Note on GPU Non-Determinism:* Re-running the identical 5 seeds on the GPU yielded different numbers (interp mean 0.0247 in an initial unrecorded run vs 0.0270 in the official recorded run; seed range 0.0061–0.0365 vs 0.0063–0.0425). Due to non-deterministic CUDA atomic operations and cuFFT execution kernels, GPU runs are not bit-reproducible; consequently, all conclusions are stated with seed spread rather than single-point estimates.
 - **Status:** **Decided by evidence; v2 frozen, v3 rejected**
 - **Evidence File:** `data/results/poisson_fno_v3/fno_v3_acceptance_report.json`, `data/results/poisson_fno_v3/fno_v3_manifest.json`, `data/results/poisson_fno_v3_per_seed.csv`, `data/results/poisson_fno_v3/split_analysis.json`, `data/results/poisson_fno_v3/dataset_checksums.json`.
+
+---
+
+### Decision 8: Heat FNO Multi-Seed Retraining Study & Frozen Checkpoint Retention
+- **Options Tried:**
+  1. *Frozen Baseline Checkpoint (`models/fno2d_heat.pt`):* Initial model with unmasked inference (`use_hard_mask=False`).
+  2. *5-Seed Retraining Cohort (`data/results/heat_fno_seeds/`, seeds 42, 43, 44, 45, 46):* Evaluated on test interpolation, low-$\alpha$ OOD, high-$\alpha$ OOD, and deterministic Mode 3 $\sigma=0$ bias floors at $\alpha \in \{0.005, 0.100, 2.500\}$.
+- **Option Selected:** Retain frozen `models/fno2d_heat.pt`. No retrained candidate replaces it.
+- **Why:**
+  - *Candidate Replacement Rule (Written AFTER Seed Results were Seen):* A replacement candidate must be no worse than the frozen baseline at **BOTH** the $\alpha = 0.005$ and $\alpha = 2.5$ deterministic bias floors (`data/results/heat_fno_seeds_summary.csv`):
+    - At $\alpha = 0.005$, frozen bias floor relative error is **17.86%** (`0.178556`). Seed 42 degrades to **23.52%** (`0.235184`, worse than frozen).
+    - At $\alpha = 2.500$, frozen bias floor relative error is **5.94%** (`0.059421`). Seed 43 degrades to **13.02%** (`0.130197`), Seed 44 degrades to **16.17%** (`0.161689`), Seed 45 degrades to **13.25%** (`0.132470`), and Seed 46 degrades to **11.31%** (`0.113087`), all substantially worse than frozen (up to $2.7\times$ higher error).
+    - Consequently, **NOT A SINGLE SEED** satisfies the criterion of being no worse at both ends of the parameter range.
+    - *Transparency Disclosure:* This replacement rule was written **AFTER** the seed results were seen (post-hoc selection criterion).
+  - *Operational Deployment Domain for Mode 3 vs Mode 3+:*
+    - Mode 3 alone is **not recommended** outside $\alpha \in [0.01, 1.0]$. At extreme diffusions ($\alpha = 0.005$ and $\alpha \ge 2.5$), neural surrogate extrapolation error creates persistent parameter estimation bias floors of 5.9% to 23.5% (`data/results/heat_fno_seeds_summary.csv` rows: frozen $\alpha=0.005 \to 0.178556$; seed 44 $\alpha=2.5 \to 0.161689$).
+    - Inside $\alpha \in [0.01, 1.0]$ (specifically at $\alpha = 0.1$), all seeds achieve $< 1.2\%$ bias floor error (e.g. Seed 42 reaches 0.044%, Seed 44 reaches 0.27%, frozen reaches 1.17%).
+    - For general deployment across wide parameter domains, **Mode 3+ (Hybrid with live Crank-Nicolson solver polish)** is the verified deployable mode, eliminating surrogate bias floors and delivering 94.0% coverage with 0.0002 median difference to pure numerical ground truth (`data/results/mode3plus_hybrid_results.csv`, `data/results/heat_fno_seeds_summary.csv`).
+- **Status:** **Decided by evidence; frozen fno2d_heat.pt retained**
+- **Evidence File:** `data/results/heat_fno_seeds_summary.csv`, `data/results/heat_fno_seeds/heat_fno_seeds_stability_summary.json`, `data/results/heat_fno_seeds/metrics_heat_frozen.json`, `metrics_heat_seed*.json`.
 
 ---
 

@@ -1,0 +1,31 @@
+{
+  "timestamp_utc": "2026-10-20T13:47:09.643301+00:00",
+  "python_version": "3.13.15 (main, Aug  6 2026, 11:06:22) [GCC 13.3.0]",
+  "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+  "processor": "x86_64",
+  "torch_version": "2.11.0+cu130",
+  "cuda_available": true,
+  "cuda_version": "13.0",
+  "device_used": "cuda",
+  "device_name": "Tesla T4",
+  "numpy_version": "2.1.3",
+  "dataset_checksums": {
+    "train.npz": {
+      "sha256": "fb5924a961c08607e62208b7013e7b8d4dad72d66cbaf79fecc15ce027bc182d",
+      "bytes": 24348271
+    },
+    "val.npz": {
+      "sha256": "19df97554504cf57ed464e0f24745adb98fcb967c74a27d4fbc5862de0fe5eed",
+      "bytes": 4869398
+    },
+    "test_interpolation.npz": {
+      "sha256": "8bc89e7b8ac16b23df44e64a348a719326973c395cd6e5f481657a6d7a349c68",
+      "bytes": 4874322
+    },
+    "test_ood.npz": {
+      "sha256": "4a7f0b2792d7697a87732a0d1ecacaf8cb69045f10338a17843a06df17fd75fd",
+      "bytes": 4910180
+    }
+  },
+  "stability_rule": "models/fno2d_heat.pt remains frozen; 5-seed study provides stability distribution only"
+}

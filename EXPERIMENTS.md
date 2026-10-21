@@ -53,7 +53,24 @@ A comprehensive registry of every script in the repository detailing its purpose
 | `tools/verify_v3_checkpoints.py` | Re-evaluates downloaded Colab v3 checkpoints on local Poisson datasets | `models/fno_v3/*.pt`, `data/datasets/poisson_v2_*.npz` | `data/results/poisson_fno_v3/local_vs_colab_verification.json` | `DECISIONS.md` (Decision 7) | **TOOL** |
 | `experiments/train_heat_fno_seeds.py` | 1D Heat FNO 5-seed stability study runner with Mode 3 bias floor evaluation | `data/datasets/train.npz`, `val.npz`, `test_*.npz` | `models/fno_heat_seeds/`, `curves_heat_seed*.csv`, `metrics_heat_seed*.json` | `DECISIONS.md` (Decision 2, 3) | **EXPERIMENT** |
 | `tools/eval_baseline_robustness_drift.py` | Evaluates baseline window length robustness (k=3..20) and baseline drift sensitivity (0%..10%) | `data/raw/anomaly_raw.csv`, simulation seeds | `data/results/anomaly_baseline_robustness_*_summary.csv`, `drift_*_summary.csv` | `DECISIONS.md`, `EXPERIMENTS.md` | **FINAL/TOOL** |
-| `tools/run_stress_matrix.py` | Week 5 stress matrix testing across 13 scenarios x 3 severities on 5 frozen modules | Ground truth solvers, model checkpoints | `data/results/stress_matrix.csv`, `stress_summary.csv`, `reports/stress_matrix.md` | `reports/stress_matrix.md` | **FINAL/TOOL** |
+| `tools/run_stress_matrix.py` | Week 5 stress matrix testing across 13 scenarios x 3 severities on 5 frozen modules (v1: 5 seeds/cell) | Ground truth solvers, model checkpoints | `data/results/stress_matrix.csv`, `stress_summary.csv`, `reports/stress_matrix.md` | `reports/stress_matrix.md` | **FINAL/TOOL** |
+| `tools/build_heat_fno_seeds_summary.py` | Builds structured heat FNO multi-seed summary table from JSON metrics | `data/results/heat_fno_seeds/*.json` | `data/results/heat_fno_seeds_summary.csv` | `DECISIONS.md` (Decision 8) | **TOOL** |
+| `tools/run_stress_matrix_v2.py` | Week 5 stress matrix powered rerun (100 seeds/cell) across 13 scenarios x 3 severities with multiprocessing | Ground truth solvers, model checkpoints | `data/results/stress_matrix_v2.csv`, `stress_summary_v2.csv`, `reports/stress_matrix_v2.md` | `reports/stress_matrix_v2.md` | **FINAL/TOOL** |
+
+---
+
+## Heat FNO Multi-Seed Stability Study Summary (`data/results/heat_fno_seeds_summary.csv`)
+
+| Seed | Best Epoch | Test Interp Rel $L_2$ | Low-$\alpha$ OOD Rel $L_2$ | High-$\alpha$ OOD Rel $L_2$ | $t=0$ MAE | $t=1$ MAE | Sensor MAE | Bias Floor $\alpha=0.005$ | Bias Floor $\alpha=0.100$ | Bias Floor $\alpha=2.500$ | Replacement Status |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :--- |
+| **frozen** | N/A | 0.004453 | 0.004546 | 0.127690 | 0.002129 | 0.002191 | 0.002021 | 0.178556 | 0.011745 | 0.059421 | **RETAINED** (`models/fno2d_heat.pt`) |
+| **42** | 55 | 0.001741 | 0.008507 | 0.124163 | 0.001866 | 0.001528 | 0.000655 | 0.235184 | 0.000440 | 0.050216 | Rejected (worse at $\alpha=0.005$: $0.235 > 0.179$) |
+| **43** | 53 | 0.001632 | 0.003945 | 0.143630 | 0.001399 | 0.000883 | 0.000707 | 0.026749 | 0.006845 | 0.130197 | Rejected (worse at $\alpha=2.5$: $0.130 > 0.059$) |
+| **44** | 57 | 0.001967 | 0.006123 | 0.138686 | 0.002249 | 0.001308 | 0.000656 | 0.068817 | 0.002674 | 0.161689 | Rejected (worse at $\alpha=2.5$: $0.162 > 0.059$) |
+| **45** | 63 | 0.001561 | 0.003788 | 0.118645 | 0.001084 | 0.001075 | 0.000571 | 0.044927 | 0.009354 | 0.132470 | Rejected (worse at $\alpha=2.5$: $0.132 > 0.059$) |
+| **46** | 75 | 0.001671 | 0.004108 | 0.123611 | 0.001051 | 0.000863 | 0.000559 | 0.012607 | 0.003507 | 0.113087 | Rejected (worse at $\alpha=2.5$: $0.113 > 0.059$) |
+
+*Replacement rule (formulated after seeing seed outcomes): Candidate must be no worse than frozen baseline at BOTH the $\alpha=0.005$ and $\alpha=2.500$ bias floors. Zero candidates satisfy this rule; frozen checkpoint stays.*
 
 ---
 
@@ -66,7 +83,7 @@ A unified, complete registry of every random seed and seed range employed across
 | **Anomaly Calibration** | `seed_cal` | Whole-cascade healthy BIC margin calibration ($\gamma_F, \gamma_C$) and baseline GLR gating thresholds | `4242` | Single fixed calibration seed (1,000 ep/cell) | **Disjoint** |
 | **Anomaly Validation** | `seed_val` | Decision boundary and penalty margin verification | `5555` | Single fixed validation seed | **Disjoint** |
 | **Anomaly Development** | Dev Set | Feature vector extraction, threshold tuning, and Old Tree vs Old Cascade vs New Cascade comparison | Layout: `[300065, 505809]`<br>Noise: `[400215, 618233]` | `layout_seed = 300000 + ep*31 + N*13`<br>`noise_seed = 400000 + ep*97 + N*41 + int(sigma*1000)`<br>Preserved in `data/raw/anomaly_dev_raw.csv` | **Disjoint** |
-| **Anomaly Fresh Final Test** | Fresh Test Set (Primary & Limitation) | Frozen final test scoring: 4x4 confusion matrix, full factorial Class F recall, single-sensor LOO branch | Layout: `[900065, 907089]`<br>Noise: `[1000215, 1020288]` | `layout_seed = 900000 + ep*31 + N*13`<br>`noise_seed = 1000000 + ep*97 + N*41 + int(sigma*1000)`<br>Preserved in `data/raw/anomaly_raw.csv` | **Disjoint** ($\ge 900000$) |
+| **Anomaly Fresh Final Test** | Fresh Test Set (Primary & Limitation) | Frozen final test scoring: 4x4 confusion matrix, full factorial Class F recall, single-sensor LOO branch.<br>**Tagged at commit:** `dab4b9e172cf052d7d365abf5aa3993ec551095b` (`anomaly-frozen-v1`).<br>**Operational Findings:** Healthy FAR is **6.5% [5.0, 8.4]** (does NOT meet 5% ceiling); detector calibrated with $k=20$ baseline readings (minimum supported baseline = 20 readings; $k=12 \to 8.5\%$, $k \le 5 \to >15\%$). | Layout: `[900065, 907089]`<br>Noise: `[1000215, 1020288]` | `layout_seed = 900000 + ep*31 + N*13`<br>`noise_seed = 1000000 + ep*97 + N*41 + int(sigma*1000)`<br>Preserved in `data/raw/anomaly_raw.csv` | **Disjoint** ($\ge 900000$) |
 | **Anomaly Off-Grid Test** | Fresh Test Set (Off-Grid) | Change-point generalization on off-grid times ($t_c \in \{0.15, 0.35, 0.70\}$, $m \in \{0.7, 1.5, 3.0\}$) | Layout: `[950065, 955809]`<br>Noise: `[1050215, 1068233]` | `layout_seed = 950000 + ep*31 + N*13`<br>`noise_seed = 1050000 + ep*97 + N*41 + int(sigma*1000)`<br>Preserved in `data/raw/anomaly_raw.csv` | **Disjoint** ($\ge 950000$) |
 | **Anomaly New Range (Checks)** | New Fresh Seed Range | Post-freeze final verification: Baseline window robustness ($k \in \{3, 5, 8, 12, 20\}$) & Baseline drift ($0\%, 2\%, 5\%, 10\%$) | Layout: `[960065, 967089]`<br>Noise: `[1070215, 1078233]` | `layout_seed = 960000 + ep*31 + N*13`<br>`noise_seed = 1070000 + ep*97 + N*41 + int(sigma*1000)`<br>Evaluated via `tools/eval_baseline_robustness_drift.py` | **Disjoint** ($\ge 960000$) |
 | **1D Heat FNO Datasets** | Train, Val, Test | Fourier series ground-truth field generation across parameter ranges | `42, 43, 44, 45, 46` | train: 42, val: 43, test_interp: 44, test_ood: 45, test_ood_extended: 46 | **Disjoint** |
@@ -76,7 +93,8 @@ A unified, complete registry of every random seed and seed range employed across
 | **Task B PINN Inversion** | Mode 1 vs Mode 2 | Hard-constrained PINN inverse parameter estimation vs Crank-Nicolson | Layout: `[505, 2520]`<br>Noise: `[1010, 12724]` | Exact layout and noise seed formula matching canonical inverse pipeline | **Paired** across models |
 | **Poisson FNO v3 Colab** | 5-Seed Retraining | GPU retraining study evaluating validation improvement and seed spread | `42, 43, 44, 45, 46` | 5 distinct training RNG seeds | **Disjoint** |
 | **Heat FNO Colab Study** | 5-Seed Stability | Multi-seed surrogate training verifying Mode 3 bias floor stability | `42, 43, 44, 45, 46` | 5 distinct training RNG seeds | **Disjoint** |
-| **Week 5 Stress Matrix** | 13 Scenarios x 3 Severities | Stress testing frozen models (Mode 2, Mode 3, Mode 3+, Two-Stage, Anomaly) under model mismatch | `[850000, 851334]` | `seed = 850000 + scen_idx * 100 + sev_idx * 10 + s_idx` (clean: 850000..850019) | **Disjoint** |
+| **Week 5 Stress Matrix v1** | 13 Scenarios x 3 Severities (v1: 5 seeds/cell) | Initial stress testing on frozen models (Mode 2, Mode 3, Mode 3+, Two-Stage, Anomaly) | `[850000, 851334]` | `seed = 850000 + scen_idx * 100 + sev_idx * 10 + s_idx` (clean: 850000..850019) | **Disjoint** |
+| **Week 5 Stress Matrix v2** | 13 Scenarios x 3 Severities (v2: 100 seeds/cell) | Powered rerun on frozen models with Wilson 95% CIs and multiprocessing | `[1200000, 1213399]` | `seed = 1200000 + scen_idx * 1000 + sev_idx * 100 + s_idx` (clean: 1200000..1200099) | **Disjoint** ($\ge 1200000$) |
 
 
 

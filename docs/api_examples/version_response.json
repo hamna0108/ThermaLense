@@ -1,0 +1,12 @@
+{
+  "git_commit": "73e721e1362685c77e620f0e7ae899e72b6698a8",
+  "git_tags": [
+    "frontend-v1"
+  ],
+  "checkpoint_sha256s": {
+    "fno2d_heat.pt": "74d778ac1920b8aae4a4edbf2e0a72d8327a83f9e430b16ce104b32dbd89462a",
+    "fno2d_poisson_v2.pt": "0efc0fd19903a6f9d05eec675339034b36e9675f2f79d5d474ce948cc622d4c4",
+    "linear_baseline_poisson_v2.npz": "1cbacc0ca252ebe9fe4fe862fa3fda42ec9edaf04876a56d9d4a60fa1e2bcfec",
+    "pinn_expD.pt": "2d89edb538b69d8bd93399ffb16b0141737569b5956c2fc4c9a475a57980aafa"
+  }
+}

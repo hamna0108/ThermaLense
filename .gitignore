@@ -19,3 +19,5 @@ models/fno_v3/
 *v3*.pt
 *.pt.tmp
 *.zip
+data/results/pinn_ablation/checkpoints/
+

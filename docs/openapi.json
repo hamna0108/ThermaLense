@@ -261,48 +261,116 @@
     "schemas": {
       "BaselineData": {
         "properties": {
-          "x": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array",
-            "title": "X",
+          "x_coords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X Coords",
             "description": "Spatial sensor coordinates x in [0, 1]"
           },
-          "t": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array",
-            "title": "T",
+          "t_coords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T Coords",
             "description": "Temporal sensor coordinates t in [0, 1]"
           },
+          "readings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readings",
+            "description": "Observed baseline sensor values"
+          },
+          "x": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X",
+            "description": "Alias for x_coords"
+          },
+          "t": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T",
+            "description": "Alias for t_coords"
+          },
           "y": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Y",
-            "description": "Observed sensor values"
+            "description": "Alias for readings"
           }
         },
         "type": "object",
-        "required": [
-          "x",
-          "t",
-          "y"
-        ],
         "title": "BaselineData"
       },
       "DiagnoseRequest": {
         "properties": {
           "readings": {
-            "$ref": "#/components/schemas/SensorReadings",
-            "description": "Operational sensor measurements"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SensorReadings"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Operational sensor measurements: {x_coords, t_coords, readings}"
           },
           "baseline": {
             "$ref": "#/components/schemas/BaselineData",
-            "description": "Healthy baseline readings (minimum k >= 20 required)"
+            "description": "Healthy baseline readings: {x_coords, t_coords, readings} with k >= 20"
           },
           "sigma": {
             "anyOf": [
@@ -315,11 +383,40 @@
             ],
             "title": "Sigma",
             "description": "Optional declared noise std"
+          },
+          "x_coords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X Coords",
+            "description": "Top-level operational x coordinates (flat format)"
+          },
+          "t_coords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T Coords",
+            "description": "Top-level operational t coordinates (flat format)"
           }
         },
         "type": "object",
         "required": [
-          "readings",
           "baseline"
         ],
         "title": "DiagnoseRequest"
@@ -410,28 +507,94 @@
       "EstimateRequest": {
         "properties": {
           "x": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "X",
             "description": "Sensor spatial coordinates x in [0, 1]"
           },
           "t": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "T",
             "description": "Sensor temporal coordinates t in [0, 1]"
           },
           "y": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array",
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Y",
             "description": "Observed sensor values"
+          },
+          "x_coords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X Coords",
+            "description": "Alias for x"
+          },
+          "t_coords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T Coords",
+            "description": "Alias for t"
+          },
+          "readings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readings",
+            "description": "Alias for y"
           },
           "sigma": {
             "anyOf": [
@@ -469,6 +632,17 @@
             "title": "Physics",
             "description": "Optional declared physics inputs (u0_fn, bc_fn, source_fn)"
           },
+          "physics_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PhysicsConfig"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Declared physics expression configuration strings"
+          },
           "mode": {
             "anyOf": [
               {
@@ -484,11 +658,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "x",
-          "t",
-          "y"
-        ],
         "title": "EstimateRequest"
       },
       "EstimateResponse": {
@@ -735,6 +904,72 @@
           "timestamp"
         ],
         "title": "HealthResponse"
+      },
+      "PhysicsConfig": {
+        "properties": {
+          "u0_expr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "U0 Expr",
+            "description": "Initial condition expression u0(x), e.g. 'sin(pi * x)'"
+          },
+          "bc_left_expr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bc Left Expr",
+            "description": "Left boundary condition expression u(0, t)"
+          },
+          "bc_right_expr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bc Right Expr",
+            "description": "Right boundary condition expression u(1, t)"
+          },
+          "source_expr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Expr",
+            "description": "Distributed volumetric source expression s(x, t)"
+          },
+          "alpha_expr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alpha Expr",
+            "description": "Spatial variable diffusivity expression alpha(x)"
+          }
+        },
+        "type": "object",
+        "title": "PhysicsConfig"
       },
       "PlacementRequest": {
         "properties": {
@@ -988,34 +1223,98 @@
       },
       "SensorReadings": {
         "properties": {
+          "x_coords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X Coords",
+            "description": "Sensor spatial coordinates x in [0, 1]"
+          },
+          "t_coords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T Coords",
+            "description": "Sensor temporal coordinates t in [0, 1]"
+          },
+          "readings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readings",
+            "description": "Observed sensor values"
+          },
           "x": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array",
-            "title": "X"
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X",
+            "description": "Alias for x_coords"
           },
           "t": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array",
-            "title": "T"
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T",
+            "description": "Alias for t_coords"
           },
           "y": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array",
-            "title": "Y"
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Y",
+            "description": "Alias for readings"
           }
         },
         "type": "object",
-        "required": [
-          "x",
-          "t",
-          "y"
-        ],
         "title": "SensorReadings"
       },
       "ValidationError": {

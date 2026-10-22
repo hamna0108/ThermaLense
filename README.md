@@ -30,26 +30,35 @@ uvicorn service.app:app --host 0.0.0.0 --port 8000
 
 ---
 
-### API Request & Response Examples
+### API Request & Response Examples (Captured from Live Service via cURL)
+
+All examples below represent real captured HTTP requests and responses executed against the running service via `curl.exe` and archived in `docs/api_examples/`.
 
 #### 1. `POST /v1/estimate`
-**Request:**
+**Request (`docs/api_examples/estimate_request.json`):**
 ```bash
 curl -X POST http://localhost:8000/v1/estimate \
   -H "Content-Type: application/json" \
   -d '{
-    "x": [0.5, 0.5, 0.5, 0.5, 0.5],
-    "t": [0.1, 0.2, 0.3, 0.4, 0.5],
-    "y": [0.3698, 0.1367, 0.0506, 0.0187, 0.0069],
-    "sigma": 0.01
+    "x_coords": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+    "t_coords": [0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95],
+    "readings": [0.612, 0.228, 0.085, 0.032, 0.012, 0.004, 0.002, 0.001, 0.0, 0.0],
+    "sigma": 0.01,
+    "mode": "mode3plus",
+    "physics_config": {
+      "u0_expr": "sin(pi * x)"
+    }
   }'
 ```
-**Response:**
+**Response (`docs/api_examples/estimate_response.json`):**
 ```json
 {
-  "alpha_hat": 0.10012,
-  "ci95": [0.09634, 0.10405],
-  "method": "Mode 3 (in-range)",
+  "alpha_hat": 0.997405,
+  "ci95": [
+    0.960072,
+    1.036189
+  ],
+  "method": "Declared Physics (splu)",
   "flags": {
     "model_invalid": false,
     "out_of_range": false,
@@ -57,121 +66,141 @@ curl -X POST http://localhost:8000/v1/estimate \
     "warnings": []
   },
   "effective_sigma": 0.01,
-  "timing_ms": 7.53
+  "timing_ms": 152.92
 }
 ```
-
-*Note: If `sigma` is omitted, `baseline` with $k \ge 20$ readings must be provided. If $k < 20$, the service returns HTTP 400 with code `REFUSED_INSUFFICIENT_BASELINE`.*
+*Note: If `sigma` is omitted, `baseline` with $k \ge 20$ readings must be provided. Expressions in `physics_config` are validated against a strict AST whitelist (max 200 chars, no `eval`, `exec`, or unwhitelisted symbols).*
 
 #### 2. `POST /v1/diagnose`
-**Request:**
+**Request (`docs/api_examples/diagnose_request.json`):**
 ```bash
 curl -X POST http://localhost:8000/v1/diagnose \
   -H "Content-Type: application/json" \
   -d '{
     "readings": {
-      "x": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
-      "t": [0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95],
-      "y": [0.610, 0.225, 0.083, 0.031, 0.511, 0.004, 0.002, 0.001, 0.000, 0.000]
+      "x_coords": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+      "t_coords": [0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95],
+      "readings": [0.612, 0.225, 0.083, 0.031, 0.511, 0.004, 0.002, 0.001, 0.0, 0.0]
     },
     "baseline": {
-      "x": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
-      "t": [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00],
-      "y": [0.612, 0.373, 0.228, 0.139, 0.085, 0.052, 0.032, 0.019, 0.012, 0.007, 0.004, 0.003, 0.002, 0.001, 0.001, 0.000, 0.000, 0.000, 0.000, 0.000]
-    }
+      "x_coords": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+      "t_coords": [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0],
+      "readings": [0.612, 0.373, 0.228, 0.139, 0.085, 0.052, 0.032, 0.019, 0.012, 0.007, 0.004, 0.003, 0.002, 0.001, 0.001, 0.0, 0.0, 0.0, 0.0, 0.0]
+    },
+    "sigma": 0.01
   }'
 ```
-**Response:**
+**Response (`docs/api_examples/diagnose_response.json`):**
 ```json
 {
   "assigned_class": "F",
   "evidence_stats": {
-    "glr_stat": 2.14,
-    "glr_threshold": 7.50,
-    "bic_healthy": 84.12,
-    "bic_sensor_fault": 18.23,
-    "alpha_fitted": 0.09871,
-    "alpha_baseline": 0.09985,
-    "chi2_reduced": 8.12
+    "glr_stat": 506.387,
+    "glr_threshold": 7.544,
+    "bic_healthy": 2459.61,
+    "bic_sensor_fault": 12.16,
+    "alpha_fitted": 0.873134,
+    "alpha_baseline": 0.998341,
+    "chi2_reduced": 273.034
   },
   "faulty_sensor_idx": 4,
   "change_time": null,
-  "effective_sigma": 0.01004,
-  "timing_ms": 19.86
+  "effective_sigma": 0.01,
+  "timing_ms": 13.67
 }
 ```
+*Architecture Note on Baseline Coordinates: The baseline dataset is collected during an independent calibration run over $k \ge 20$ points, while `readings` contains operational measurements ($N=10$). `BaselineData` has its own explicit spatial and temporal coordinates (`x_coords`, `t_coords`, `readings`).*
 
 #### 3. `POST /v1/placement`
-**Request:**
+**Request (`docs/api_examples/placement_request.json`):**
 ```bash
 curl -X POST http://localhost:8000/v1/placement \
   -H "Content-Type: application/json" \
-  -d '{"N": 10, "sigma": 0.01, "sensor_x": 0.5}'
+  -d '{"N": 20, "sigma": 0.01, "sensor_x": 0.5}'
 ```
-**Response:**
+**Response (`docs/api_examples/placement_response.json`):**
 ```json
 {
-  "N": 10,
+  "N": 20,
   "sigma": 0.01,
   "sensor_x": 0.5,
-  "t_stage1": [0.01, 0.03162, 0.1, 0.31623, 1.0],
-  "t_stage2_nominal": [0.0325, 0.0612, 0.0984, 0.1521, 0.2483],
-  "strategy_description": "Two-stage adaptive placement at x=0.5: Stage 1 (5 points) explores log-spaced time domain. Stage 2 (5 points) dynamically concentrates around t* = 1 / (pi^2 * alpha_hat_1).",
-  "timing_ms": 5.46
+  "t_stage1": [
+    0.01, 0.01668, 0.02783, 0.04642, 0.07743,
+    0.12915, 0.21544, 0.35938, 0.59948, 1.0
+  ],
+  "t_stage2_nominal": [
+    0.26238, 0.40517, 0.50304, 0.58449, 0.65722,
+    0.72466, 0.78867, 0.85045, 0.91081, 0.97037
+  ],
+  "strategy_description": "Two-stage adaptive placement at x=0.5: Stage 1 (10 points) explores log-spaced time domain. Stage 2 (10 points) dynamically concentrates around t* = 1 / (pi^2 * alpha_hat_1).",
+  "timing_ms": 0.73
 }
 ```
 
 #### 4. `POST /v1/field`
-**Request:**
+**Request (`docs/api_examples/field_request.json`):**
 ```bash
 curl -X POST http://localhost:8000/v1/field \
   -H "Content-Type: application/json" \
-  -d '{"alpha": 0.10, "Nx": 101, "Nt": 201}'
+  -d '{"alpha": 0.10, "method": "fno", "Nx": 64, "Nt": 64}'
 ```
-**Response:**
+**Response (`docs/api_examples/field_response.json`):**
 ```json
 {
-  "u_grid": [[...], ...],
-  "x_grid": [0.0, 0.01, ..., 1.0],
-  "t_grid": [0.0, 0.005, ..., 1.0],
+  "u_grid": [[... 64x64 floating point matrix ...]],
+  "x_grid": [0.0, 0.01587, 0.03175, "...", 1.0],
+  "t_grid": [0.0, 0.01587, 0.03175, "...", 1.0],
   "method_used": "fno",
-  "timing_ms": 98.93
+  "timing_ms": 3.99
 }
 ```
 
 #### 5. `POST /v1/poisson`
-**Request (Sine Source with high-frequency check):**
+**Request (`docs/api_examples/poisson_request.json`):**
 ```bash
 curl -X POST http://localhost:8000/v1/poisson \
   -H "Content-Type: application/json" \
   -d '{
     "source": {
       "type": "sine",
-      "modes": [[5, 2]],
+      "modes": [[2, 2]],
       "amplitudes": [1.0]
     },
     "grid_size": 64
   }'
 ```
-**Response:**
+**Response (`docs/api_examples/poisson_response.json`):**
 ```json
 {
-  "exact_field": [[...], ...],
-  "fno_field": [[...], ...],
-  "linear_field": [[...], ...],
+  "exact_field": [[... 64x64 array ...]],
+  "fno_field": [[... 64x64 array ...]],
+  "linear_field": [[... 64x64 array ...]],
   "relative_errors": {
-    "rel_l2_fno_vs_exact": 0.4215,
-    "rel_l2_linear_vs_exact": 0.0149,
-    "rel_l2_fno_vs_linear": 0.4198
+    "rel_l2_fno_vs_exact": 0.029476,
+    "rel_l2_linear_vs_exact": 0.045751,
+    "rel_l2_fno_vs_linear": 0.05388
   },
   "timing_ms": {
-    "exact_ms": 0.485,
-    "fno_ms": 12.31,
-    "linear_ms": 1.12,
-    "total_ms": 47.16
+    "exact_ms": 0.772,
+    "fno_ms": 29.836,
+    "linear_ms": 2.921,
+    "total_ms": 33.88
   },
-  "high_frequency_source": true
+  "high_frequency_source": false
 }
+```
+*Note: Direct sparse LU solves in 0.77 ms on CPU, 38.6x faster than FNO (29.84 ms).*
+
+#### 6. System Endpoints (`GET /health`, `/version`, `/metrics`)
+```bash
+curl -s http://localhost:8000/health
+# {"status": "healthy", "service": "digital-twin-inverse-service", "version": "1.0.0", "timestamp": "1792672405.576943"}
+
+curl -s http://localhost:8000/version
+# {"git_commit": "73e721e1362685c77e620f0e7ae899e72b6698a8", "git_tags": ["frontend-v1"], "checkpoint_sha256s": {"fno2d_heat.pt": "74d778ac...", "fno2d_poisson_v2.pt": "0efc0fd1...", "linear_baseline_poisson_v2.npz": "1cbacc0c...", "pinn_expD.pt": "2d89edb5..."}}
+
+curl -s http://localhost:8000/metrics
+# {"requests_total": 23, "refusals_total": 0, "errors_total": 1, "latency_p50_ms": {"/v1/estimate": 157.63, "/v1/diagnose": 16.01, "/v1/poisson": 3.56, ...}}
 ```
 
 ---

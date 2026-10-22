@@ -172,6 +172,60 @@ def test_estimate_declared_physics_mode(client):
     assert "Declared Physics" in data["method"]
     assert abs(data["alpha_hat"] - 0.10) < 0.05
 
+def test_estimate_physics_config_valid(client):
+    x, t, y = generate_heat_readings(alpha=0.10, N=10, sigma=0.01, seed=402)
+    payload = {
+        "x_coords": x, "t_coords": t, "readings": y,
+        "sigma": 0.01,
+        "physics_config": {
+            "u0_expr": "sin(pi * x)",
+            "bc_left_expr": "0",
+            "bc_right_expr": "0",
+            "source_expr": "0",
+            "alpha_expr": "1.0"
+        }
+    }
+    res = client.post("/v1/estimate", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["alpha_hat"] > 0
+
+def test_estimate_security_rejections(client):
+    x, t, y = generate_heat_readings(alpha=0.10, N=10, sigma=0.01, seed=403)
+    
+    # 1. Reject __import__('os')
+    payload1 = {
+        "x": x, "t": t, "y": y,
+        "physics_config": {"u0_expr": "__import__('os')"}
+    }
+    res1 = client.post("/v1/estimate", json=payload1)
+    assert res1.status_code == 400
+    data1 = res1.json()
+    assert data1["error_code"] == "SECURITY_VALIDATION_ERROR"
+    assert "disallowed" in data1["message"].lower()
+
+    # 2. Reject open('x')
+    payload2 = {
+        "x": x, "t": t, "y": y,
+        "physics_config": {"bc_left_expr": "open('x')"}
+    }
+    res2 = client.post("/v1/estimate", json=payload2)
+    assert res2.status_code == 400
+    data2 = res2.json()
+    assert data2["error_code"] == "SECURITY_VALIDATION_ERROR"
+    assert "disallowed" in data2["message"].lower()
+
+    # 3. Reject length > 200
+    payload3 = {
+        "x": x, "t": t, "y": y,
+        "physics_config": {"u0_expr": "x + " * 100 + "x"}
+    }
+    res3 = client.post("/v1/estimate", json=payload3)
+    assert res3.status_code == 400
+    data3 = res3.json()
+    assert data3["error_code"] == "SECURITY_VALIDATION_ERROR"
+    assert "length" in data3["message"].lower() and "maximum" in data3["message"].lower()
+
 # -------------------------------------------------------------------------------------------------
 # POST /v1/diagnose
 # -------------------------------------------------------------------------------------------------
@@ -203,6 +257,21 @@ def test_diagnose_healthy(client):
     assert data["faulty_sensor_idx"] is None
     assert data["change_time"] is None
     assert "glr_stat" in data["evidence_stats"]
+
+def test_diagnose_canonical_coordinates(client):
+    """Verify diagnose accepts canonical {x_coords, t_coords, readings} with k>=20 independent baseline."""
+    xo, to, yo = generate_heat_readings(alpha=0.10, N=10, sigma=0.01, seed=510)
+    xb, tb, yb = generate_heat_readings(alpha=0.10, N=25, sigma=0.01, seed=511)
+    payload = {
+        "readings": {"x_coords": xo, "t_coords": to, "readings": yo},
+        "baseline": {"x_coords": xb, "t_coords": tb, "readings": yb},
+        "sigma": 0.01
+    }
+    res = client.post("/v1/diagnose", json=payload)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["assigned_class"] == "H"
+    assert data["evidence_stats"]["alpha_baseline"] > 0
 
 def test_diagnose_sensor_fault(client):
     x, t, y = generate_heat_readings(alpha=0.10, N=10, sigma=0.01, seed=601)

@@ -1,7 +1,7 @@
 {
   "meta": {
     "generator": "tools/build_evidence_json.py",
-    "git_commit": "071d35675dd8d320912d516c81572fbc631fca31",
+    "git_commit": "73e721e1362685c77e620f0e7ae899e72b6698a8",
     "source_files": [
       "data/results/mode2_pipeline_results_v2.csv",
       "data/results/mode3_pipeline_results_v2.csv",
@@ -13,7 +13,10 @@
       "data/results/poisson_v2_benchmark_table.csv",
       "data/results/timing_honesty.json",
       "data/results/experiments_summary.csv",
-      "data/results/mode1_pinn_summary.csv"
+      "data/results/mode1_pinn_summary.csv",
+      "data/results/task_e_v2_followups.json",
+      "data/results/task_e_v2_followups.csv",
+      "data/results/pinn_ablation/pinn_ablation_summary.csv"
     ]
   },
   "headline_findings": [
@@ -1393,6 +1396,191 @@
       }
     ]
   },
+  "v2_followups_final_state": {
+    "d2_false_flags_by_N": [
+      {
+        "N": 5,
+        "dof": 4,
+        "tau_threshold": 2.3719,
+        "num_runs": 1000,
+        "false_flags": 54,
+        "false_flag_rate_pct": 5.4,
+        "ci_95": [
+          4.16,
+          6.98
+        ],
+        "median_chi2_dof": 0.8536,
+        "status": "MET",
+        "supersedes_preliminary": null
+      },
+      {
+        "N": 10,
+        "dof": 9,
+        "tau_threshold": 1.8799,
+        "num_runs": 1000,
+        "false_flags": 42,
+        "false_flag_rate_pct": 4.2,
+        "ci_95": [
+          3.12,
+          5.63
+        ],
+        "median_chi2_dof": 0.9237,
+        "status": "MET",
+        "supersedes_preliminary": "7.0% (before: from early 100-sample run)"
+      },
+      {
+        "N": 20,
+        "dof": 19,
+        "tau_threshold": 1.5865,
+        "num_runs": 1000,
+        "false_flags": 59,
+        "false_flag_rate_pct": 5.9,
+        "ci_95": [
+          4.6,
+          7.54
+        ],
+        "median_chi2_dof": 0.9616,
+        "status": "MET",
+        "supersedes_preliminary": null
+      }
+    ],
+    "d2_durbin_watson_detection_by_rho": [
+      {
+        "severity": 1,
+        "rho": 0.5,
+        "dw_detection_rate_pct": 23.9,
+        "ci_95": [
+          21.36,
+          26.64
+        ]
+      },
+      {
+        "severity": 2,
+        "rho": 0.8,
+        "dw_detection_rate_pct": 60.4,
+        "ci_95": [
+          57.33,
+          63.39
+        ]
+      },
+      {
+        "severity": 3,
+        "rho": 0.95,
+        "dw_detection_rate_pct": 80.5,
+        "ci_95": [
+          77.93,
+          82.84
+        ]
+      }
+    ],
+    "d3_range_guard_comparison": {
+      "alpha_target": 0.0005,
+      "description": "Sub-grid low diffusivity (alpha=5e-4)",
+      "old_1pct_rule_rate_pct": 65.0,
+      "old_1pct_ci_95": [
+        55.25,
+        73.64
+      ],
+      "new_rule_rate_pct": 90.0,
+      "new_rule_ci_95": [
+        82.56,
+        94.48
+      ],
+      "target_spec": ">= 95.0%",
+      "target_status": "MISSED (at 90.0% [82.56, 94.48])",
+      "routed_to_m3p_pct": 100.0,
+      "median_hat": 0.0010001165918496532,
+      "before_initial_estimate": "72.0% (before: preliminary run without CI guard)"
+    },
+    "d5_warnings_evaluation": {
+      "healthy_false_warning_rates": {
+        "drift_far_pct": 3.8,
+        "drift_far_ci_95": [
+          2.78,
+          5.17
+        ],
+        "kurtosis_far_pct": 4.5,
+        "kurtosis_far_ci_95": [
+          3.38,
+          5.97
+        ],
+        "durbin_watson_far_pct": 4.9,
+        "durbin_watson_far_ci_95": [
+          3.73,
+          6.42
+        ]
+      },
+      "drift_warning_evaluation": {
+        "power_conclusion": "drift warning has no power, 3.3/4.2/5.6% vs 3.8% false warnings",
+        "healthy_far_pct": 3.8,
+        "detection_by_severity": [
+          {
+            "severity": 1,
+            "drift_level": 0.02,
+            "description": "Slow drift 2%",
+            "detection_rate_pct": 3.3,
+            "ci_95": [
+              2.36,
+              4.6
+            ]
+          },
+          {
+            "severity": 2,
+            "drift_level": 0.05,
+            "description": "Moderate drift 5%",
+            "detection_rate_pct": 4.2,
+            "ci_95": [
+              3.12,
+              5.63
+            ]
+          },
+          {
+            "severity": 3,
+            "drift_level": 0.1,
+            "description": "Severe drift 10%",
+            "detection_rate_pct": 5.6,
+            "ci_95": [
+              4.34,
+              7.2
+            ]
+          }
+        ]
+      },
+      "kurtosis_warning_evaluation": {
+        "summary_range": "kurtosis warning 10-34%",
+        "healthy_far_pct": 4.5,
+        "detection_by_severity": [
+          {
+            "severity": 1,
+            "description": "Student-t (df=5)",
+            "detection_rate_pct": 9.8,
+            "ci_95": [
+              8.11,
+              11.8
+            ]
+          },
+          {
+            "severity": 2,
+            "description": "Student-t (df=3)",
+            "detection_rate_pct": 17.1,
+            "ci_95": [
+              14.89,
+              19.56
+            ]
+          },
+          {
+            "severity": 3,
+            "description": "Student-t (df=3) + 10% 5-sigma outliers",
+            "detection_rate_pct": 33.6,
+            "ci_95": [
+              30.74,
+              36.59
+            ]
+          }
+        ]
+      }
+    }
+  },
   "stage2_methods": {
     "benchmark_table": [
       {
@@ -1675,6 +1863,151 @@
         "mean_rel_err": 0.168967,
         "single_fit_time_ms": 7.571
       }
+    ],
+    "full_ablation_summary": [
+      {
+        "variant": "frozen_expD",
+        "axis": "frozen_reference",
+        "activation": "tanh",
+        "collocation": "base",
+        "loss_weighting": "pure_pde",
+        "optimizer": "adam_lbfgs",
+        "seeds": 1,
+        "interp_rel_l2_median": 0.008817,
+        "low_alpha_ood_rel_l2_median": 0.040845,
+        "high_alpha_ood_rel_l2_median": 0.655916,
+        "train_time_sec_mean": 0.0
+      },
+      {
+        "variant": "base",
+        "axis": "base",
+        "activation": "tanh",
+        "collocation": "base",
+        "loss_weighting": "pde_1.0_data_0.0",
+        "optimizer": "adam_lbfgs",
+        "seeds": 3,
+        "interp_rel_l2_median": 0.007987,
+        "low_alpha_ood_rel_l2_median": 0.042582,
+        "high_alpha_ood_rel_l2_median": 0.721896,
+        "train_time_sec_mean": 13.91
+      },
+      {
+        "variant": "activation_gelu",
+        "axis": "activation",
+        "activation": "gelu",
+        "collocation": "base",
+        "loss_weighting": "pde_1.0_data_0.0",
+        "optimizer": "adam_lbfgs",
+        "seeds": 3,
+        "interp_rel_l2_median": 0.006089,
+        "low_alpha_ood_rel_l2_median": 0.003242,
+        "high_alpha_ood_rel_l2_median": 0.626933,
+        "train_time_sec_mean": 22.57
+      },
+      {
+        "variant": "activation_sin",
+        "axis": "activation",
+        "activation": "sin",
+        "collocation": "base",
+        "loss_weighting": "pde_1.0_data_0.0",
+        "optimizer": "adam_lbfgs",
+        "seeds": 3,
+        "interp_rel_l2_median": 0.00753,
+        "low_alpha_ood_rel_l2_median": 0.042501,
+        "high_alpha_ood_rel_l2_median": 0.64699,
+        "train_time_sec_mean": 15.63
+      },
+      {
+        "variant": "collocation_fixed",
+        "axis": "collocation",
+        "activation": "tanh",
+        "collocation": "fixed",
+        "loss_weighting": "pde_1.0_data_0.0",
+        "optimizer": "adam_lbfgs",
+        "seeds": 3,
+        "interp_rel_l2_median": 0.000438,
+        "low_alpha_ood_rel_l2_median": 0.003406,
+        "high_alpha_ood_rel_l2_median": 0.396218,
+        "train_time_sec_mean": 24.23
+      },
+      {
+        "variant": "collocation_sobol",
+        "axis": "collocation",
+        "activation": "tanh",
+        "collocation": "sobol",
+        "loss_weighting": "pde_1.0_data_0.0",
+        "optimizer": "adam_lbfgs",
+        "seeds": 3,
+        "interp_rel_l2_median": 0.000411,
+        "low_alpha_ood_rel_l2_median": 0.002297,
+        "high_alpha_ood_rel_l2_median": 0.428079,
+        "train_time_sec_mean": 26.0
+      },
+      {
+        "variant": "collocation_lhs",
+        "axis": "collocation",
+        "activation": "tanh",
+        "collocation": "lhs",
+        "loss_weighting": "pde_1.0_data_0.0",
+        "optimizer": "adam_lbfgs",
+        "seeds": 3,
+        "interp_rel_l2_median": 0.000436,
+        "low_alpha_ood_rel_l2_median": 0.00292,
+        "high_alpha_ood_rel_l2_median": 0.388624,
+        "train_time_sec_mean": 27.63
+      },
+      {
+        "variant": "loss_data_equal",
+        "axis": "loss_weighting",
+        "activation": "tanh",
+        "collocation": "base",
+        "loss_weighting": "pde_1.0_data_1.0",
+        "optimizer": "adam_lbfgs",
+        "seeds": 3,
+        "interp_rel_l2_median": 0.00736,
+        "low_alpha_ood_rel_l2_median": 0.03607,
+        "high_alpha_ood_rel_l2_median": 0.719852,
+        "train_time_sec_mean": 14.48
+      },
+      {
+        "variant": "loss_data_heavy",
+        "axis": "loss_weighting",
+        "activation": "tanh",
+        "collocation": "base",
+        "loss_weighting": "pde_0.1_data_1.0",
+        "optimizer": "adam_lbfgs",
+        "seeds": 3,
+        "interp_rel_l2_median": 0.005945,
+        "low_alpha_ood_rel_l2_median": 0.02388,
+        "high_alpha_ood_rel_l2_median": 0.741337,
+        "train_time_sec_mean": 14.46
+      },
+      {
+        "variant": "loss_grad_norm",
+        "axis": "loss_weighting",
+        "activation": "tanh",
+        "collocation": "base",
+        "loss_weighting": "grad_norm",
+        "optimizer": "adam_lbfgs",
+        "seeds": 3,
+        "interp_rel_l2_median": 0.004132,
+        "low_alpha_ood_rel_l2_median": 0.014886,
+        "high_alpha_ood_rel_l2_median": 0.72278,
+        "train_time_sec_mean": 25.53
+      },
+      {
+        "variant": "optim_adam_only",
+        "axis": "optimizer",
+        "activation": "tanh",
+        "collocation": "base",
+        "loss_weighting": "pde_1.0_data_0.0",
+        "optimizer": "adam_only",
+        "seeds": 3,
+        "interp_rel_l2_median": 0.005103,
+        "low_alpha_ood_rel_l2_median": 0.02794,
+        "high_alpha_ood_rel_l2_median": 0.654654,
+        "train_time_sec_mean": 20.73
+      }
     ]
   },
   "notes_and_caveats": {
@@ -1692,20 +2025,20 @@
       "source": "data/results/timing_honesty.json"
     },
     "missed_v2_targets": {
-      "statement": "Empirical evaluation revealed that V2 targets D2 and D3 were missed under rigorous stress testing. D2 (Goodness-of-Fit Gate): chi2/dof thresholding failed to flag AR(1) correlated noise (flag rates 1.0% - 2.0% vs >=80.0% target) and low-severity boundary/source mismatches (28.0% - 69.0% vs >=80.0% target), while exhibiting a 7.0% false-alarm rate under healthy conditions (target <=5.0%). D3 (Range Guard): out-of-grid detection for alpha=0.0005 achieved 72.0% (target >=95.0%) due to finite confidence-interval pinning.",
+      "statement": "Final empirical followup evaluation (data/results/task_e_v2_followups.json) established the final state of V2 targets D2, D3, and D5. D2 (Goodness-of-Fit Gate): chi2/dof thresholding exhibits a final false-alarm rate of 4.2% [3.12, 5.63] for N=10 (before: 7.0% in preliminary 100-run sample), 5.4% for N=5, and 5.9% for N=20. The chi2 gate fails to detect AR(1) noise (flag rates 1.0%-2.0%), but the Durbin-Watson diagnostic detects AR(1) noise at 23.9% (rho=0.5), 60.4% (rho=0.8), and 80.5% (rho=0.95). D3 (Range Guard): for alpha=0.0005, the old 1% rule achieved 65.0% (before: 72.0% preliminary), whereas the new multi-criteria rule achieved 90.0% [82.56, 94.48], missing the 95.0% target at 90.0% (100% routed to Mode 3+). D5 (Diagnostic Warnings): the drift warning has no power (3.3/4.2/5.6% detection vs 3.8% false warnings); the kurtosis warning achieves 10-34% (9.8% to 33.6% detection vs 4.5% false warnings).",
       "missed_items": [
         {
           "target_id": "D2",
           "scenario": "Healthy Control (sigma=0.01)",
           "metric": "Healthy False Flag Rate",
-          "observed": "7.0% [3.43, 13.75]",
+          "observed": "4.2% [3.12, 5.63] for N=10 (before: 7.0% in preliminary 100-run sample)",
           "target_spec": "<= 5.0%"
         },
         {
           "target_id": "D2",
           "scenario": "S3 Sev 1 (AR(1) rho = 0.50)",
           "metric": "Model Invalid Flag Rate",
-          "observed": "1.0% [0.18, 5.45]",
+          "observed": "1.0% [0.18, 5.45] (DW detector achieves 23.9%)",
           "target_spec": ">= 80.0%"
         },
         {
@@ -1733,11 +2066,18 @@
           "target_id": "D3",
           "scenario": "S12 Sev 1 (alpha=0.0005)",
           "metric": "At Bound / Out-of-Range %",
-          "observed": "72.0% [62.51, 79.86]",
-          "target_spec": ">= 95.0%"
+          "observed": "90.0% [82.56, 94.48] (before: 72.0% preliminary / 65.0% old 1% rule)",
+          "target_spec": ">= 95.0% (missed at 90.0%)"
+        },
+        {
+          "target_id": "D5",
+          "scenario": "S13 (Drift warning power)",
+          "metric": "Detection vs False Alarm",
+          "observed": "3.3/4.2/5.6% vs 3.8% false warnings (has no power)",
+          "target_spec": "Meaningful statistical power over false alarm"
         }
       ],
-      "source": "data/results/v2_before_after_summary.csv"
+      "source": "data/results/task_e_v2_followups.json and data/results/v2_before_after_summary.csv"
     },
     "poisson_high_mode_breakdown": {
       "fno_high_mode_median_l2": 0.804159,

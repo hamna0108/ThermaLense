@@ -15,34 +15,82 @@ def validate_finite_list(vals: List[float], name: str, max_len: int = 1000) -> L
     return vals
 
 class BaselineData(BaseModel):
-    x: List[float] = Field(..., description="Spatial sensor coordinates x in [0, 1]")
-    t: List[float] = Field(..., description="Temporal sensor coordinates t in [0, 1]")
-    y: List[float] = Field(..., description="Observed sensor values")
+    x_coords: Optional[List[float]] = Field(None, description="Spatial sensor coordinates x in [0, 1]")
+    t_coords: Optional[List[float]] = Field(None, description="Temporal sensor coordinates t in [0, 1]")
+    readings: Optional[List[float]] = Field(None, description="Observed baseline sensor values")
+    x: Optional[List[float]] = Field(None, description="Alias for x_coords")
+    t: Optional[List[float]] = Field(None, description="Alias for t_coords")
+    y: Optional[List[float]] = Field(None, description="Alias for readings")
 
-    @field_validator('x', 't', 'y')
+    @model_validator(mode='before')
     @classmethod
-    def check_finite(cls, v, info):
-        return validate_finite_list(v, info.field_name, max_len=1000)
+    def resolve_aliases(cls, data):
+        if isinstance(data, dict):
+            if 'x' in data and 'x_coords' not in data:
+                data['x_coords'] = data['x']
+            if 't' in data and 't_coords' not in data:
+                data['t_coords'] = data['t']
+            if 'y' in data and 'readings' not in data:
+                data['readings'] = data['y']
+            if 'x_coords' in data and 'x' not in data:
+                data['x'] = data['x_coords']
+            if 't_coords' in data and 't' not in data:
+                data['t'] = data['t_coords']
+            if 'readings' in data and 'y' not in data:
+                data['y'] = data['readings']
+        return data
 
     @model_validator(mode='after')
     def check_lengths(self):
-        if not (len(self.x) == len(self.t) == len(self.y)):
-            raise ValueError(f"Baseline coordinate lengths must match: x({len(self.x)}), t({len(self.t)}), y({len(self.y)})")
+        xc = self.x_coords or self.x
+        tc = self.t_coords or self.t
+        yc = self.readings or self.y
+        if xc is None or tc is None or yc is None:
+            raise ValueError("Baseline must supply x_coords, t_coords, and readings (or x, t, y).")
+        validate_finite_list(xc, "x_coords", max_len=1000)
+        validate_finite_list(tc, "t_coords", max_len=1000)
+        validate_finite_list(yc, "readings", max_len=1000)
+        if not (len(xc) == len(tc) == len(yc)):
+            raise ValueError(f"Baseline coordinate lengths must match: x({len(xc)}), t({len(tc)}), y({len(yc)})")
         return self
 
+class PhysicsConfig(BaseModel):
+    u0_expr: Optional[str] = Field(None, description="Initial condition expression u0(x), e.g. 'sin(pi * x)'")
+    bc_left_expr: Optional[str] = Field(None, description="Left boundary condition expression u(0, t)")
+    bc_right_expr: Optional[str] = Field(None, description="Right boundary condition expression u(1, t)")
+    source_expr: Optional[str] = Field(None, description="Distributed volumetric source expression s(x, t)")
+    alpha_expr: Optional[str] = Field(None, description="Spatial variable diffusivity expression alpha(x)")
+
 class EstimateRequest(BaseModel):
-    x: List[float] = Field(..., description="Sensor spatial coordinates x in [0, 1]")
-    t: List[float] = Field(..., description="Sensor temporal coordinates t in [0, 1]")
-    y: List[float] = Field(..., description="Observed sensor values")
+    x: Optional[List[float]] = Field(None, description="Sensor spatial coordinates x in [0, 1]")
+    t: Optional[List[float]] = Field(None, description="Sensor temporal coordinates t in [0, 1]")
+    y: Optional[List[float]] = Field(None, description="Observed sensor values")
+    x_coords: Optional[List[float]] = Field(None, description="Alias for x")
+    t_coords: Optional[List[float]] = Field(None, description="Alias for t")
+    readings: Optional[List[float]] = Field(None, description="Alias for y")
     sigma: Optional[float] = Field(None, description="Observation noise std. If None, estimated from baseline.")
     baseline: Optional[BaselineData] = Field(None, description="Healthy baseline readings (required if sigma is omitted; k >= 20)")
     physics: Optional[Dict[str, Any]] = Field(None, description="Optional declared physics inputs (u0_fn, bc_fn, source_fn)")
+    physics_config: Optional[PhysicsConfig] = Field(None, description="Declared physics expression configuration strings")
     mode: Optional[str] = Field("mode3plus", description="Parameter inversion mode: 'mode3plus' (default), 'mode2', 'mode3', 'declared_physics'")
 
-    @field_validator('x', 't', 'y')
+    @model_validator(mode='before')
     @classmethod
-    def check_finite(cls, v, info):
-        return validate_finite_list(v, info.field_name, max_len=1000)
+    def resolve_aliases(cls, data):
+        if isinstance(data, dict):
+            if 'x' in data and 'x_coords' not in data:
+                data['x_coords'] = data['x']
+            if 't' in data and 't_coords' not in data:
+                data['t_coords'] = data['t']
+            if 'y' in data and 'readings' not in data:
+                data['readings'] = data['y']
+            if 'x_coords' in data and 'x' not in data:
+                data['x'] = data['x_coords']
+            if 't_coords' in data and 't' not in data:
+                data['t'] = data['t_coords']
+            if 'readings' in data and 'y' not in data:
+                data['y'] = data['readings']
+        return data
 
     @field_validator('sigma')
     @classmethod
@@ -54,8 +102,16 @@ class EstimateRequest(BaseModel):
 
     @model_validator(mode='after')
     def check_lengths(self):
-        if not (len(self.x) == len(self.t) == len(self.y)):
-            raise ValueError(f"Observation coordinate lengths must match: x({len(self.x)}), t({len(self.t)}), y({len(self.y)})")
+        xc = self.x_coords or self.x
+        tc = self.t_coords or self.t
+        yc = self.readings or self.y
+        if xc is None or tc is None or yc is None:
+            raise ValueError("EstimateRequest must supply coordinates and readings (x_coords, t_coords, readings or x, t, y)")
+        validate_finite_list(xc, "x_coords", max_len=1000)
+        validate_finite_list(tc, "t_coords", max_len=1000)
+        validate_finite_list(yc, "readings", max_len=1000)
+        if not (len(xc) == len(tc) == len(yc)):
+            raise ValueError(f"Observation coordinate lengths must match: x({len(xc)}), t({len(tc)}), y({len(yc)})")
         return self
 
 class EstimateFlags(BaseModel):
@@ -73,25 +129,68 @@ class EstimateResponse(BaseModel):
     timing_ms: float
 
 class SensorReadings(BaseModel):
-    x: List[float]
-    t: List[float]
-    y: List[float]
+    x_coords: Optional[List[float]] = Field(None, description="Sensor spatial coordinates x in [0, 1]")
+    t_coords: Optional[List[float]] = Field(None, description="Sensor temporal coordinates t in [0, 1]")
+    readings: Optional[List[float]] = Field(None, description="Observed sensor values")
+    x: Optional[List[float]] = Field(None, description="Alias for x_coords")
+    t: Optional[List[float]] = Field(None, description="Alias for t_coords")
+    y: Optional[List[float]] = Field(None, description="Alias for readings")
 
-    @field_validator('x', 't', 'y')
+    @model_validator(mode='before')
     @classmethod
-    def check_finite(cls, v, info):
-        return validate_finite_list(v, info.field_name, max_len=1000)
+    def resolve_aliases(cls, data):
+        if isinstance(data, dict):
+            if 'x' in data and 'x_coords' not in data:
+                data['x_coords'] = data['x']
+            if 't' in data and 't_coords' not in data:
+                data['t_coords'] = data['t']
+            if 'y' in data and 'readings' not in data:
+                data['readings'] = data['y']
+            if 'x_coords' in data and 'x' not in data:
+                data['x'] = data['x_coords']
+            if 't_coords' in data and 't' not in data:
+                data['t'] = data['t_coords']
+            if 'readings' in data and 'y' not in data:
+                data['y'] = data['readings']
+        return data
 
     @model_validator(mode='after')
     def check_lengths(self):
-        if not (len(self.x) == len(self.t) == len(self.y)):
-            raise ValueError(f"Reading lengths must match: x({len(self.x)}), t({len(self.t)}), y({len(self.y)})")
+        xc = self.x_coords or self.x
+        tc = self.t_coords or self.t
+        yc = self.readings or self.y
+        if xc is None or tc is None or yc is None:
+            raise ValueError("SensorReadings must supply coordinates and readings (x_coords, t_coords, readings or x, t, y)")
+        validate_finite_list(xc, "x_coords", max_len=1000)
+        validate_finite_list(tc, "t_coords", max_len=1000)
+        validate_finite_list(yc, "readings", max_len=1000)
+        if not (len(xc) == len(tc) == len(yc)):
+            raise ValueError(f"Reading lengths must match: x({len(xc)}), t({len(tc)}), y({len(yc)})")
         return self
 
 class DiagnoseRequest(BaseModel):
-    readings: SensorReadings = Field(..., description="Operational sensor measurements")
-    baseline: BaselineData = Field(..., description="Healthy baseline readings (minimum k >= 20 required)")
+    readings: Optional[SensorReadings] = Field(None, description="Operational sensor measurements: {x_coords, t_coords, readings}")
+    baseline: BaselineData = Field(..., description="Healthy baseline readings: {x_coords, t_coords, readings} with k >= 20")
     sigma: Optional[float] = Field(None, description="Optional declared noise std")
+    x_coords: Optional[List[float]] = Field(None, description="Top-level operational x coordinates (flat format)")
+    t_coords: Optional[List[float]] = Field(None, description="Top-level operational t coordinates (flat format)")
+
+    @model_validator(mode='before')
+    @classmethod
+    def resolve_diagnose_payload(cls, data):
+        if isinstance(data, dict):
+            # If readings is provided as a flat array of numbers and top-level x_coords/t_coords exist
+            if isinstance(data.get('readings'), list):
+                r_list = data['readings']
+                xc = data.get('x_coords') or data.get('x')
+                tc = data.get('t_coords') or data.get('t')
+                data['readings'] = {'x_coords': xc, 't_coords': tc, 'readings': r_list}
+            elif data.get('readings') is None and ('x_coords' in data or 'x' in data):
+                xc = data.get('x_coords') or data.get('x')
+                tc = data.get('t_coords') or data.get('t')
+                yc = data.get('y')
+                data['readings'] = {'x_coords': xc, 't_coords': tc, 'readings': yc}
+        return data
 
 class DiagnoseResponse(BaseModel):
     assigned_class: str = Field(..., description="'H' (Healthy), 'A' (Anomalous Diffusion), 'F' (Sensor Fault), 'C' (Change-Point)")

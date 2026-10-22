@@ -831,7 +831,7 @@
         <ul style="margin-left: 1.25rem; line-height: 1.7; font-size: 0.9rem;">
           <li><strong>Mode 3 vs Mode 3+ Coverage Trade-off:</strong> Mode 3 achieves 88.2% mean Wald coverage (dropping to 61.8% on Extended High-α OOD) in 0.68 ms. Mode 3+ hybrid polish recovers 94.0% coverage across all 135 parameter cells at 138.8 ms fit latency.</li>
           <li><strong>Classical Solver Speed Superiority on 64x64 CPU:</strong> Pre-factorized sparse direct LU solves in 0.50 ms, which is 40.9x faster than CPU FNO inference (20.48 ms). Even full re-factorization from scratch (10.93 ms) beats the FNO by ~1.9x.</li>
-          <li><strong>Missed V2 Stress Targets:</strong> D2 (GOF Gate) missed AR(1) correlated noise detection (flag rate 1.0-2.0% vs &gt;=80% target) and mild boundary offsets, with a 7.0% false flag rate. D3 (Range Guard) missed 95% bound pinning at α = 0.0005 (achieved 72.0%).</li>
+          <li><strong>Missed V2 Stress Targets &amp; Final State:</strong> D2 (GOF Gate) final false-flag rate is 4.2% for N=10 (before: 7.0% in preliminary 100-run sample; 5.4% for N=5, 5.9% for N=20). AR(1) correlated noise is detected via Durbin-Watson at 23.9% (ρ=0.5), 60.4% (ρ=0.8), and 80.5% (ρ=0.95). D3 (Range Guard) target 95% is missed at 90.0% [82.56, 94.48] under the new multi-criteria rule (before: 72.0% preliminary, 65.0% old 1% rule; 100% routed to Mode 3+). D5 drift warning has no power (3.3/4.2/5.6% vs 3.8% false warnings); kurtosis warning achieves 10–34%.</li>
           <li><strong>High-Frequency Operator Failure:</strong> On Poisson wavenumbers m, n &gt; 4, FNO median relative L₂ error jumps to 80.4%, while linear baseline remains at 1.5%.</li>
         </ul>
       </div>
@@ -942,6 +942,73 @@
         </div>
       </div>
 
+      <!-- Section 5b: V2 Followup Targets Final State (D2, D3, D5) -->
+      <div class="card">
+        <h2 class="card-title">5b. V2 Followup Targets: Final Empirical State (D2, D3, D5)</h2>
+        <p class="text-muted" style="margin-bottom: 0.75rem;">Large-sample N-sweep (1,000 runs/N), AR(1) Durbin-Watson calibration, multi-criteria range guard, and warning power analysis. Source: <code>task_e_v2_followups.json</code></p>
+        
+        <div class="grid-2">
+          <div>
+            <h3 style="font-size: 0.95rem; margin-top: 0;">D2: False-Flag Rate by Sensor Count N (1,000 runs)</h3>
+            <div class="table-container">
+              <table class="booktabs">
+                <thead>
+                  <tr>
+                    <th>Sensors (N)</th>
+                    <th class="text-right">DOF</th>
+                    <th class="text-right">False Flags</th>
+                    <th class="text-right">False Flag Rate</th>
+                    <th class="text-right">95% CI</th>
+                    <th>Target &amp; Status</th>
+                  </tr>
+                </thead>
+                <tbody id="ev-tbody-v2-d2-n"></tbody>
+              </table>
+            </div>
+            <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.3rem;">Note: N=10 achieves 4.2% [3.12, 5.63] (status: MET &le;5.0%), superseding preliminary 100-sample 7.0% (before).</p>
+          </div>
+
+          <div>
+            <h3 style="font-size: 0.95rem; margin-top: 0;">D2: Durbin-Watson Correlated Noise Detection by ρ</h3>
+            <div class="table-container">
+              <table class="booktabs">
+                <thead>
+                  <tr>
+                    <th>AR(1) ρ</th>
+                    <th class="text-right">Severity</th>
+                    <th class="text-right">DW Detection Rate</th>
+                    <th class="text-right">95% CI</th>
+                  </tr>
+                </thead>
+                <tbody id="ev-tbody-v2-d2-dw"></tbody>
+              </table>
+            </div>
+            <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.3rem;">Resolved via Durbin-Watson test; chi²/dof gate lacks sensitivity to temporally correlated noise.</p>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 1.25rem;">
+          <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <h3 style="font-size: 0.95rem; margin-top: 0; color: var(--accent-burgundy);">D3 Range Guard at α = 0.0005: Target Missed</h3>
+            <ul style="font-size: 0.88rem; line-height: 1.6; margin-left: 1.2rem; margin-bottom: 0;">
+              <li><strong>Old 1% Rule Detection:</strong> 65.0% [55.25, 73.64] (before: preliminary 72.0%)</li>
+              <li><strong>New Multi-Criteria Rule:</strong> <strong>90.0% [82.56, 94.48]</strong></li>
+              <li><strong>Target Spec:</strong> &ge; 95.0% (Target 95% missed at 90.0%)</li>
+              <li><strong>Mitigation / Route:</strong> 100.0% of out-of-grid queries routed to Mode 3+ live solve (Median α̂ = 0.0010).</li>
+            </ul>
+          </div>
+
+          <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+            <h3 style="font-size: 0.95rem; margin-top: 0; color: var(--accent-amber);">D5 Diagnostic Warnings: Power Evaluation</h3>
+            <ul style="font-size: 0.88rem; line-height: 1.6; margin-left: 1.2rem; margin-bottom: 0;">
+              <li><strong>Healthy False Warning Rates:</strong> Drift 3.8% [2.78, 5.17], Kurtosis 4.5% [3.38, 5.97], DW 4.9% [3.73, 6.42]</li>
+              <li><strong>Drift Warning Power:</strong> <strong>Has no power</strong> (2% drift: 3.3%, 5% drift: 4.2%, 10% drift: 5.6% vs 3.8% false warnings)</li>
+              <li><strong>Kurtosis Warning Detection:</strong> <strong>10–34%</strong> (df=5: 9.8%, df=3: 17.1%, df=3 + 10% outliers: 33.6%)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <!-- Section 6: Stage 2 Poisson Benchmark -->
       <div class="card">
         <h2 class="card-title">6. Stage 2 Poisson 2D Operator Benchmark</h2>
@@ -967,6 +1034,8 @@
       <div class="card">
         <h2 class="card-title">7. PINN Architecture &amp; Reparametrization Ablation</h2>
         <p class="text-muted" style="margin-bottom: 0.75rem;">Source: <code>experiments_summary.csv</code> and <code>mode1_pinn_summary.csv</code></p>
+        
+        <h3 style="font-size: 0.95rem; margin-top: 0;">Forward Solver Architectures (Benchmark Splits)</h3>
         <div class="table-container">
           <table class="booktabs">
             <thead>
@@ -980,6 +1049,28 @@
               </tr>
             </thead>
             <tbody id="ev-tbody-pinn"></tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size: 0.95rem; margin-top: 1.25rem;">Multi-Axis PINN Ablation (11 Systematic Variants across Seeds 42, 43, 44)</h3>
+        <p class="text-muted" style="margin-bottom: 0.75rem;">Source: <code>data/results/pinn_ablation/pinn_ablation_summary.csv</code></p>
+        <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+          <table class="booktabs">
+            <thead>
+              <tr>
+                <th>Variant</th>
+                <th>Axis</th>
+                <th>Collocation</th>
+                <th>Activation</th>
+                <th>Loss Weight</th>
+                <th>Optimizer</th>
+                <th class="text-right">Interp Med Rel L₂</th>
+                <th class="text-right">Low-α OOD Med L₂</th>
+                <th class="text-right">High-α OOD Med L₂</th>
+                <th class="text-right">Mean Train (s)</th>
+              </tr>
+            </thead>
+            <tbody id="ev-tbody-pinn-full"></tbody>
           </table>
         </div>
       </div>

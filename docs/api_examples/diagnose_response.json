@@ -1,0 +1,16 @@
+{
+  "assigned_class": "F",
+  "evidence_stats": {
+    "glr_stat": 506.387,
+    "glr_threshold": 7.544,
+    "bic_healthy": 2459.61,
+    "bic_sensor_fault": 12.16,
+    "alpha_fitted": 0.873134,
+    "alpha_baseline": 0.998341,
+    "chi2_reduced": 273.034
+  },
+  "faulty_sensor_idx": 4,
+  "change_time": null,
+  "effective_sigma": 0.01,
+  "timing_ms": 23.5
+}

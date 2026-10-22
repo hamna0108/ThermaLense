@@ -1,0 +1,42 @@
+{
+  "requests_total": 23,
+  "requests_by_endpoint": {
+    "/v1/estimate": 1,
+    "/v1/diagnose": 1,
+    "/v1/placement": 1,
+    "/v1/field": 1,
+    "/v1/poisson": 1,
+    "/health": 13,
+    "/version": 3,
+    "/metrics": 2
+  },
+  "refusals_total": 0,
+  "errors_total": 1,
+  "latency_p50_ms": {
+    "/v1/estimate": 157.63,
+    "/v1/diagnose": 16.01,
+    "/v1/placement": 3.31,
+    "/v1/field": 7.37,
+    "/v1/poisson": 3.56,
+    "/health": 2.05,
+    "/version": 1.03,
+    "/metrics": 1.63
+  },
+  "latency_p95_ms": {
+    "/v1/estimate": 157.63,
+    "/v1/diagnose": 16.01,
+    "/v1/placement": 3.31,
+    "/v1/field": 7.37,
+    "/v1/poisson": 3.56,
+    "/health": 3.53,
+    "/version": 1.2,
+    "/metrics": 1.63
+  },
+  "flags": {
+    "estimate_requests_count": 1,
+    "model_invalid_count": 0,
+    "model_invalid_share": 0.0,
+    "out_of_range_count": 0,
+    "out_of_range_share": 0.0
+  }
+}

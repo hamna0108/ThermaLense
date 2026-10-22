@@ -1,0 +1,31 @@
+{
+  "N": 20,
+  "sigma": 0.01,
+  "sensor_x": 0.5,
+  "t_stage1": [
+    0.01,
+    0.01668,
+    0.02783,
+    0.04642,
+    0.07743,
+    0.12915,
+    0.21544,
+    0.35938,
+    0.59948,
+    1.0
+  ],
+  "t_stage2_nominal": [
+    0.26238,
+    0.40517,
+    0.50304,
+    0.58449,
+    0.65722,
+    0.72466,
+    0.78867,
+    0.85045,
+    0.91081,
+    0.97037
+  ],
+  "strategy_description": "Two-stage adaptive placement at x=0.5: Stage 1 (10 points) explores log-spaced time domain. Stage 2 (10 points) dynamically concentrates around t* = 1 / (pi^2 * alpha_hat_1).",
+  "timing_ms": 0.42
+}

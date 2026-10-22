@@ -337,19 +337,19 @@ async function executeParameterEstimate() {
       tb.push(t);
       yb.push(u + randomNormal(rngBase, 0, 0.01));
     }
-    payload.baseline = { x: xb, t: tb, y: yb };
+    payload.baseline = { x_coords: xb, t_coords: tb, readings: yb };
   } else if (noiseMode === 'baseline_short') {
     // Intentionally invalid k=10 baseline to test refusal path
     const xb = Array(10).fill(0.5);
     const tb = Array.from({length: 10}, (_, i) => 0.1 + i * 0.08);
     const yb = tb.map(t => Math.sin(Math.PI * 0.5) * Math.exp(-0.10 * Math.PI * Math.PI * t));
-    payload.baseline = { x: xb, t: tb, y: yb };
+    payload.baseline = { x_coords: xb, t_coords: tb, readings: yb };
   }
 
   // Declared physics check
   const u0Val = document.getElementById('est-phys-u0').value.trim();
   if (u0Val && u0Val !== 'sin(pi*x)') {
-    payload.physics = { u0_fn: u0Val };
+    payload.physics_config = { u0_expr: u0Val };
   }
 
   try {
@@ -634,8 +634,8 @@ async function executeDiagnosis() {
   }
 
   const payload = {
-    readings: { x: xo, t: to, y: yo },
-    baseline: { x: xb, t: tb, y: yb },
+    readings: { x_coords: xo, t_coords: to, readings: yo },
+    baseline: { x_coords: xb, t_coords: tb, readings: yb },
     sigma: sigma
   };
 
@@ -1484,6 +1484,36 @@ function renderEvidencePage() {
     `).join('');
   }
 
+  // 5b. V2 Followups Final State
+  const d2nTbody = document.getElementById('ev-tbody-v2-d2-n');
+  const d2dwTbody = document.getElementById('ev-tbody-v2-d2-dw');
+  if (ev.v2_followups_final_state) {
+    const f = ev.v2_followups_final_state;
+    if (d2nTbody && f.d2_false_flags_by_N) {
+      d2nTbody.innerHTML = f.d2_false_flags_by_N.map(r => `
+        <tr>
+          <td class="mono font-bold">N = ${r.N}</td>
+          <td class="text-right mono">${r.dof}</td>
+          <td class="text-right mono">${r.false_flags} / ${r.num_runs}</td>
+          <td class="text-right mono font-bold">${r.false_flag_rate_pct.toFixed(1)}%</td>
+          <td class="text-right mono text-muted">[${r.ci_95[0].toFixed(2)}, ${r.ci_95[1].toFixed(2)}]</td>
+          <td><span class="badge ${r.status === 'MET' ? 'badge-met' : 'badge-missed'}">${r.status} (&le;5.0%)</span></td>
+        </tr>
+      `).join('');
+    }
+
+    if (d2dwTbody && f.d2_durbin_watson_detection_by_rho) {
+      d2dwTbody.innerHTML = f.d2_durbin_watson_detection_by_rho.map(r => `
+        <tr>
+          <td class="mono font-bold">&rho; = ${r.rho}</td>
+          <td class="text-right mono">Sev ${r.severity}</td>
+          <td class="text-right mono font-bold">${r.dw_detection_rate_pct.toFixed(1)}%</td>
+          <td class="text-right mono text-muted">[${r.ci_95[0].toFixed(2)}, ${r.ci_95[1].toFixed(2)}]</td>
+        </tr>
+      `).join('');
+    }
+  }
+
   // 6. Poisson Table
   const poiTbody = document.getElementById('ev-tbody-poisson');
   if (poiTbody && ev.stage2_methods) {
@@ -1499,7 +1529,7 @@ function renderEvidencePage() {
     `).join('');
   }
 
-  // 7. PINN Table
+  // 7. PINN Tables
   const pinnTbody = document.getElementById('ev-tbody-pinn');
   if (pinnTbody && ev.pinn_ablation_table) {
     pinnTbody.innerHTML = ev.pinn_ablation_table.forward_ablation_variants.map(p => `
@@ -1510,6 +1540,24 @@ function renderEvidencePage() {
         <td class="text-right mono font-bold">${(p.median_rel_l2 * 100).toFixed(2)}%</td>
         <td class="text-right mono">${(p.p90_rel_l2 * 100).toFixed(2)}%</td>
         <td class="text-right mono">${p.median_t0_mae.toExponential(2)}</td>
+      </tr>
+    `).join('');
+  }
+
+  const pinnFullTbody = document.getElementById('ev-tbody-pinn-full');
+  if (pinnFullTbody && ev.pinn_ablation_table && ev.pinn_ablation_table.full_ablation_summary) {
+    pinnFullTbody.innerHTML = ev.pinn_ablation_table.full_ablation_summary.map(a => `
+      <tr>
+        <td class="mono font-bold">${a.variant}</td>
+        <td>${a.axis}</td>
+        <td><code>${a.collocation}</code></td>
+        <td><code>${a.activation}</code></td>
+        <td><code>${a.loss_weighting}</code></td>
+        <td><code>${a.optimizer}</code></td>
+        <td class="text-right mono font-bold">${(a.interp_rel_l2_median * 100).toFixed(3)}%</td>
+        <td class="text-right mono">${(a.low_alpha_ood_rel_l2_median * 100).toFixed(3)}%</td>
+        <td class="text-right mono">${(a.high_alpha_ood_rel_l2_median * 100).toFixed(2)}%</td>
+        <td class="text-right mono">${a.train_time_sec_mean.toFixed(1)}s</td>
       </tr>
     `).join('');
   }

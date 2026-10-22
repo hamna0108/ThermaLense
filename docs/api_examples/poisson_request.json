@@ -1,0 +1,15 @@
+{
+  "source": {
+    "type": "sine",
+    "modes": [
+      [
+        2,
+        2
+      ]
+    ],
+    "amplitudes": [
+      1.0
+    ]
+  },
+  "grid_size": 64
+}

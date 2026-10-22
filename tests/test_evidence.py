@@ -149,3 +149,94 @@ def test_pinn_ablation_provenance(evidence_data):
         match = exp_df[(exp_df["model"] == row["model"]) & (exp_df["split"] == row["split"])]
         assert len(match) == 1
         assert round(float(match["median_rel_l2"].iloc[0]), 6) == row["median_rel_l2"]
+
+def test_v2_followups_provenance(evidence_data):
+    """Trace V2 followups final state to data/results/task_e_v2_followups.json."""
+    followup_path = os.path.join(RESULTS_DIR, "task_e_v2_followups.json")
+    with open(followup_path, "r", encoding="utf-8") as f:
+        raw_f = json.load(f)
+
+    v2_f = evidence_data["v2_followups_final_state"]
+    assert "d2_false_flags_by_N" in v2_f
+    assert "d2_durbin_watson_detection_by_rho" in v2_f
+    assert "d3_range_guard_comparison" in v2_f
+    assert "d5_warnings_evaluation" in v2_f
+
+    # 1. D2 false flag rate by N
+    d2_by_n = {item["N"]: item for item in v2_f["d2_false_flags_by_N"]}
+    assert d2_by_n[5]["false_flag_rate_pct"] == 5.4
+    assert d2_by_n[5]["ci_95"] == [4.16, 6.98]
+    assert d2_by_n[10]["false_flag_rate_pct"] == 4.2
+    assert d2_by_n[10]["ci_95"] == [3.12, 5.63]
+    assert d2_by_n[20]["false_flag_rate_pct"] == 5.9
+    assert d2_by_n[20]["ci_95"] == [4.6, 7.54]
+    # Check trace to raw file
+    assert d2_by_n[10]["false_flags"] == raw_f["part1_gof_gate"]["N_10"]["false_flags"]
+
+    # 2. D2 Durbin-Watson detection by rho
+    dw_by_rho = {item["rho"]: item for item in v2_f["d2_durbin_watson_detection_by_rho"]}
+    assert dw_by_rho[0.5]["dw_detection_rate_pct"] == 23.9
+    assert dw_by_rho[0.5]["ci_95"] == [21.36, 26.64]
+    assert dw_by_rho[0.8]["dw_detection_rate_pct"] == 60.4
+    assert dw_by_rho[0.8]["ci_95"] == [57.33, 63.39]
+    assert dw_by_rho[0.95]["dw_detection_rate_pct"] == 80.5
+    assert dw_by_rho[0.95]["ci_95"] == [77.93, 82.84]
+
+    # 3. D3 Range Guard comparison (alpha = 0.0005)
+    d3_comp = v2_f["d3_range_guard_comparison"]
+    assert d3_comp["alpha_target"] == 0.0005
+    assert d3_comp["old_1pct_rule_rate_pct"] == 65.0
+    assert d3_comp["old_1pct_ci_95"] == [55.25, 73.64]
+    assert d3_comp["new_rule_rate_pct"] == 90.0
+    assert d3_comp["new_rule_ci_95"] == [82.56, 94.48]
+    assert "MISSED" in d3_comp["target_status"]
+    assert d3_comp["routed_to_m3p_pct"] == 100.0
+
+    # 4. D5 Warnings evaluation
+    d5 = v2_f["d5_warnings_evaluation"]
+    drift_far = d5["healthy_false_warning_rates"]["drift_far_pct"]
+    assert drift_far == 3.8
+    assert d5["healthy_false_warning_rates"]["kurtosis_far_pct"] == 4.5
+    assert d5["healthy_false_warning_rates"]["durbin_watson_far_pct"] == 4.9
+
+    # Drift warning has no power: rates 3.3%, 4.2%, 5.6% vs 3.8% FAR
+    drift_rates = [d["detection_rate_pct"] for d in d5["drift_warning_evaluation"]["detection_by_severity"]]
+    assert drift_rates == [3.3, 4.2, 5.6]
+    assert "has no power" in d5["drift_warning_evaluation"]["power_conclusion"]
+
+    # Kurtosis warning achieves 10-34%
+    kurt_rates = [k["detection_rate_pct"] for k in d5["kurtosis_warning_evaluation"]["detection_by_severity"]]
+    assert kurt_rates == [9.8, 17.1, 33.6]
+    assert min(kurt_rates) >= 9.8 and max(kurt_rates) <= 34.0
+
+def test_pinn_ablation_summary_provenance(evidence_data):
+    """Trace PINN multi-axis ablation to pinn_ablation/pinn_ablation_summary.csv."""
+    abl_csv = pd.read_csv(os.path.join(RESULTS_DIR, "pinn_ablation", "pinn_ablation_summary.csv"))
+    full_abl = evidence_data["pinn_ablation_table"]["full_ablation_summary"]
+
+    assert len(full_abl) == len(abl_csv["variant"].unique())
+    for item in full_abl:
+        var = item["variant"]
+        sub = abl_csv[abl_csv["variant"] == var]
+        assert len(sub) == item["seeds"]
+        expected_med = round(float(sub["interp_rel_l2_median"].median()), 6)
+        assert item["interp_rel_l2_median"] == expected_med
+
+def test_superseded_numbers_labeled_as_before(evidence_data):
+    """Ensure superseded numbers (7.0% false flags, 72.0% range guard) are labeled as 'before'."""
+    missed = evidence_data["notes_and_caveats"]["missed_v2_targets"]
+    stmt = missed["statement"]
+
+    # The statement must qualify 7.0% and 72.0% with 'before'
+    if "7.0%" in stmt:
+        assert "before: 7.0%" in stmt or "before" in stmt
+    if "72.0%" in stmt:
+        assert "before: 72.0%" in stmt or "before" in stmt
+
+    # Check observed items in missed_items
+    for item in missed["missed_items"]:
+        obs = item["observed"]
+        if "7.0%" in obs:
+            assert "before:" in obs
+        if "72.0%" in obs:
+            assert "before:" in obs

@@ -45,6 +45,7 @@ from service.models import (
     HealthResponse, VersionResponse, ErrorDetail
 )
 from service.metrics import GLOBAL_METRICS
+from service.security import parse_whitelisted_expression, SecurityError, ExpressionSecurityError
 
 from src.paths import MODELS, RESULTS
 from src.solvers.heat_1d import solve_heat_1d_exact
@@ -406,19 +407,75 @@ def get_metrics():
 def post_estimate(req: EstimateRequest):
     """Parameter inversion with goodness-of-fit gating, range guard, and baseline estimation."""
     t0 = time.perf_counter()
-    x_s = np.array(req.x, dtype=float)
-    t_s = np.array(req.t, dtype=float)
-    y_s = np.array(req.y, dtype=float)
+    x_coords = req.x_coords or req.x
+    t_coords = req.t_coords or req.t
+    readings = req.readings or req.y
+    x_s = np.array(x_coords, dtype=float)
+    t_s = np.array(t_coords, dtype=float)
+    y_s = np.array(readings, dtype=float)
     prec = APP_STATE.get("prec")
     warnings_list = []
     
+    # 0. Secure Expression Parsing for Declared Physics
+    u0_fn = None
+    bc_fn = None
+    source_fn = None
+    alpha_fn = None
+    bc_left_fn = None
+    bc_right_fn = None
+
+    if req.physics_config is not None:
+        try:
+            if req.physics_config.u0_expr:
+                u0_fn = parse_whitelisted_expression(req.physics_config.u0_expr)
+            if req.physics_config.bc_left_expr:
+                bc_left_fn = parse_whitelisted_expression(req.physics_config.bc_left_expr)
+            if req.physics_config.bc_right_expr:
+                bc_right_fn = parse_whitelisted_expression(req.physics_config.bc_right_expr)
+            if req.physics_config.source_expr:
+                source_fn = parse_whitelisted_expression(req.physics_config.source_expr)
+            if req.physics_config.alpha_expr:
+                alpha_fn = parse_whitelisted_expression(req.physics_config.alpha_expr)
+            if bc_left_fn is not None or bc_right_fn is not None:
+                def combined_bc(t):
+                    b0 = bc_left_fn(t=t) if bc_left_fn else 0.0
+                    b1 = bc_right_fn(t=t) if bc_right_fn else 0.0
+                    return (b0, b1)
+                bc_fn = combined_bc
+        except (SecurityError, ValueError) as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error_code": "SECURITY_VALIDATION_ERROR",
+                    "message": f"Declared physics expression rejected by security sandbox: {str(e)}"
+                }
+            )
+    elif req.physics is not None:
+        u0_candidate = req.physics.get("u0_expr") or req.physics.get("u0_fn")
+        if isinstance(u0_candidate, str):
+            try:
+                u0_fn = parse_whitelisted_expression(u0_candidate)
+            except (SecurityError, ValueError) as e:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "error_code": "SECURITY_VALIDATION_ERROR",
+                        "message": f"Declared physics expression rejected by security sandbox: {str(e)}"
+                    }
+                )
+        elif callable(u0_candidate):
+            u0_fn = u0_candidate
+
     # 1. Determine effective sigma
     if req.sigma is not None:
         effective_sigma = float(req.sigma)
     elif req.baseline is not None:
-        xb = np.array(req.baseline.x, dtype=float)
-        tb = np.array(req.baseline.t, dtype=float)
-        yb = np.array(req.baseline.y, dtype=float)
+        xb_coords = req.baseline.x_coords or req.baseline.x
+        tb_coords = req.baseline.t_coords or req.baseline.t
+        yb_readings = req.baseline.readings or req.baseline.y
+        xb = np.array(xb_coords, dtype=float)
+        tb = np.array(tb_coords, dtype=float)
+        yb = np.array(yb_readings, dtype=float)
         k = len(yb)
         if k < 20:
             raise HTTPException(
@@ -442,10 +499,12 @@ def post_estimate(req: EstimateRequest):
         
     # 2. Execute estimation
     mode = req.mode.lower() if req.mode else "mode3plus"
-    
-    if req.physics is not None or mode == "declared_physics":
-        u0_fn = req.physics.get("u0_fn") if req.physics else None
-        res_d4 = invert_with_declared_physics(x_s, t_s, y_s, effective_sigma, alpha_true=0.1, u0_fn=u0_fn)
+
+    if req.physics_config is not None or req.physics is not None or mode == "declared_physics":
+        res_d4 = invert_with_declared_physics(
+            x_s, t_s, y_s, effective_sigma, alpha_true=0.1,
+            u0_fn=u0_fn, bc_fn=bc_fn, source_fn=source_fn, alpha_fn=alpha_fn
+        )
         hat_alpha = res_d4["alpha_hat"]
         se_log10 = float(np.sqrt(res_d4["crb"]) / (hat_alpha * np.log(10))) if res_d4["crb"] != np.inf and res_d4["crb"] > 0 else 0.1
         method_str = "Declared Physics (splu)"
@@ -507,13 +566,19 @@ def post_estimate(req: EstimateRequest):
 def post_diagnose(req: DiagnoseRequest):
     """Sensor anomaly and physical change-point diagnosis via baseline-informed cascade."""
     t0 = time.perf_counter()
-    x_s = np.array(req.readings.x, dtype=float)
-    t_s = np.array(req.readings.t, dtype=float)
-    y_s = np.array(req.readings.y, dtype=float)
+    x_coords = req.readings.x_coords or req.readings.x
+    t_coords = req.readings.t_coords or req.readings.t
+    readings = req.readings.readings or req.readings.y
+    x_s = np.array(x_coords, dtype=float)
+    t_s = np.array(t_coords, dtype=float)
+    y_s = np.array(readings, dtype=float)
     
-    xb = np.array(req.baseline.x, dtype=float)
-    tb = np.array(req.baseline.t, dtype=float)
-    yb = np.array(req.baseline.y, dtype=float)
+    xb_coords = req.baseline.x_coords or req.baseline.x
+    tb_coords = req.baseline.t_coords or req.baseline.t
+    yb_readings = req.baseline.readings or req.baseline.y
+    xb = np.array(xb_coords, dtype=float)
+    tb = np.array(tb_coords, dtype=float)
+    yb = np.array(yb_readings, dtype=float)
     
     k = len(yb)
     if k < 20:

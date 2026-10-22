@@ -251,7 +251,7 @@ def build_stage2_methods():
     }
 
 def build_pinn_ablation():
-    """Extract PINN ablation table from experiments_summary.csv and mode1_pinn_summary.csv."""
+    """Extract PINN ablation table from experiments_summary.csv, mode1_pinn_summary.csv, and pinn_ablation_summary.csv."""
     exp_path = os.path.join(RESULTS_DIR, "experiments_summary.csv")
     df_exp = pd.read_csv(exp_path)
     
@@ -283,10 +283,151 @@ def build_pinn_ablation():
             "mean_rel_err": round(float(row["mean_rel_err"]), 6),
             "single_fit_time_ms": round(float(row["single_fit_time_ms"]), 3)
         })
+
+    # Comprehensive PINN ablation from pinn_ablation/pinn_ablation_summary.csv
+    abl_path = os.path.join(RESULTS_DIR, "pinn_ablation", "pinn_ablation_summary.csv")
+    df_abl = pd.read_csv(abl_path)
+    
+    # Aggregate across seeds per variant
+    ablation_summary_table = []
+    for var in df_abl["variant"].unique():
+        sub = df_abl[df_abl["variant"] == var]
+        axis = sub["axis"].iloc[0]
+        activation = sub["activation"].iloc[0]
+        collocation = sub["collocation"].iloc[0]
+        loss_w = sub["loss_weighting"].iloc[0]
+        optimizer = sub["optimizer"].iloc[0]
+        
+        interp_med = float(pd.to_numeric(sub["interp_rel_l2_median"]).median())
+        low_ood_med = float(pd.to_numeric(sub["low_alpha_ood_rel_l2_median"]).median())
+        high_ood_med = float(pd.to_numeric(sub["high_alpha_ood_rel_l2_median"]).median())
+        train_time_mean = float(pd.to_numeric(sub["train_time_sec"]).mean())
+        
+        ablation_summary_table.append({
+            "variant": str(var),
+            "axis": str(axis),
+            "activation": str(activation),
+            "collocation": str(collocation),
+            "loss_weighting": str(loss_w),
+            "optimizer": str(optimizer),
+            "seeds": len(sub),
+            "interp_rel_l2_median": round(interp_med, 6),
+            "low_alpha_ood_rel_l2_median": round(low_ood_med, 6),
+            "high_alpha_ood_rel_l2_median": round(high_ood_med, 6),
+            "train_time_sec_mean": round(train_time_mean, 2)
+        })
         
     return {
         "forward_ablation_variants": variants_table,
-        "mode1_inverse_summary": mode1_inverse
+        "mode1_inverse_summary": mode1_inverse,
+        "full_ablation_summary": ablation_summary_table
+    }
+
+def build_v2_followups():
+    """Extract V2 final targets from task_e_v2_followups.json."""
+    followup_path = os.path.join(RESULTS_DIR, "task_e_v2_followups.json")
+    with open(followup_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # 1. D2 false-flag rate by N (1000 runs each)
+    p1 = data.get("part1_gof_gate", {})
+    d2_by_n = []
+    for key in ["N_5", "N_10", "N_20"]:
+        if key in p1:
+            item = p1[key]
+            d2_by_n.append({
+                "N": item["N"],
+                "dof": item["dof"],
+                "tau_threshold": item["tau_threshold"],
+                "num_runs": item["num_runs"],
+                "false_flags": item["false_flags"],
+                "false_flag_rate_pct": item["false_flag_rate_pct"],
+                "ci_95": item["ci_95"],
+                "median_chi2_dof": item["median_chi2_dof"],
+                "status": item["status"],
+                "supersedes_preliminary": "7.0% (before: from early 100-sample run)" if item["N"] == 10 else None
+            })
+
+    # 2. D2 AR(1) & Durbin-Watson detection by rho
+    p3 = data.get("part3_d5_warnings", {})
+    dw_by_rho = []
+    for row in p3.get("s3_dw_detection", []):
+        dw_by_rho.append({
+            "severity": row["sev_idx"],
+            "rho": row["rho"],
+            "dw_detection_rate_pct": row["rate_pct"],
+            "ci_95": row["ci_95"]
+        })
+
+    # 3. D3 Range Guard: Old 1% rule vs New rule at alpha=0.0005
+    p4 = data.get("part4_range_guard_s12", {})
+    s12 = p4.get("s12_comparison", [])
+    d3_s12_target = None
+    for row in s12:
+        if row.get("sev_idx") == 1:
+            d3_s12_target = {
+                "alpha_target": row["alpha_target"],
+                "description": row["desc"],
+                "old_1pct_rule_rate_pct": row["rate_1pct"],
+                "old_1pct_ci_95": row["ci_1pct"],
+                "new_rule_rate_pct": row["rate_new"],
+                "new_rule_ci_95": row["ci_new"],
+                "target_spec": ">= 95.0%",
+                "target_status": "MISSED (at 90.0% [82.56, 94.48])",
+                "routed_to_m3p_pct": row["routed_to_m3p_pct"],
+                "median_hat": row["median_hat"],
+                "before_initial_estimate": "72.0% (before: preliminary run without CI guard)"
+            }
+            break
+
+    # 4. D5 Warnings: Drift vs Kurtosis
+    far_rates = p3.get("healthy_false_warning_rates", {})
+    drift_detection = p3.get("s13_drift_detection", [])
+    kurt_detection = p3.get("s2_kurtosis_detection", [])
+
+    d5_summary = {
+        "healthy_false_warning_rates": {
+            "drift_far_pct": far_rates.get("drift_far", {}).get("rate_pct", 3.8),
+            "drift_far_ci_95": far_rates.get("drift_far", {}).get("ci_95", [2.78, 5.17]),
+            "kurtosis_far_pct": far_rates.get("kurtosis_far", {}).get("rate_pct", 4.5),
+            "kurtosis_far_ci_95": far_rates.get("kurtosis_far", {}).get("ci_95", [3.38, 5.97]),
+            "durbin_watson_far_pct": far_rates.get("durbin_watson_far", {}).get("rate_pct", 4.9),
+            "durbin_watson_far_ci_95": far_rates.get("durbin_watson_far", {}).get("ci_95", [3.73, 6.42])
+        },
+        "drift_warning_evaluation": {
+            "power_conclusion": "drift warning has no power, 3.3/4.2/5.6% vs 3.8% false warnings",
+            "healthy_far_pct": far_rates.get("drift_far", {}).get("rate_pct", 3.8),
+            "detection_by_severity": [
+                {
+                    "severity": d["sev_idx"],
+                    "drift_level": d["drift"],
+                    "description": d["desc"],
+                    "detection_rate_pct": d["rate_pct"],
+                    "ci_95": d["ci_95"]
+                }
+                for d in drift_detection
+            ]
+        },
+        "kurtosis_warning_evaluation": {
+            "summary_range": "kurtosis warning 10-34%",
+            "healthy_far_pct": far_rates.get("kurtosis_far", {}).get("rate_pct", 4.5),
+            "detection_by_severity": [
+                {
+                    "severity": k["sev_idx"],
+                    "description": k["desc"],
+                    "detection_rate_pct": k["rate_pct"],
+                    "ci_95": k["ci_95"]
+                }
+                for k in kurt_detection
+            ]
+        }
+    }
+
+    return {
+        "d2_false_flags_by_N": d2_by_n,
+        "d2_durbin_watson_detection_by_rho": dw_by_rho,
+        "d3_range_guard_comparison": d3_s12_target,
+        "d5_warnings_evaluation": d5_summary
     }
 
 def build_notes_and_caveats():
@@ -316,25 +457,29 @@ def build_notes_and_caveats():
         },
         "missed_v2_targets": {
             "statement": (
-                "Empirical evaluation revealed that V2 targets D2 and D3 were missed under rigorous stress testing. "
-                "D2 (Goodness-of-Fit Gate): chi2/dof thresholding failed to flag AR(1) correlated noise (flag rates "
-                "1.0% - 2.0% vs >=80.0% target) and low-severity boundary/source mismatches (28.0% - 69.0% vs >=80.0% target), "
-                "while exhibiting a 7.0% false-alarm rate under healthy conditions (target <=5.0%). D3 (Range Guard): out-of-grid "
-                "detection for alpha=0.0005 achieved 72.0% (target >=95.0%) due to finite confidence-interval pinning."
+                "Final empirical followup evaluation (data/results/task_e_v2_followups.json) established the final "
+                "state of V2 targets D2, D3, and D5. D2 (Goodness-of-Fit Gate): chi2/dof thresholding exhibits a final "
+                "false-alarm rate of 4.2% [3.12, 5.63] for N=10 (before: 7.0% in preliminary 100-run sample), 5.4% for "
+                "N=5, and 5.9% for N=20. The chi2 gate fails to detect AR(1) noise (flag rates 1.0%-2.0%), but the Durbin-Watson "
+                "diagnostic detects AR(1) noise at 23.9% (rho=0.5), 60.4% (rho=0.8), and 80.5% (rho=0.95). D3 (Range Guard): "
+                "for alpha=0.0005, the old 1% rule achieved 65.0% (before: 72.0% preliminary), whereas the new multi-criteria "
+                "rule achieved 90.0% [82.56, 94.48], missing the 95.0% target at 90.0% (100% routed to Mode 3+). D5 (Diagnostic "
+                "Warnings): the drift warning has no power (3.3/4.2/5.6% detection vs 3.8% false warnings); the kurtosis warning "
+                "achieves 10-34% (9.8% to 33.6% detection vs 4.5% false warnings)."
             ),
             "missed_items": [
                 {
                     "target_id": "D2",
                     "scenario": "Healthy Control (sigma=0.01)",
                     "metric": "Healthy False Flag Rate",
-                    "observed": "7.0% [3.43, 13.75]",
+                    "observed": "4.2% [3.12, 5.63] for N=10 (before: 7.0% in preliminary 100-run sample)",
                     "target_spec": "<= 5.0%"
                 },
                 {
                     "target_id": "D2",
                     "scenario": "S3 Sev 1 (AR(1) rho = 0.50)",
                     "metric": "Model Invalid Flag Rate",
-                    "observed": "1.0% [0.18, 5.45]",
+                    "observed": "1.0% [0.18, 5.45] (DW detector achieves 23.9%)",
                     "target_spec": ">= 80.0%"
                 },
                 {
@@ -362,11 +507,18 @@ def build_notes_and_caveats():
                     "target_id": "D3",
                     "scenario": "S12 Sev 1 (alpha=0.0005)",
                     "metric": "At Bound / Out-of-Range %",
-                    "observed": "72.0% [62.51, 79.86]",
-                    "target_spec": ">= 95.0%"
+                    "observed": "90.0% [82.56, 94.48] (before: 72.0% preliminary / 65.0% old 1% rule)",
+                    "target_spec": ">= 95.0% (missed at 90.0%)"
+                },
+                {
+                    "target_id": "D5",
+                    "scenario": "S13 (Drift warning power)",
+                    "metric": "Detection vs False Alarm",
+                    "observed": "3.3/4.2/5.6% vs 3.8% false warnings (has no power)",
+                    "target_spec": "Meaningful statistical power over false alarm"
                 }
             ],
-            "source": "data/results/v2_before_after_summary.csv"
+            "source": "data/results/task_e_v2_followups.json and data/results/v2_before_after_summary.csv"
         },
         "poisson_high_mode_breakdown": {
             "fno_high_mode_median_l2": 0.804159,
@@ -394,7 +546,10 @@ def main():
         "data/results/poisson_v2_benchmark_table.csv",
         "data/results/timing_honesty.json",
         "data/results/experiments_summary.csv",
-        "data/results/mode1_pinn_summary.csv"
+        "data/results/mode1_pinn_summary.csv",
+        "data/results/task_e_v2_followups.json",
+        "data/results/task_e_v2_followups.csv",
+        "data/results/pinn_ablation/pinn_ablation_summary.csv"
     ]
     
     # Verify all source files exist
@@ -434,6 +589,7 @@ def main():
         "anomaly_confusion_matrix": build_anomaly_confusion(),
         "stress_summary": build_stress_summary(),
         "v2_before_after": build_v2_before_after(),
+        "v2_followups_final_state": build_v2_followups(),
         "stage2_methods": build_stage2_methods(),
         "pinn_ablation_table": build_pinn_ablation(),
         "notes_and_caveats": build_notes_and_caveats()

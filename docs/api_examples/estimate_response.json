@@ -1,0 +1,16 @@
+{
+  "alpha_hat": 0.997405,
+  "ci95": [
+    0.960072,
+    1.036189
+  ],
+  "method": "Declared Physics (splu)",
+  "flags": {
+    "model_invalid": false,
+    "out_of_range": false,
+    "at_bound": false,
+    "warnings": []
+  },
+  "effective_sigma": 0.01,
+  "timing_ms": 160.17
+}

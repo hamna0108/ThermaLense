@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Novatore Digital Twin — Thermal Diffusion & Poisson Workbench</title>
+  <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Top App Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-section">
+        <a href="#overview" class="brand-title" id="brand-link">NOVATORE TWIN</a>
+        <span class="brand-subtitle">Physical Parameter &amp; Diagnostics Instrument</span>
+      </div>
+      <div class="header-status-area">
+        <span id="service-health-badge" class="health-badge healthy" title="Live status from /health">
+          <span class="health-indicator-dot"></span>
+          <span id="service-health-text">CONNECTING...</span>
+        </span>
+        <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle light and dark color theme">
+          <span id="theme-toggle-text">Dark Theme</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Bar (Hash Routing) -->
+  <nav class="nav-bar" aria-label="Workbench navigation">
+    <div class="nav-inner">
+      <a href="#overview" class="nav-link active" id="nav-overview">Overview</a>
+      <a href="#estimate" class="nav-link" id="nav-estimate">Estimate</a>
+      <a href="#diagnose" class="nav-link" id="nav-diagnose">Diagnose</a>
+      <a href="#placement" class="nav-link" id="nav-placement">Place Sensors</a>
+      <a href="#field" class="nav-link" id="nav-field">Field (Forward)</a>
+      <a href="#poisson" class="nav-link" id="nav-poisson">Stage 2 Poisson</a>
+      <a href="#evidence" class="nav-link" id="nav-evidence">Evidence</a>
+      <a href="#limits" class="nav-link" id="nav-limits">Limits</a>
+    </div>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="main-content" id="main-content">
+
+    <!-- ====================================================================
+         PAGE 1: OVERVIEW
+         ==================================================================== -->
+    <section id="view-overview" class="page-view active" aria-labelledby="heading-overview">
+      <div class="page-intro">
+        <h1 id="heading-overview">Novatore Thermal &amp; PDE Digital Twin</h1>
+        <p class="page-desc">Mathematical framework, dual neural surrogate architecture, and operational findings.</p>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">System Architecture &amp; Core Model</h2>
+        <p id="overview-para-1">
+          The Novatore Digital Twin models unsteady one-dimensional thermal diffusion in a homogeneous bar governed by the parabolic partial differential equation ∂u/∂t = α ∂²u/∂x² on the spatial domain x ∈ [0, 1] and temporal interval t ∈ [0, 1], subject to homogeneous Dirichlet boundary conditions u(0, t) = u(1, t) = 0 and fundamental harmonic initial condition u(x, 0) = sin(πx). The twin pairs this unsteady diffusion process with a two-dimensional steady-state Poisson elliptic operator −∇²u = f on the unit square [0, 1]² with manufactured distributed heating sources.
+        </p>
+        <p id="overview-para-2">
+          Rather than relying on isolated neural black boxes, the architecture implements a rigorous hybrid surrogate hierarchy: a pre-factorized Crank-Nicolson numerical solver guarantees exact finite-difference truth; a Fourier Neural Operator (FNO-2D) with hard boundary-mask constraints computes global spatiotemporal fields in sub-millisecond evaluation passes; and a bounded reparametrized Physics-Informed Neural Network (PINN Exp D) provides analytical autograd parameter gradients dL/dα without spatial meshing.
+        </p>
+        <p id="overview-para-3">
+          Operationally, the service provides real-time parameter inversion under sensor noise σ, goodness-of-fit gating (D2) to prevent silent model invalidity, a 4-hypothesis baseline-informed Generalized Likelihood Ratio (GLR) cascade for sensor fault and physical change detection, and a two-stage adaptive sensor placement schedule concentrated near peak Fisher information.
+        </p>
+      </div>
+
+      <!-- Headline Findings dynamically loaded from evidence.json -->
+      <h2>Headline Benchmark Findings</h2>
+      <div class="headline-grid" id="headline-findings-container">
+        <!-- Rendered dynamically by app.js from evidence.json -->
+        <div class="headline-card">
+          <div class="headline-stat">...</div>
+          <div class="headline-title">Loading findings...</div>
+          <div class="headline-detail">Fetching verified numbers from evidence.json.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">Workbench Demonstration Quickstart</h2>
+        <p>Explore each operational subsystem through the live interactive workbench panels:</p>
+        <ul style="margin-left: 1.5rem; line-height: 1.8;">
+          <li><a href="#estimate" style="color: var(--primary-navy); font-weight: 600;">Parameter Estimation</a> — Invert thermal diffusivity α̂ from synthetic or raw sensor readings with Wald 95% confidence intervals and range-guard routing.</li>
+          <li><a href="#diagnose" style="color: var(--primary-navy); font-weight: 600;">Anomaly &amp; Change Diagnostics</a> — Classify operational states into Healthy, Anomalous Diffusion, Sensor Fault, or Physical Change with ground-truth comparison.</li>
+          <li><a href="#placement" style="color: var(--primary-navy); font-weight: 600;">Sensor Placement</a> — Compute optimal two-stage temporal sampling points clustered near optimal Fisher sensitivity.</li>
+          <li><a href="#field" style="color: var(--primary-navy); font-weight: 600;">Forward Heat Field</a> — Generate and inspect spatiotemporal solution heatmaps u(x, t) with side-by-side Numerical Solver vs FNO comparison.</li>
+          <li><a href="#poisson" style="color: var(--primary-navy); font-weight: 600;">Stage 2 Poisson</a> — Synthesize custom Gaussian hotspots or harmonic wave sources and compare exact sparse direct solves with FNO and Linear baseline fields.</li>
+          <li><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Empirical Evidence Tables</a> — Inspect complete audit tables, confusion matrices, and ablation runs traceable to raw data files.</li>
+          <li><a href="#limits" style="color: var(--primary-navy); font-weight: 600;">Operational Limits</a> — Review honest boundaries and physical constraints of the twin.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         PAGE 2: ESTIMATE (INVERSE PARAMETER ESTIMATION)
+         ==================================================================== -->
+    <section id="view-estimate" class="page-view" aria-labelledby="heading-estimate">
+      <div class="page-intro">
+        <h1 id="heading-estimate">Parameter Estimation Workbench</h1>
+        <p class="page-desc">Inverse parameter estimation for thermal diffusivity α with goodness-of-fit gating, range guarding, and Wald confidence intervals.</p>
+      </div>
+
+      <div class="grid-2">
+        <!-- Input Form -->
+        <div class="card">
+          <h2 class="card-title" style="margin-top: 0;">Sensor Measurements &amp; Settings</h2>
+          
+          <div class="form-group">
+            <label class="form-label">Data Input Mode</label>
+            <div class="btn-group" style="width: 100%;">
+              <button type="button" class="btn btn-secondary btn-sm active" id="estimate-mode-synth-btn">Synthetic Generator</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="estimate-mode-paste-btn">Paste Coordinates (x, t, y)</button>
+            </div>
+          </div>
+
+          <!-- Synthetic Controls -->
+          <div id="estimate-synth-controls">
+            <div class="form-group">
+              <label for="est-true-alpha" class="form-label">True Diffusivity α (Ground Truth)</label>
+              <input type="number" id="est-true-alpha" class="form-control mono" value="0.10" min="0.0001" max="10.0" step="0.01">
+              <span class="form-help">Synthetic simulation value; used only to generate readings and evaluate confidence interval coverage.</span>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="est-num-sensors" class="form-label">Sensor Count N</label>
+                <input type="number" id="est-num-sensors" class="form-control mono" value="10" min="2" max="500" step="1">
+              </div>
+              <div class="form-group">
+                <label for="est-seed" class="form-label">RNG Seed</label>
+                <input type="number" id="est-seed" class="form-control mono" value="42" step="1">
+              </div>
+            </div>
+          </div>
+
+          <!-- Paste Controls -->
+          <div id="estimate-paste-controls" style="display: none;">
+            <div class="form-group">
+              <label for="est-paste-text" class="form-label">Raw Data Rows: x, t, y</label>
+              <textarea id="est-paste-text" class="form-control" rows="6" placeholder="0.5, 0.1, 0.3678&#10;0.5, 0.2, 0.1353&#10;..."></textarea>
+              <span class="form-help">One reading per line: comma- or whitespace-separated spatial x ∈ [0, 1], temporal t ∈ [0, 1], and sensor measurement y.</span>
+            </div>
+          </div>
+
+          <!-- Noise Specification -->
+          <div class="form-group">
+            <label class="form-label">Observation Noise σ Source</label>
+            <select id="est-noise-select" class="form-select">
+              <option value="declared" selected>Declared / Known Noise Sigma</option>
+              <option value="baseline">Estimate from 20-Reading Baseline</option>
+              <option value="baseline_short">Invalid Baseline Test (k = 10, triggers refusal)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="est-declared-sigma-group">
+            <label for="est-sigma-val" class="form-label">Declared Noise σ</label>
+            <input type="number" id="est-sigma-val" class="form-control mono" value="0.01" min="0.0001" max="1.0" step="0.005">
+          </div>
+
+          <!-- Method Selection -->
+          <div class="form-group">
+            <label for="est-method-select" class="form-label">Estimation Algorithm</label>
+            <select id="est-method-select" class="form-select">
+              <option value="mode3plus" selected>Mode 3+ (Default: Range-Guarded FNO + CN Polish)</option>
+              <option value="mode2">Mode 2 (Classical Crank-Nicolson Spline)</option>
+              <option value="mode3">Mode 3 (Fast Sub-Millisecond FNO Surrogate)</option>
+              <option value="declared_physics">Declared Physics General CN (Sparse LU)</option>
+            </select>
+            <span class="form-help">Mode 3+ delivers verified 94.0% Wald CI coverage. Mode 3 is fastest (0.68 ms) but drops coverage to 88.2%.</span>
+          </div>
+
+          <!-- Declared Physics Accordion -->
+          <details class="disclosure" id="est-physics-disclosure">
+            <summary>Declared Physics Configuration (Optional)</summary>
+            <div style="margin-top: 0.6rem;">
+              <p class="form-help">Specify non-standard physics when the physical bar differs from the default initial condition sin(πx) or zero boundaries.</p>
+              <div class="form-group">
+                <label for="est-phys-u0" class="form-label">Initial Condition u₀(x)</label>
+                <input type="text" id="est-phys-u0" class="form-control mono" placeholder="sin(pi*x) or sin(2*pi*x) or 1.0" value="sin(pi*x)">
+              </div>
+            </div>
+          </details>
+
+          <div style="margin-top: 1.25rem; display: flex; gap: 0.5rem;">
+            <button type="button" class="btn btn-primary" id="est-submit-btn">Execute Parameter Inversion</button>
+            <button type="button" class="btn btn-secondary" id="est-sample-synth-btn">Generate Readings</button>
+          </div>
+        </div>
+
+        <!-- Output Results Card -->
+        <div class="card" id="estimate-results-card">
+          <h2 class="card-title" style="margin-top: 0;">Estimation Diagnostics</h2>
+
+          <!-- State container -->
+          <div id="est-state-container">
+            <div class="state-box">
+              Configure parameters and click <strong>Execute Parameter Inversion</strong> to run the service.
+            </div>
+          </div>
+
+          <!-- Result Panel (Shown on success) -->
+          <div id="est-result-panel" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.75rem;">
+              <div>
+                <span style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Estimated Diffusivity α̂</span>
+                <div style="font-family: var(--font-mono); font-size: 2.1rem; font-weight: 700; color: var(--primary-navy);" id="est-out-alpha">-</div>
+              </div>
+              <div style="text-align: right;">
+                <span class="badge badge-primary" id="est-out-method">Mode 3+</span>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Timing: <span id="est-out-timing" class="mono">-</span> ms</div>
+              </div>
+            </div>
+
+            <!-- Confidence Interval & Flags -->
+            <div style="background-color: var(--bg-surface-raised); border: 1px solid var(--rule-hairline); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+                <span style="font-size: 0.85rem; font-weight: 600;">95% Wald Confidence Interval</span>
+                <span class="mono" id="est-out-ci" style="font-weight: 600;">[-, -]</span>
+              </div>
+              <div id="est-coverage-verdict" style="font-size: 0.82rem; margin-bottom: 0.4rem;">-</div>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="est-badges-container">
+                <!-- Badges populated by JS -->
+              </div>
+            </div>
+
+            <!-- Fitted Chart -->
+            <figure>
+              <div class="chart-wrapper">
+                <svg id="est-chart-svg" class="chart-svg" viewBox="0 0 540 260" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="chart-legend" id="est-chart-legend">
+                  <div class="legend-item"><span class="legend-line" style="background-color: var(--primary-navy);"></span> Fitted Decay Curve</div>
+                  <div class="legend-item"><span class="legend-line" style="border-top: 2px dashed #e67e22;"></span> True Alpha (Ground Truth)</div>
+                  <div class="legend-item"><span class="legend-swatch" style="background-color: rgba(31, 58, 95, 0.15);"></span> 95% Confidence Band</div>
+                  <div class="legend-item"><span class="legend-swatch" style="background-color: #e74c3c; border-radius: 50%;"></span> Normalized Readings y / sin(πx)</div>
+                </div>
+              </div>
+              <figcaption>
+                <strong>Figure 1. Fitted Diffusion Decay Curve.</strong> Normalized sensor observations yᵢ / sin(πxᵢ) plotted against time t alongside the estimated trajectory exp(−α̂ π² t), confidence envelope, and synthetic ground truth.
+              </figcaption>
+            </figure>
+
+            <!-- Disclosures & Download -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="est-download-btn">Download Result (JSON)</button>
+            </div>
+
+            <details class="disclosure" id="est-json-disclosure">
+              <summary>Request and Response Payloads (JSON)</summary>
+              <pre id="est-json-dump"></pre>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         PAGE 3: DIAGNOSE (SENSOR FAULT & CHANGE-POINT CASCADE)
+         ==================================================================== -->
+    <section id="view-diagnose" class="page-view" aria-labelledby="heading-diagnose">
+      <div class="page-intro">
+        <h1 id="heading-diagnose">Sensor Fault &amp; Physical Change Diagnostics</h1>
+        <p class="page-desc">4-Hypothesis sequential cascade integrating baseline-informed Generalized Likelihood Ratio (GLR) testing and Leave-One-Out Bayesian Information Criterion (BIC).</p>
+      </div>
+
+      <div class="grid-2">
+        <!-- Controls Card -->
+        <div class="card">
+          <h2 class="card-title" style="margin-top: 0;">Diagnostic Scenario Generator</h2>
+          
+          <div class="form-group">
+            <label for="diag-scenario-select" class="form-label">Operational Scenario</label>
+            <select id="diag-scenario-select" class="form-select">
+              <option value="H" selected>Healthy Diffusion (Class H)</option>
+              <option value="A">Anomalous Diffusivity Jump / Out-of-Range (Class A: alpha=2.50)</option>
+              <option value="F_stuck">Sensor Fault: Stuck Output (Class F: sensor pinned at constant)</option>
+              <option value="F_bias">Sensor Fault: Persistent Calibration Bias (Class F: +10 sigma offset)</option>
+              <option value="F_gain">Sensor Fault: Sensor Gain Error (Class F: 1.5x amplification)</option>
+              <option value="C">Physical Change-Point (Class C: step jump alpha 0.05 -> 0.50 at tc=0.35)</option>
+              <option value="refusal_baseline">Refusal Test: Baseline k=10 &lt; 20 (Triggers Machine-Readable Refusal)</option>
+            </select>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="diag-sensors" class="form-label">Sensor Observations N</label>
+              <input type="number" id="diag-sensors" class="form-control mono" value="10" min="5" max="100" step="1">
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="diag-sigma" class="form-label">Noise σ</label>
+                <input type="number" id="diag-sigma" class="form-control mono" value="0.01" step="0.005">
+              </div>
+              <div class="form-group">
+                <label for="diag-seed" class="form-label">RNG Seed</label>
+                <input type="number" id="diag-seed" class="form-control mono" value="702" step="1">
+              </div>
+            </div>
+          </div>
+
+          <div class="callout" style="margin: 0.75rem 0;">
+            <div class="callout-title">Baseline Calibration Requirement</div>
+            <p class="form-help" style="margin-bottom: 0;">
+              The diagnosis cascade requires a calibrated baseline of at least k ≥ 20 readings to establish σ̂ and baseline diffusivity α̂_base. Requests with fewer baseline readings are refused by design.
+            </p>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <button type="button" class="btn btn-primary" id="diag-submit-btn">Run Diagnostic Cascade</button>
+          </div>
+        </div>
+
+        <!-- Output Card -->
+        <div class="card" id="diagnose-results-card">
+          <h2 class="card-title" style="margin-top: 0;">Diagnostic Evidence &amp; Classification</h2>
+
+          <div id="diag-state-container">
+            <div class="state-box">
+              Select a scenario and click <strong>Run Diagnostic Cascade</strong> to evaluate the operational readings.
+            </div>
+          </div>
+
+          <div id="diag-result-panel" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <div>
+                <span style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Assigned Classification</span>
+                <div style="display: flex; align-items: baseline; gap: 0.6rem; margin-top: 0.2rem;">
+                  <span id="diag-out-class-badge" class="badge badge-healthy" style="font-size: 1.4rem; padding: 0.25rem 0.75rem;">CLASS H</span>
+                  <span id="diag-out-class-name" style="font-weight: 600; font-size: 1.05rem;">Healthy Baseline</span>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span class="badge badge-synthetic" id="diag-ground-truth-badge">Ground Truth: Healthy</span>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">Timing: <span id="diag-out-timing" class="mono">-</span> ms</div>
+              </div>
+            </div>
+
+            <!-- Specific Fault/Change Details -->
+            <div id="diag-specific-info" style="margin-bottom: 1rem; padding: 0.65rem 0.85rem; background-color: var(--bg-surface-raised); border: 1px solid var(--rule-hairline); border-radius: var(--radius-sm); font-size: 0.88rem;">
+              <!-- Dynamic details: faulty sensor index, change time, etc. -->
+            </div>
+
+            <!-- Statistical Evidence Table -->
+            <div class="table-container" style="margin: 0.75rem 0;">
+              <table class="booktabs" id="diag-evidence-table">
+                <thead>
+                  <tr>
+                    <th>Evidence Metric</th>
+                    <th>Observed Value</th>
+                    <th>Decision Threshold</th>
+                    <th>Interpretation</th>
+                  </tr>
+                </thead>
+                <tbody id="diag-evidence-tbody">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Diagnostics Chart -->
+            <figure>
+              <div class="chart-wrapper">
+                <svg id="diag-chart-svg" class="chart-svg" viewBox="0 0 540 240" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="chart-legend" id="diag-chart-legend">
+                  <div class="legend-item"><span class="legend-line" style="background-color: var(--primary-navy);"></span> Baseline Healthy Curve</div>
+                  <div class="legend-item"><span class="legend-swatch" style="background-color: #2980b9; border-radius: 50%;"></span> Operational Readings</div>
+                  <div class="legend-item" id="diag-fault-legend-item" style="display: none;"><span class="legend-swatch" style="background-color: #c0392b; border-radius: 50%;"></span> Flagged Faulty Sensor</div>
+                </div>
+              </div>
+              <figcaption>
+                <strong>Figure 2. Operational Observations vs Calibrated Baseline.</strong> Sensor measurements yᵢ plotted alongside the baseline expectation u_base(xᵢ, tᵢ), highlighting deviations that triggered the cascade decision.
+              </figcaption>
+            </figure>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="diag-download-btn">Download Result (JSON)</button>
+            </div>
+
+            <details class="disclosure" id="diag-json-disclosure">
+              <summary>Request and Response Payloads (JSON)</summary>
+              <pre id="diag-json-dump"></pre>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         PAGE 4: PLACE SENSORS (TWO-STAGE ADAPTIVE PLACEMENT)
+         ==================================================================== -->
+    <section id="view-placement" class="page-view" aria-labelledby="heading-placement">
+      <div class="page-intro">
+        <h1 id="heading-placement">Two-Stage Adaptive Sensor Placement</h1>
+        <p class="page-desc">Information-theoretic sensor placement scheduling. Stage 1 log-explores the temporal domain; Stage 2 concentrates dynamically around the optimal Fisher sensitivity point t* = 1 / (π² α̂₁).</p>
+      </div>
+
+      <div class="grid-1-2">
+        <!-- Configuration Card -->
+        <div class="card">
+          <h2 class="card-title" style="margin-top: 0;">Schedule Parameters</h2>
+          
+          <div class="form-group">
+            <label for="place-n" class="form-label">Total Sensor Budget N</label>
+            <input type="number" id="place-n" class="form-control mono" value="20" min="2" max="500" step="2">
+            <span class="form-help">Split equally: N₁ = ⌊N/2⌋ in Stage 1, N₂ = N − N₁ in Stage 2.</span>
+          </div>
+
+          <div class="form-group">
+            <label for="place-sigma" class="form-label">Assumed Noise σ</label>
+            <input type="number" id="place-sigma" class="form-control mono" value="0.01" step="0.005" min="0.0001">
+          </div>
+
+          <div class="form-group">
+            <label for="place-sensor-x" class="form-label">Spatial Sensor Location x</label>
+            <input type="number" id="place-sensor-x" class="form-control mono" value="0.50" min="0.0" max="1.0" step="0.05">
+            <span class="form-help">Standard midpoint location x = 0.5 maximizes signal sin(πx) = 1.</span>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="place-tmin" class="form-label">t_min</label>
+              <input type="number" id="place-tmin" class="form-control mono" value="0.01" step="0.01" min="0.0001">
+            </div>
+            <div class="form-group">
+              <label for="place-tmax" class="form-label">t_max</label>
+              <input type="number" id="place-tmax" class="form-control mono" value="1.0" step="0.1" min="0.1">
+            </div>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <button type="button" class="btn btn-primary" id="place-submit-btn">Compute Placement Schedule</button>
+          </div>
+        </div>
+
+        <!-- Schedule Results Card -->
+        <div class="card" id="placement-results-card">
+          <h2 class="card-title" style="margin-top: 0;">Adaptive Sampling Schedule</h2>
+
+          <div id="place-state-container">
+            <div class="state-box">
+              Click <strong>Compute Placement Schedule</strong> to generate the deployable two-stage timeline.
+            </div>
+          </div>
+
+          <div id="place-result-panel" style="display: none;">
+            <p id="place-strategy-text" style="font-size: 0.92rem; color: var(--text-main); margin-bottom: 1rem; border-left: 3px solid var(--primary-navy); padding-left: 0.75rem; background: var(--bg-surface-raised); padding: 0.6rem 0.8rem;"></p>
+
+            <!-- Timeline Visualization on Logarithmic Axis -->
+            <figure>
+              <div class="chart-wrapper">
+                <svg id="place-chart-svg" class="chart-svg" viewBox="0 0 700 200" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="chart-legend" id="place-chart-legend">
+                  <div class="legend-item"><span class="legend-swatch" style="background-color: #2980b9;"></span> Stage 1 Points (Log-Spaced Exploratory)</div>
+                  <div class="legend-item"><span class="legend-swatch" style="background-color: #e67e22;"></span> Stage 2 Nominal Points (Fisher Concentration)</div>
+                  <div class="legend-item"><span class="legend-line" style="border-top: 2px dashed #c0392b;"></span> Peak Fisher Sensitivity t*(α=0.10) ≈ 1.01</div>
+                </div>
+              </div>
+              <figcaption>
+                <strong>Figure 3. Two-Stage Temporal Sensor Distribution.</strong> Logarithmic temporal axis from t_min to t_max showing Stage 1 exploration points and Stage 2 information-weighted concentration.
+              </figcaption>
+            </figure>
+
+            <!-- Coordinate Tables -->
+            <div class="grid-2" style="margin-top: 1rem;">
+              <div>
+                <h3 style="margin-top: 0; font-size: 0.95rem;">Stage 1 Coordinates (t₁ … t_N₁)</h3>
+                <div class="table-container" style="max-height: 200px; overflow-y: auto;">
+                  <table class="booktabs">
+                    <thead>
+                      <tr><th>Index</th><th>Time t (s)</th></tr>
+                    </thead>
+                    <tbody id="place-t1-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div>
+                <h3 style="margin-top: 0; font-size: 0.95rem;">Stage 2 Nominal Coordinates (t_N₁+1 … t_N)</h3>
+                <div class="table-container" style="max-height: 200px; overflow-y: auto;">
+                  <table class="booktabs">
+                    <thead>
+                      <tr><th>Index</th><th>Time t (s)</th></tr>
+                    </thead>
+                    <tbody id="place-t2-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="place-download-btn">Download Result (JSON)</button>
+              <span class="text-muted" style="font-size: 0.8rem;">Solved in <span id="place-timing" class="mono">-</span> ms</span>
+            </div>
+
+            <details class="disclosure" id="place-json-disclosure">
+              <summary>Request and Response Payloads (JSON)</summary>
+              <pre id="place-json-dump"></pre>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         PAGE 5: FIELD (FORWARD PROBLEM)
+         ==================================================================== -->
+    <section id="view-field" class="page-view" aria-labelledby="heading-field">
+      <div class="page-intro">
+        <h1 id="heading-field">Heat Diffusion Field Simulation u(x, t)</h1>
+        <p class="page-desc">High-resolution 2D spatio-temporal forward solution of the heat equation ∂u/∂t = α ∂²u/∂x². Compare classical Crank-Nicolson numerical solves against Fourier Neural Operator (FNO) inference.</p>
+      </div>
+
+      <div class="grid-1-2">
+        <!-- Input Form -->
+        <div class="card">
+          <h2 class="card-title" style="margin-top: 0;">Simulation Parameters</h2>
+          
+          <div class="form-group">
+            <label for="field-alpha" class="form-label">Diffusivity Parameter α</label>
+            <input type="number" id="field-alpha" class="form-control mono" value="0.10" min="0.001" max="10.0" step="0.01">
+            <span class="form-help">FNO verified for α ∈ [0.01, 1.0]. Outside this range, the numerical solver runs automatically.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Evaluation Method</label>
+            <div class="btn-group" style="width: 100%;">
+              <button type="button" class="btn btn-secondary btn-sm" id="field-method-solver-btn">Solver (CN)</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="field-method-fno-btn">FNO Operator</button>
+              <button type="button" class="btn btn-secondary btn-sm active" id="field-method-compare-btn">Compare Both</button>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="field-nx" class="form-label">Spatial Grid N_x</label>
+              <input type="number" id="field-nx" class="form-control mono" value="101" readonly>
+            </div>
+            <div class="form-group">
+              <label for="field-nt" class="form-label">Temporal Grid N_t</label>
+              <input type="number" id="field-nt" class="form-control mono" value="201" readonly>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="field-time-slider" class="form-label">Cross-Section Time t*</label>
+            <input type="range" id="field-time-slider" min="0" max="200" value="40" style="width: 100%;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
+              <span>t = 0.00</span>
+              <span id="field-time-val" class="mono font-bold">t = 0.20</span>
+              <span>t = 1.00</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <button type="button" class="btn btn-primary" id="field-submit-btn">Compute Spatio-Temporal Field</button>
+          </div>
+        </div>
+
+        <!-- Field Heatmap & Comparison Card -->
+        <div class="card" id="field-results-card">
+          <h2 class="card-title" style="margin-top: 0;">Spatio-Temporal Solution Field u(x, t)</h2>
+
+          <div id="field-state-container">
+            <div class="state-box">
+              Click <strong>Compute Spatio-Temporal Field</strong> to generate heatmaps and cross-sectional profiles.
+            </div>
+          </div>
+
+          <div id="field-result-panel" style="display: none;">
+            <!-- Comparison Summary Strip -->
+            <div id="field-compare-summary" style="display: flex; gap: 1rem; align-items: center; justify-content: space-between; padding: 0.6rem 0.9rem; background: var(--bg-surface-raised); border: 1px solid var(--rule-hairline); border-radius: var(--radius-sm); margin-bottom: 1rem;">
+              <div>
+                <span class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">Method Used</span>
+                <div style="font-weight: 600;" id="field-method-badge">Compare</div>
+              </div>
+              <div id="field-rel-diff-box">
+                <span class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">Relative Difference L₂</span>
+                <div class="mono" style="font-weight: 700; color: var(--primary-navy);" id="field-rel-diff-val">-</div>
+              </div>
+              <div>
+                <span class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">Timing</span>
+                <div class="mono" style="font-size: 0.88rem;" id="field-timing-text">-</div>
+              </div>
+            </div>
+
+            <!-- Heatmap Views -->
+            <div class="heatmap-container">
+              <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <span style="font-size: 0.85rem; font-weight: 600;" id="field-heatmap-title">Thermal Field u(x, t) Heatmap</span>
+                <span class="hover-readout" id="field-hover-readout">Hover over heatmap for (x, t, u)</span>
+              </div>
+              <canvas id="field-canvas" class="heatmap-canvas" width="505" height="260"></canvas>
+              <div class="heatmap-colorbar-wrap">
+                <span>0.00</span>
+                <div class="heatmap-colorbar" id="field-colorbar"></div>
+                <span>1.00</span>
+              </div>
+            </div>
+
+            <figure>
+              <figcaption>
+                <strong>Figure 4. Spatio-Temporal Heat Diffusion Heatmap.</strong> Horizontal axis represents space x ∈ [0, 1]; vertical axis represents time t ∈ [0, 1] (time flows downward). Colors mapped via sequential perceptually ordered thermal scale.
+              </figcaption>
+            </figure>
+
+            <!-- Cross-sectional Profile -->
+            <h3 style="margin-top: 1rem; font-size: 1.05rem;">Spatial Profile u(x, t*) vs Exact Analytic</h3>
+            <figure>
+              <div class="chart-wrapper">
+                <svg id="field-profile-svg" class="chart-svg" viewBox="0 0 540 220" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="chart-legend" id="field-profile-legend">
+                  <div class="legend-item"><span class="legend-line" style="background-color: var(--primary-navy); height: 2px;"></span> Model Solution Profile u(x, t*)</div>
+                  <div class="legend-item"><span class="legend-line" style="border-top: 2px dashed #e67e22;"></span> Exact Analytic sin(πx) exp(−α π² t*)</div>
+                </div>
+              </div>
+              <figcaption>
+                <strong>Figure 5. Spatial Profile at Selected Time t*.</strong> Cross-section across x ∈ [0, 1] evaluated at t* alongside exact Fourier analysis solution.
+              </figcaption>
+            </figure>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="field-download-btn">Download Field Grid (JSON)</button>
+            </div>
+
+            <details class="disclosure" id="field-json-disclosure">
+              <summary>Request and Response Payloads (JSON)</summary>
+              <pre id="field-json-dump"></pre>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         PAGE 6: STAGE 2 POISSON (-nabla^2 u = f)
+         ==================================================================== -->
+    <section id="view-poisson" class="page-view" aria-labelledby="heading-poisson">
+      <div class="page-intro">
+        <h1 id="heading-poisson">Stage 2 2D Poisson Operator Workbench</h1>
+        <p class="page-desc">Solve −∇²u = f(x, y) on [0, 1]² with homogeneous Dirichlet boundaries. Benchmark exact sparse LU against FNO and Linear ridge baseline.</p>
+      </div>
+
+      <!-- High-Frequency Warning Callout (Visible conditionally) -->
+      <div id="poisson-hf-banner" class="callout callout-warning" style="display: none;">
+        <div class="callout-title">Prominent Notice: High-Frequency Source Term Detected</div>
+        <p style="margin-bottom: 0;">
+          The specified source term contains harmonic wavenumbers exceeding m > 4 or n > 4. Empirical benchmark testing proves that FNO degrades severely on high-frequency out-of-distribution modes (median relative L₂ error spikes to <strong>80.4%</strong>, max 229.4%), whereas the linear baseline maintains ~1.5% and the exact sparse direct solver maintains exact accuracy.
+        </p>
+      </div>
+
+      <div class="grid-1-2">
+        <!-- Source Term Builder Card -->
+        <div class="card">
+          <h2 class="card-title" style="margin-top: 0;">Source Term Builder f(x, y)</h2>
+          
+          <div class="form-group">
+            <label class="form-label">Source Family</label>
+            <div class="btn-group" style="width: 100%;">
+              <button type="button" class="btn btn-secondary btn-sm active" id="poi-family-sine-btn">Harmonic Sine Modes</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="poi-family-gauss-btn">Gaussian Heaters</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Quick Presets</label>
+            <select id="poi-presets-select" class="form-select">
+              <option value="sine_low" selected>Sine Mode [2, 2] (In-Distribution)</option>
+              <option value="sine_high">Sine Mode [6, 2] (Out-of-Distribution High Mode)</option>
+              <option value="gauss_center">Single Center Gaussian Heater [0.5, 0.5]</option>
+              <option value="gauss_dual">Dual Gaussian Heaters [0.3, 0.3] &amp; [0.7, 0.7]</option>
+            </select>
+          </div>
+
+          <!-- Sine Mode Inputs -->
+          <div id="poi-sine-controls">
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="poi-mode-m" class="form-label">Wavenumber m (x)</label>
+                <input type="number" id="poi-mode-m" class="form-control mono" value="2" min="1" max="16" step="1">
+              </div>
+              <div class="form-group">
+                <label for="poi-mode-n" class="form-label">Wavenumber n (y)</label>
+                <input type="number" id="poi-mode-n" class="form-control mono" value="2" min="1" max="16" step="1">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="poi-mode-amp" class="form-label">Mode Amplitude A</label>
+              <input type="number" id="poi-mode-amp" class="form-control mono" value="1.0" min="0.1" max="10.0" step="0.1">
+            </div>
+          </div>
+
+          <!-- Gaussian Controls -->
+          <div id="poi-gauss-controls" style="display: none;">
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="poi-gauss-cx" class="form-label">Center x₀</label>
+                <input type="number" id="poi-gauss-cx" class="form-control mono" value="0.5" min="0.0" max="1.0" step="0.05">
+              </div>
+              <div class="form-group">
+                <label for="poi-gauss-cy" class="form-label">Center y₀</label>
+                <input type="number" id="poi-gauss-cy" class="form-control mono" value="0.5" min="0.0" max="1.0" step="0.05">
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="poi-gauss-amp" class="form-label">Amplitude</label>
+                <input type="number" id="poi-gauss-amp" class="form-control mono" value="1.0" step="0.1">
+              </div>
+              <div class="form-group">
+                <label for="poi-gauss-sigma" class="form-label">Width σ</label>
+                <input type="number" id="poi-gauss-sigma" class="form-control mono" value="0.15" step="0.02" min="0.01">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="poi-grid-size" class="form-label">Spatial Resolution N × N</label>
+            <input type="number" id="poi-grid-size" class="form-control mono" value="64" min="16" max="128" step="16" readonly>
+            <span class="form-help">Pre-factorized direct solver initialized at 64 × 64.</span>
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <button type="button" class="btn btn-primary" id="poi-submit-btn">Solve Poisson Operator</button>
+          </div>
+        </div>
+
+        <!-- Poisson Output Card -->
+        <div class="card" id="poisson-results-card">
+          <h2 class="card-title" style="margin-top: 0;">Tri-Solver Comparison &amp; Error Analysis</h2>
+
+          <div id="poi-state-container">
+            <div class="state-box">
+              Configure the source field and click <strong>Solve Poisson Operator</strong> to compare models.
+            </div>
+          </div>
+
+          <div id="poi-result-panel" style="display: none;">
+            <!-- Errors and Timings Summary Table -->
+            <div class="table-container" style="margin: 0.5rem 0 1rem 0;">
+              <table class="booktabs">
+                <thead>
+                  <tr>
+                    <th>Method</th>
+                    <th class="text-right">Relative L₂ Error vs Exact</th>
+                    <th class="text-right">CPU Latency (ms)</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Exact Sparse Direct (SciPy LU)</strong></td>
+                    <td class="text-right mono">0.000000 (Reference)</td>
+                    <td class="text-right mono" id="poi-time-exact">-</td>
+                    <td><span class="badge badge-success">Exact Reference</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Linear Ridge Baseline</strong></td>
+                    <td class="text-right mono" id="poi-err-lin">-</td>
+                    <td class="text-right mono" id="poi-time-lin">-</td>
+                    <td><span class="badge badge-info" id="poi-badge-lin">Baseline</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Fourier Neural Operator (FNO-2D)</strong></td>
+                    <td class="text-right mono" id="poi-err-fno">-</td>
+                    <td class="text-right mono" id="poi-time-fno">-</td>
+                    <td><span class="badge badge-info" id="poi-badge-fno">Evaluated</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Heatmap Canvases for the 3 fields -->
+            <div class="grid-3" style="gap: 0.75rem;">
+              <div>
+                <h4 style="font-size: 0.8rem; margin-bottom: 0.3rem;">Exact Sparse Solve</h4>
+                <canvas id="poi-canvas-exact" class="heatmap-canvas" style="height: 160px;" width="160" height="160"></canvas>
+              </div>
+              <div>
+                <h4 style="font-size: 0.8rem; margin-bottom: 0.3rem;">FNO Prediction</h4>
+                <canvas id="poi-canvas-fno" class="heatmap-canvas" style="height: 160px;" width="160" height="160"></canvas>
+              </div>
+              <div>
+                <h4 style="font-size: 0.8rem; margin-bottom: 0.3rem;">Linear Baseline</h4>
+                <canvas id="poi-canvas-lin" class="heatmap-canvas" style="height: 160px;" width="160" height="160"></canvas>
+              </div>
+            </div>
+
+            <!-- Error Maps (FNO error vs Linear error) -->
+            <div class="grid-2" style="gap: 0.75rem; margin-top: 1rem;">
+              <div>
+                <h4 style="font-size: 0.8rem; margin-bottom: 0.3rem; color: var(--accent-burgundy);">FNO Absolute Error |u_fno − u_exact|</h4>
+                <canvas id="poi-canvas-err-fno" class="heatmap-canvas" style="height: 160px;" width="240" height="160"></canvas>
+              </div>
+              <div>
+                <h4 style="font-size: 0.8rem; margin-bottom: 0.3rem;">Linear Absolute Error |u_lin − u_exact|</h4>
+                <canvas id="poi-canvas-err-lin" class="heatmap-canvas" style="height: 160px;" width="240" height="160"></canvas>
+              </div>
+            </div>
+
+            <figure>
+              <figcaption>
+                <strong>Figure 6. Poisson Tri-Solver Comparative Fields and Residual Maps.</strong> 2D spatial solution fields [0, 1]² with Dirichlet boundaries. Error maps use diverging scale highlighting localized high-frequency spatial discrepancies.
+              </figcaption>
+            </figure>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="poi-download-btn">Download Poisson Solution (JSON)</button>
+              <span class="text-muted" style="font-size: 0.8rem;">Total pipeline time: <span id="poi-time-total" class="mono">-</span> ms</span>
+            </div>
+
+            <details class="disclosure" id="poi-json-disclosure">
+              <summary>Request and Response Payloads (JSON)</summary>
+              <pre id="poi-json-dump"></pre>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         PAGE 7: EVIDENCE (VERIFIED RESULTS ARCHIVE)
+         ==================================================================== -->
+    <section id="view-evidence" class="page-view" aria-labelledby="heading-evidence">
+      <div class="page-intro">
+        <h1 id="heading-evidence">Empirical Evidence &amp; Verification Archive</h1>
+        <p class="page-desc">Complete tables and figures generated strictly from frozen benchmark files in <code>data/results/</code>. Every number traces to active repository commits.</p>
+      </div>
+
+      <!-- Caveat Highlights Strip -->
+      <div class="card" style="border-left: 4px solid var(--accent-amber);">
+        <h2 class="card-title" style="margin-top: 0; color: var(--accent-amber);">Mandatory Caveats &amp; Honest Findings</h2>
+        <ul style="margin-left: 1.25rem; line-height: 1.7; font-size: 0.9rem;">
+          <li><strong>Mode 3 vs Mode 3+ Coverage Trade-off:</strong> Mode 3 achieves 88.2% mean Wald coverage (dropping to 61.8% on Extended High-α OOD) in 0.68 ms. Mode 3+ hybrid polish recovers 94.0% coverage across all 135 parameter cells at 138.8 ms fit latency.</li>
+          <li><strong>Classical Solver Speed Superiority on 64x64 CPU:</strong> Pre-factorized sparse direct LU solves in 0.50 ms, which is 40.9x faster than CPU FNO inference (20.48 ms). Even full re-factorization from scratch (10.93 ms) beats the FNO by ~1.9x.</li>
+          <li><strong>Missed V2 Stress Targets:</strong> D2 (GOF Gate) missed AR(1) correlated noise detection (flag rate 1.0-2.0% vs &gt;=80% target) and mild boundary offsets, with a 7.0% false flag rate. D3 (Range Guard) missed 95% bound pinning at α = 0.0005 (achieved 72.0%).</li>
+          <li><strong>High-Frequency Operator Failure:</strong> On Poisson wavenumbers m, n &gt; 4, FNO median relative L₂ error jumps to 80.4%, while linear baseline remains at 1.5%.</li>
+        </ul>
+      </div>
+
+      <!-- Section 1: Stage 1 Inverse Modes -->
+      <div class="card">
+        <h2 class="card-title">1. Stage 1 Inverse Estimation Benchmark</h2>
+        <p class="text-muted" style="margin-bottom: 0.75rem;">Source: <code>mode2_pipeline_results_v2.csv</code>, <code>mode3_pipeline_results_v2.csv</code>, <code>mode3plus_hybrid_results.csv</code></p>
+        <div class="table-container">
+          <table class="booktabs" id="ev-table-s1">
+            <thead>
+              <tr>
+                <th>Algorithm Mode</th>
+                <th class="text-right">Overall Median Rel Err</th>
+                <th class="text-right">95% Wald CI Coverage</th>
+                <th class="text-right">Mean Fit Latency</th>
+                <th class="text-right">Benchmark Cells</th>
+              </tr>
+            </thead>
+            <tbody id="ev-tbody-s1"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section 2: Sensor Placement -->
+      <div class="card">
+        <h2 class="card-title">2. Sensor Placement Strategy Comparison</h2>
+        <p class="text-muted" style="margin-bottom: 0.75rem;">Source: <code>sensor_placement_summary.csv</code></p>
+        <div class="table-container">
+          <table class="booktabs" id="ev-table-placement">
+            <thead>
+              <tr>
+                <th>Placement Strategy</th>
+                <th class="text-right">Median Rel Err</th>
+                <th class="text-right">Mean Rel Err</th>
+                <th class="text-right">Mean Spread / CRB</th>
+                <th class="text-right">Fit Time (ms)</th>
+              </tr>
+            </thead>
+            <tbody id="ev-tbody-placement"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section 3: Anomaly Confusion Matrix Figure -->
+      <div class="card">
+        <h2 class="card-title">3. Anomaly Cascade 4x4 Confusion Matrix</h2>
+        <p class="text-muted" style="margin-bottom: 0.75rem;">Primary Operational Test Set (N = 10, σ = 0.01). Source: <code>anomaly_frozen_final_tables.json</code></p>
+        <figure>
+          <div class="chart-wrapper">
+            <svg id="ev-conf-matrix-svg" class="chart-svg" viewBox="0 0 540 280" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+          <figcaption>
+            <strong>Figure 7. Anomaly &amp; Fault Classification Confusion Matrix.</strong> Rows indicate true injected conditions (Healthy H, Anomalous A, Sensor Fault F, Change-point C); columns indicate predicted class assigned by the GLR-BIC cascade.
+          </figcaption>
+        </figure>
+      </div>
+
+      <!-- Section 4: Stress Testing Summary -->
+      <div class="card">
+        <h2 class="card-title">4. Empirical Stress Testing (Week 5 Matrix v2b)</h2>
+        <p class="text-muted" style="margin-bottom: 0.75rem;">13 Scenarios × 3 Severities across 5 Frozen Modules (100 reps/cell). Source: <code>stress_summary_v2b.csv</code></p>
+        <div class="grid-2">
+          <div>
+            <h3 style="font-size: 0.95rem; margin-top: 0;">Performance by Module</h3>
+            <div class="table-container">
+              <table class="booktabs">
+                <thead>
+                  <tr><th>Module</th><th class="text-right">Passed</th><th class="text-right">Failed</th><th class="text-right">Pass Rate</th></tr>
+                </thead>
+                <tbody id="ev-tbody-stress-module"></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h3 style="font-size: 0.95rem; margin-top: 0;">Performance by Scenario Category</h3>
+            <div class="table-container">
+              <table class="booktabs">
+                <thead>
+                  <tr><th>Category</th><th class="text-right">Passed</th><th class="text-right">Failed</th><th class="text-right">Pass Rate</th></tr>
+                </thead>
+                <tbody id="ev-tbody-stress-cat"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5: V2 Before / After Table -->
+      <div class="card">
+        <h2 class="card-title">5. V2 Wrappers Before / After Targets (D1–D4)</h2>
+        <p class="text-muted" style="margin-bottom: 0.75rem;">34 Pre-registered evaluation criteria. Source: <code>v2_before_after_summary.csv</code></p>
+        <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+          <table class="booktabs">
+            <thead>
+              <tr>
+                <th>Target</th>
+                <th>Scenario</th>
+                <th>Metric</th>
+                <th>Before (Frozen)</th>
+                <th>After (V2 Wrapper)</th>
+                <th>Target Spec</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="ev-tbody-v2"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section 6: Stage 2 Poisson Benchmark -->
+      <div class="card">
+        <h2 class="card-title">6. Stage 2 Poisson 2D Operator Benchmark</h2>
+        <p class="text-muted" style="margin-bottom: 0.75rem;">Source: <code>poisson_v2_benchmark_table.csv</code> and <code>timing_honesty.json</code></p>
+        <div class="table-container">
+          <table class="booktabs">
+            <thead>
+              <tr>
+                <th>Evaluation Split</th>
+                <th class="text-right">Samples</th>
+                <th class="text-right">FNO Rel L₂ Med</th>
+                <th class="text-right">FNO Rel L₂ P90</th>
+                <th class="text-right">Linear Rel L₂ Med</th>
+                <th class="text-right">Linear Rel L₂ P90</th>
+              </tr>
+            </thead>
+            <tbody id="ev-tbody-poisson"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section 7: PINN Ablation -->
+      <div class="card">
+        <h2 class="card-title">7. PINN Architecture &amp; Reparametrization Ablation</h2>
+        <p class="text-muted" style="margin-bottom: 0.75rem;">Source: <code>experiments_summary.csv</code> and <code>mode1_pinn_summary.csv</code></p>
+        <div class="table-container">
+          <table class="booktabs">
+            <thead>
+              <tr>
+                <th>Model Variant</th>
+                <th>Evaluation Split</th>
+                <th class="text-right">Samples</th>
+                <th class="text-right">Median Rel L₂</th>
+                <th class="text-right">P90 Rel L₂</th>
+                <th class="text-right">Initial Condition t = 0 MAE</th>
+              </tr>
+            </thead>
+            <tbody id="ev-tbody-pinn"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         PAGE 8: LIMITS (OPERATIONAL BOUNDARIES)
+         ==================================================================== -->
+    <section id="view-limits" class="page-view" aria-labelledby="heading-limits">
+      <div class="page-intro">
+        <h1 id="heading-limits">Operational Boundaries &amp; Mathematical Limits</h1>
+        <p class="page-desc">Clear, honest statement of conditions where the digital twin cannot or should not be deployed, linked directly to verified empirical evidence.</p>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title" style="margin-top: 0;">What the Digital Twin Cannot Do</h2>
+        <div class="table-container">
+          <table class="booktabs">
+            <thead>
+              <tr>
+                <th style="width: 25%;">Boundary Condition</th>
+                <th style="width: 50%;">Operational Constraint &amp; Mathematical Cause</th>
+                <th style="width: 25%;">Empirical Evidence Link</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Assumed Physics &amp; BCs</strong></td>
+                <td>The standard twin assumes homogeneous Dirichlet boundaries u = 0 and fundamental harmonic initial state sin(πx). Under unannounced boundary offsets or sources, the goodness-of-fit gate correctly flags invalidity, but parameter estimates degrade without declared physics.</td>
+                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 4 &amp; 5 (S4–S6, D4)</a></td>
+              </tr>
+              <tr>
+                <td><strong>Baseline Requirement (k ≥ 20)</strong></td>
+                <td>Noise estimation σ̂ and GLR baseline calibration fail statistically below 20 readings. Healthy false alarm rates exceed 15% for k ≤ 5. The service strictly refuses requests with k &lt; 20.</td>
+                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 3 (Table 2)</a></td>
+              </tr>
+              <tr>
+                <td><strong>Diffusivity Range Limits</strong></td>
+                <td>The FNO neural surrogate is verified only for α ∈ [0.01, 1.0]. Outside this range, the Range Guard routes queries to Mode 3+ or the numerical solver; severe extrapolation errors occur if FNO is forced.</td>
+                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 1 &amp; 5 (S12, D3)</a></td>
+              </tr>
+              <tr>
+                <td><strong>Correlated &amp; Heavy-Tailed Noise</strong></td>
+                <td>Wald confidence intervals assume independent Gaussian perturbations. Strongly correlated AR(1) noise and Cauchy heavy-tailed noise invalidate the Fisher information matrix and breach the 80% coverage threshold.</td>
+                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 4 (S2, S3)</a></td>
+              </tr>
+              <tr>
+                <td><strong>Slow Thermal Baseline Drift</strong></td>
+                <td>Uncompensated sensor calibration drift over time masquerades as anomalous physical diffusion or triggers false alarms in the GLR cascade unless periodically recalibrated against fresh baseline runs.</td>
+                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 4 (S13)</a></td>
+              </tr>
+              <tr>
+                <td><strong>Poisson High-Mode Operator Failure</strong></td>
+                <td>The Fourier Neural Operator fails on 2D Poisson source terms with harmonic wavenumbers m, n &gt; 4, exhibiting 80.4% median relative error. Only the classical sparse direct solver or linear baseline should be deployed for high-frequency loading.</td>
+                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 6 (High Modes)</a></td>
+              </tr>
+              <tr>
+                <td><strong>Simulation vs Hardware Domain Gap</strong></td>
+                <td>All validation datasets, noise models, and sensor faults are synthesized via numerical solutions. No hardware test bench with physical thermocouples or real materials has been evaluated.</td>
+                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 7 (Meta)</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- App Footer -->
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div class="footer-meta">
+        <span><strong>Service:</strong> <span id="footer-service-name">digital-twin-service</span></span>
+        <span><strong>Version:</strong> <span id="footer-version" class="mono">1.0.0</span></span>
+        <span><strong>Git Commit:</strong> <span id="footer-commit" class="mono">unknown</span></span>
+      </div>
+      <div>
+        <a href="/version" target="_blank" style="color: var(--text-muted); text-decoration: none;" title="Open raw /version endpoint">View Checkpoint Hashes &amp; Provenance &rarr;</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

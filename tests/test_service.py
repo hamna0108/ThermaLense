@@ -35,6 +35,32 @@ def generate_heat_readings(alpha: float, N: int = 10, sigma: float = 0.01, seed:
     return x.tolist(), t.tolist(), y.tolist()
 
 # -------------------------------------------------------------------------------------------------
+# Frontend Static Files & Root
+# -------------------------------------------------------------------------------------------------
+
+def test_static_frontend_served(client):
+    """Verify that GET / serves index.html, returns 200, and contains the title."""
+    res = client.get("/")
+    assert res.status_code == 200
+    assert "Novatore Digital Twin" in res.text
+    assert "<nav" in res.text
+    assert "style.css" in res.text
+    assert "app.js" in res.text
+
+    # Also verify static assets
+    res_css = client.get("/style.css")
+    assert res_css.status_code == 200
+    assert "Scientific Design System" in res_css.text
+
+    res_js = client.get("/app.js")
+    assert res_js.status_code == 200
+
+    res_ev = client.get("/evidence.json")
+    assert res_ev.status_code == 200
+    data = res_ev.json()
+    assert "headline_findings" in data
+
+# -------------------------------------------------------------------------------------------------
 # Health, Version, Metrics
 # -------------------------------------------------------------------------------------------------
 

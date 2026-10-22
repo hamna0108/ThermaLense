@@ -600,6 +600,7 @@ def post_field(req: FieldRequest):
     alpha = req.alpha
     Nx = req.Nx
     Nt = req.Nt
+    method_req = (req.method or "auto").lower()
     
     # FNO is verified for alpha in [0.01, 1.0] under standard initial-boundary physics
     can_use_fno = bool(
@@ -612,38 +613,109 @@ def post_field(req: FieldRequest):
     x_grid = np.linspace(0, 1, Nx).tolist()
     t_grid = np.linspace(0, 1, Nt).tolist()
     
-    if can_use_fno:
+    def run_fno():
         fno_model = APP_STATE["fno_heat"]
         mean_la = APP_STATE["heat_log_alpha_mean"]
         std_la = APP_STATE["heat_log_alpha_std"]
-        
         t_mesh, x_mesh = np.meshgrid(np.linspace(0, 1, Nt), np.linspace(0, 1, Nx), indexing='ij')
         t_tensor = torch.tensor(2 * t_mesh - 1, dtype=torch.float32)
         x_tensor = torch.tensor(2 * x_mesh - 1, dtype=torch.float32)
         norm_alpha = (np.log10(alpha) - mean_la) / std_la
         alpha_tensor = torch.full_like(t_tensor, norm_alpha)
         grid_input = torch.stack([t_tensor, x_tensor, alpha_tensor], dim=0).unsqueeze(0)
-        
         with torch.no_grad():
             u_out = fno_model(grid_input).squeeze().cpu().numpy()
-            
-        u_grid = [[round(float(v), 5) for v in row] for row in u_out]
-        method_str = "fno"
-    else:
-        # Live pre-factorized Crank-Nicolson numerical PDE solver
+        return u_out
+
+    def run_solver():
         _, _, u_num = solve_heat_1d_general(Nx=Nx, Nt=Nt, alpha=alpha)
-        u_grid = [[round(float(v), 5) for v in row] for row in u_num]
-        method_str = "numerical_solver"
+        return u_num
+
+    if method_req == "compare":
+        t_sol_0 = time.perf_counter()
+        u_solver = run_solver()
+        sol_ms = round((time.perf_counter() - t_sol_0) * 1000.0, 2)
         
-    timing_ms = round((time.perf_counter() - t0) * 1000.0, 2)
-    
-    return FieldResponse(
-        u_grid=u_grid,
-        x_grid=x_grid,
-        t_grid=t_grid,
-        method_used=method_str,
-        timing_ms=timing_ms
-    )
+        if can_use_fno or ("fno_heat" in APP_STATE and Nx == 101 and Nt == 201):
+            t_fno_0 = time.perf_counter()
+            u_fno = run_fno()
+            fno_ms = round((time.perf_counter() - t_fno_0) * 1000.0, 2)
+        else:
+            u_fno = u_solver
+            fno_ms = sol_ms
+
+        norm_sol = float(np.linalg.norm(u_solver)) + 1e-12
+        rel_diff = float(np.linalg.norm(u_fno - u_solver) / norm_sol)
+        total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+
+        return FieldResponse(
+            u_grid=[[round(float(v), 5) for v in row] for row in u_solver],
+            x_grid=x_grid,
+            t_grid=t_grid,
+            method_used="compare",
+            timing_ms=total_ms,
+            solver_timing_ms=sol_ms,
+            fno_timing_ms=fno_ms,
+            relative_difference=round(rel_diff, 6),
+            compare_grid=[[round(float(v), 5) for v in row] for row in u_fno]
+        )
+    elif method_req in ["solver", "numerical_solver"]:
+        u_solver = run_solver()
+        total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        return FieldResponse(
+            u_grid=[[round(float(v), 5) for v in row] for row in u_solver],
+            x_grid=x_grid,
+            t_grid=t_grid,
+            method_used="numerical_solver",
+            timing_ms=total_ms,
+            solver_timing_ms=total_ms
+        )
+    elif method_req == "fno":
+        if can_use_fno or ("fno_heat" in APP_STATE and Nx == 101 and Nt == 201):
+            u_fno = run_fno()
+            total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            return FieldResponse(
+                u_grid=[[round(float(v), 5) for v in row] for row in u_fno],
+                x_grid=x_grid,
+                t_grid=t_grid,
+                method_used="fno",
+                timing_ms=total_ms,
+                fno_timing_ms=total_ms
+            )
+        else:
+            u_solver = run_solver()
+            total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            return FieldResponse(
+                u_grid=[[round(float(v), 5) for v in row] for row in u_solver],
+                x_grid=x_grid,
+                t_grid=t_grid,
+                method_used="numerical_solver",
+                timing_ms=total_ms,
+                solver_timing_ms=total_ms
+            )
+    else:  # auto
+        if can_use_fno:
+            u_fno = run_fno()
+            total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            return FieldResponse(
+                u_grid=[[round(float(v), 5) for v in row] for row in u_fno],
+                x_grid=x_grid,
+                t_grid=t_grid,
+                method_used="fno",
+                timing_ms=total_ms,
+                fno_timing_ms=total_ms
+            )
+        else:
+            u_solver = run_solver()
+            total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            return FieldResponse(
+                u_grid=[[round(float(v), 5) for v in row] for row in u_solver],
+                x_grid=x_grid,
+                t_grid=t_grid,
+                method_used="numerical_solver",
+                timing_ms=total_ms,
+                solver_timing_ms=total_ms
+            )
 
 @app.post("/v1/poisson", response_model=PoissonResponse)
 def post_poisson(req: PoissonRequest):
@@ -738,3 +810,13 @@ def post_poisson(req: PoissonRequest):
         ),
         high_frequency_source=high_freq
     )
+
+# -------------------------------------------------------------------------------------------------
+# Static Frontend Files Mount (served at /)
+# -------------------------------------------------------------------------------------------------
+from fastapi.staticfiles import StaticFiles
+
+STATIC_DIR = os.path.join(REPO_ROOT, "service", "static")
+if os.path.exists(STATIC_DIR):
+    app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+

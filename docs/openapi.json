@@ -1,0 +1,1092 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Digital Twin Inverse & Diagnostics Service",
+    "description": "Production-grade physical parameter estimation, sensor fault diagnosis, and PDE operator inference.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Get Health",
+        "description": "Health check endpoint for container orchestrators.",
+        "operationId": "get_health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/version": {
+      "get": {
+        "summary": "Get Version",
+        "description": "Version and provenance metadata: git commit, tags, and checkpoint SHA256 hashes.",
+        "operationId": "get_version_version_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "summary": "Get Metrics",
+        "description": "Prometheus-style metrics snapshot: request counts, errors, refusals, p50/p95 latency, flag shares.",
+        "operationId": "get_metrics_metrics_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/estimate": {
+      "post": {
+        "summary": "Post Estimate",
+        "description": "Parameter inversion with goodness-of-fit gating, range guard, and baseline estimation.",
+        "operationId": "post_estimate_v1_estimate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EstimateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/diagnose": {
+      "post": {
+        "summary": "Post Diagnose",
+        "description": "Sensor anomaly and physical change-point diagnosis via baseline-informed cascade.",
+        "operationId": "post_diagnose_v1_diagnose_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiagnoseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnoseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/placement": {
+      "post": {
+        "summary": "Post Placement",
+        "description": "Deployable Two-Stage Adaptive Placement schedule.",
+        "operationId": "post_placement_v1_placement_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlacementRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlacementResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/field": {
+      "post": {
+        "summary": "Post Field",
+        "description": "Generate 2D spatial-temporal heat diffusion field u(x, t) on grid.",
+        "operationId": "post_field_v1_field_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FieldResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/poisson": {
+      "post": {
+        "summary": "Post Poisson",
+        "description": "Solve 2D Poisson equation -nabla^2 u = f using exact sparse solver, FNO, and Linear baseline.",
+        "operationId": "post_poisson_v1_poisson_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PoissonRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoissonResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BaselineData": {
+        "properties": {
+          "x": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "X",
+            "description": "Spatial sensor coordinates x in [0, 1]"
+          },
+          "t": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "T",
+            "description": "Temporal sensor coordinates t in [0, 1]"
+          },
+          "y": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Y",
+            "description": "Observed sensor values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "x",
+          "t",
+          "y"
+        ],
+        "title": "BaselineData"
+      },
+      "DiagnoseRequest": {
+        "properties": {
+          "readings": {
+            "$ref": "#/components/schemas/SensorReadings",
+            "description": "Operational sensor measurements"
+          },
+          "baseline": {
+            "$ref": "#/components/schemas/BaselineData",
+            "description": "Healthy baseline readings (minimum k >= 20 required)"
+          },
+          "sigma": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sigma",
+            "description": "Optional declared noise std"
+          }
+        },
+        "type": "object",
+        "required": [
+          "readings",
+          "baseline"
+        ],
+        "title": "DiagnoseRequest"
+      },
+      "DiagnoseResponse": {
+        "properties": {
+          "assigned_class": {
+            "type": "string",
+            "title": "Assigned Class",
+            "description": "'H' (Healthy), 'A' (Anomalous Diffusion), 'F' (Sensor Fault), 'C' (Change-Point)"
+          },
+          "evidence_stats": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Evidence Stats"
+          },
+          "faulty_sensor_idx": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Faulty Sensor Idx"
+          },
+          "change_time": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Time"
+          },
+          "effective_sigma": {
+            "type": "number",
+            "title": "Effective Sigma"
+          },
+          "timing_ms": {
+            "type": "number",
+            "title": "Timing Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assigned_class",
+          "evidence_stats",
+          "effective_sigma",
+          "timing_ms"
+        ],
+        "title": "DiagnoseResponse"
+      },
+      "EstimateFlags": {
+        "properties": {
+          "model_invalid": {
+            "type": "boolean",
+            "title": "Model Invalid"
+          },
+          "out_of_range": {
+            "type": "boolean",
+            "title": "Out Of Range"
+          },
+          "at_bound": {
+            "type": "boolean",
+            "title": "At Bound"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "model_invalid",
+          "out_of_range",
+          "at_bound",
+          "warnings"
+        ],
+        "title": "EstimateFlags"
+      },
+      "EstimateRequest": {
+        "properties": {
+          "x": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "X",
+            "description": "Sensor spatial coordinates x in [0, 1]"
+          },
+          "t": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "T",
+            "description": "Sensor temporal coordinates t in [0, 1]"
+          },
+          "y": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Y",
+            "description": "Observed sensor values"
+          },
+          "sigma": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sigma",
+            "description": "Observation noise std. If None, estimated from baseline."
+          },
+          "baseline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BaselineData"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Healthy baseline readings (required if sigma is omitted; k >= 20)"
+          },
+          "physics": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Physics",
+            "description": "Optional declared physics inputs (u0_fn, bc_fn, source_fn)"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode",
+            "description": "Parameter inversion mode: 'mode3plus' (default), 'mode2', 'mode3', 'declared_physics'",
+            "default": "mode3plus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "x",
+          "t",
+          "y"
+        ],
+        "title": "EstimateRequest"
+      },
+      "EstimateResponse": {
+        "properties": {
+          "alpha_hat": {
+            "type": "number",
+            "title": "Alpha Hat"
+          },
+          "ci95": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Ci95"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method"
+          },
+          "flags": {
+            "$ref": "#/components/schemas/EstimateFlags"
+          },
+          "effective_sigma": {
+            "type": "number",
+            "title": "Effective Sigma"
+          },
+          "timing_ms": {
+            "type": "number",
+            "title": "Timing Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "alpha_hat",
+          "ci95",
+          "method",
+          "flags",
+          "effective_sigma",
+          "timing_ms"
+        ],
+        "title": "EstimateResponse"
+      },
+      "FieldRequest": {
+        "properties": {
+          "alpha": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Alpha",
+            "description": "Diffusivity parameter alpha"
+          },
+          "physics": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Physics"
+          },
+          "Nx": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 501.0,
+                "minimum": 11.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nx",
+            "default": 101
+          },
+          "Nt": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1001.0,
+                "minimum": 11.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nt",
+            "default": 201
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method",
+            "description": "Execution method: 'auto' (default), 'solver', 'fno', or 'compare'",
+            "default": "auto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "alpha"
+        ],
+        "title": "FieldRequest"
+      },
+      "FieldResponse": {
+        "properties": {
+          "u_grid": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "U Grid"
+          },
+          "x_grid": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "X Grid"
+          },
+          "t_grid": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "T Grid"
+          },
+          "method_used": {
+            "type": "string",
+            "title": "Method Used",
+            "description": "'fno' if alpha in [0.01, 1.0], otherwise 'numerical_solver'"
+          },
+          "timing_ms": {
+            "type": "number",
+            "title": "Timing Ms"
+          },
+          "fno_timing_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fno Timing Ms"
+          },
+          "solver_timing_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Solver Timing Ms"
+          },
+          "relative_difference": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relative Difference"
+          },
+          "compare_grid": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compare Grid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "u_grid",
+          "x_grid",
+          "t_grid",
+          "method_used",
+          "timing_ms"
+        ],
+        "title": "FieldResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "timestamp": {
+            "type": "string",
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "service",
+          "version",
+          "timestamp"
+        ],
+        "title": "HealthResponse"
+      },
+      "PlacementRequest": {
+        "properties": {
+          "N": {
+            "type": "integer",
+            "maximum": 500.0,
+            "minimum": 2.0,
+            "title": "N",
+            "description": "Total number of sensor observation points"
+          },
+          "sigma": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Sigma",
+            "description": "Assumed measurement noise standard deviation"
+          },
+          "t_min": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0001
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T Min",
+            "default": 0.01
+          },
+          "t_max": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 10.0,
+                "minimum": 0.01
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "T Max",
+            "default": 1.0
+          },
+          "sensor_x": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sensor X",
+            "default": 0.5
+          }
+        },
+        "type": "object",
+        "required": [
+          "N",
+          "sigma"
+        ],
+        "title": "PlacementRequest"
+      },
+      "PlacementResponse": {
+        "properties": {
+          "N": {
+            "type": "integer",
+            "title": "N"
+          },
+          "sigma": {
+            "type": "number",
+            "title": "Sigma"
+          },
+          "sensor_x": {
+            "type": "number",
+            "title": "Sensor X"
+          },
+          "t_stage1": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "T Stage1"
+          },
+          "t_stage2_nominal": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "T Stage2 Nominal"
+          },
+          "strategy_description": {
+            "type": "string",
+            "title": "Strategy Description"
+          },
+          "timing_ms": {
+            "type": "number",
+            "title": "Timing Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "N",
+          "sigma",
+          "sensor_x",
+          "t_stage1",
+          "t_stage2_nominal",
+          "strategy_description",
+          "timing_ms"
+        ],
+        "title": "PlacementResponse"
+      },
+      "PoissonErrors": {
+        "properties": {
+          "rel_l2_fno_vs_exact": {
+            "type": "number",
+            "title": "Rel L2 Fno Vs Exact"
+          },
+          "rel_l2_linear_vs_exact": {
+            "type": "number",
+            "title": "Rel L2 Linear Vs Exact"
+          },
+          "rel_l2_fno_vs_linear": {
+            "type": "number",
+            "title": "Rel L2 Fno Vs Linear"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rel_l2_fno_vs_exact",
+          "rel_l2_linear_vs_exact",
+          "rel_l2_fno_vs_linear"
+        ],
+        "title": "PoissonErrors"
+      },
+      "PoissonRequest": {
+        "properties": {
+          "source": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Source",
+            "description": "Source configuration: {'type': 'gaussian', ...} or {'type': 'sine', ...}"
+          },
+          "grid_size": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 128.0,
+                "minimum": 16.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grid Size",
+            "description": "Spatial resolution N (default 64)",
+            "default": 64
+          }
+        },
+        "type": "object",
+        "required": [
+          "source"
+        ],
+        "title": "PoissonRequest"
+      },
+      "PoissonResponse": {
+        "properties": {
+          "exact_field": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Exact Field"
+          },
+          "fno_field": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Fno Field"
+          },
+          "linear_field": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Linear Field"
+          },
+          "relative_errors": {
+            "$ref": "#/components/schemas/PoissonErrors"
+          },
+          "timing_ms": {
+            "$ref": "#/components/schemas/PoissonTiming"
+          },
+          "high_frequency_source": {
+            "type": "boolean",
+            "title": "High Frequency Source",
+            "description": "True if sine modes exceed 4 (outside training family)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "exact_field",
+          "fno_field",
+          "linear_field",
+          "relative_errors",
+          "timing_ms",
+          "high_frequency_source"
+        ],
+        "title": "PoissonResponse"
+      },
+      "PoissonTiming": {
+        "properties": {
+          "exact_ms": {
+            "type": "number",
+            "title": "Exact Ms"
+          },
+          "fno_ms": {
+            "type": "number",
+            "title": "Fno Ms"
+          },
+          "linear_ms": {
+            "type": "number",
+            "title": "Linear Ms"
+          },
+          "total_ms": {
+            "type": "number",
+            "title": "Total Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "exact_ms",
+          "fno_ms",
+          "linear_ms",
+          "total_ms"
+        ],
+        "title": "PoissonTiming"
+      },
+      "SensorReadings": {
+        "properties": {
+          "x": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "X"
+          },
+          "t": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "T"
+          },
+          "y": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Y"
+          }
+        },
+        "type": "object",
+        "required": [
+          "x",
+          "t",
+          "y"
+        ],
+        "title": "SensorReadings"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VersionResponse": {
+        "properties": {
+          "git_commit": {
+            "type": "string",
+            "title": "Git Commit"
+          },
+          "git_tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Git Tags"
+          },
+          "checkpoint_sha256s": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Checkpoint Sha256S"
+          }
+        },
+        "type": "object",
+        "required": [
+          "git_commit",
+          "git_tags",
+          "checkpoint_sha256s"
+        ],
+        "title": "VersionResponse"
+      }
+    }
+  }
+}

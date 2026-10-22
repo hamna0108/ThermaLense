@@ -1,0 +1,1749 @@
+{
+  "meta": {
+    "generator": "tools/build_evidence_json.py",
+    "git_commit": "071d35675dd8d320912d516c81572fbc631fca31",
+    "source_files": [
+      "data/results/mode2_pipeline_results_v2.csv",
+      "data/results/mode3_pipeline_results_v2.csv",
+      "data/results/mode3plus_hybrid_results.csv",
+      "data/results/sensor_placement_summary.csv",
+      "data/results/anomaly_frozen_final_tables.json",
+      "data/results/stress_summary_v2b.csv",
+      "data/results/v2_before_after_summary.csv",
+      "data/results/poisson_v2_benchmark_table.csv",
+      "data/results/timing_honesty.json",
+      "data/results/experiments_summary.csv",
+      "data/results/mode1_pinn_summary.csv"
+    ]
+  },
+  "headline_findings": [
+    {
+      "id": "headline_1",
+      "title": "Sub-Millisecond Inversion with Hybrid Polish",
+      "stat": "0.68 ms",
+      "detail": "Mode 3 FNO spline inversion executes in 0.68 ms. Mode 3+ hybrid polish recovers 94.0% Wald CI coverage across 135 parameter cells."
+    },
+    {
+      "id": "headline_2",
+      "title": "Exact Sparse Solver 40.9x Faster than FNO on CPU",
+      "stat": "40.9x",
+      "detail": "At 64x64 grid resolution on CPU, the classical pre-factorized sparse Poisson solver solves in 0.50 ms vs 20.48 ms for FNO."
+    },
+    {
+      "id": "headline_3",
+      "title": "Full Factorial Sensor Fault Recall",
+      "stat": "80.0% Recall",
+      "detail": "The integrated GLR-BIC anomaly cascade achieves 80.0% sensor fault recall and 94.5% healthy retention on fresh test seeds."
+    }
+  ],
+  "stage1_inverse_modes": {
+    "mode2": {
+      "name": "Mode 2 (CN Solver + Brent)",
+      "overall_median_rel_err": 0.08082,
+      "overall_mean_cov_95": 93.56,
+      "overall_mean_latency_ms": 1.905,
+      "total_cells": 120,
+      "splits": [
+        {
+          "split": "Extended Low-alpha OOD",
+          "median_rel_err": 0.46453,
+          "mean_cov_95": 89.2,
+          "mean_latency_ms": 1.01,
+          "cells": 8
+        },
+        {
+          "split": "Low-alpha OOD",
+          "median_rel_err": 0.35011,
+          "mean_cov_95": 92.4,
+          "mean_latency_ms": 2.09,
+          "cells": 32
+        },
+        {
+          "split": "Interpolation",
+          "median_rel_err": 0.04445,
+          "mean_cov_95": 94.7,
+          "mean_latency_ms": 1.84,
+          "cells": 40
+        },
+        {
+          "split": "High-alpha OOD",
+          "median_rel_err": 0.04214,
+          "mean_cov_95": 94.5,
+          "mean_latency_ms": 1.98,
+          "cells": 32
+        },
+        {
+          "split": "Extended High-alpha OOD",
+          "median_rel_err": 0.03724,
+          "mean_cov_95": 93.3,
+          "mean_latency_ms": 2.15,
+          "cells": 8
+        }
+      ]
+    },
+    "mode3": {
+      "name": "Mode 3 (FNO + Spline)",
+      "overall_median_rel_err": 0.07544,
+      "overall_mean_cov_95": 88.22,
+      "overall_mean_latency_ms": 0.684,
+      "total_cells": 90,
+      "splits": [
+        {
+          "split": "Extended Low-alpha OOD",
+          "median_rel_err": 0.39575,
+          "mean_cov_95": 87.8,
+          "mean_latency_ms": 0.75,
+          "cells": 6
+        },
+        {
+          "split": "Low-alpha OOD",
+          "median_rel_err": 0.32689,
+          "mean_cov_95": 91.5,
+          "mean_latency_ms": 0.72,
+          "cells": 24
+        },
+        {
+          "split": "Interpolation",
+          "median_rel_err": 0.04205,
+          "mean_cov_95": 94.7,
+          "mean_latency_ms": 0.65,
+          "cells": 30
+        },
+        {
+          "split": "High-alpha OOD",
+          "median_rel_err": 0.04047,
+          "mean_cov_95": 83.5,
+          "mean_latency_ms": 0.65,
+          "cells": 24
+        },
+        {
+          "split": "Extended High-alpha OOD",
+          "median_rel_err": null,
+          "mean_cov_95": 61.8,
+          "mean_latency_ms": 0.77,
+          "cells": 6
+        }
+      ]
+    },
+    "mode3plus": {
+      "name": "Mode 3+ (Hybrid Route + Polish)",
+      "overall_median_rel_err": 0.0656,
+      "overall_mean_cov_95": 93.99,
+      "overall_mean_latency_ms": 138.824,
+      "total_cells": 90,
+      "splits": [
+        {
+          "split": "Extended Low-alpha OOD",
+          "median_rel_err": 0.44989,
+          "mean_cov_95": 90.5,
+          "mean_latency_ms": 100.56,
+          "cells": 6
+        },
+        {
+          "split": "Low-alpha OOD",
+          "median_rel_err": 0.3508,
+          "mean_cov_95": 92.9,
+          "mean_latency_ms": 166.39,
+          "cells": 24
+        },
+        {
+          "split": "Interpolation",
+          "median_rel_err": 0.04185,
+          "mean_cov_95": 95.4,
+          "mean_latency_ms": 127.11,
+          "cells": 30
+        },
+        {
+          "split": "High-alpha OOD",
+          "median_rel_err": 0.02659,
+          "mean_cov_95": 94.7,
+          "mean_latency_ms": 133.6,
+          "cells": 24
+        },
+        {
+          "split": "Extended High-alpha OOD",
+          "median_rel_err": 0.03136,
+          "mean_cov_95": 91.9,
+          "mean_latency_ms": 146.28,
+          "cells": 6
+        }
+      ]
+    }
+  },
+  "sensor_placement": {
+    "strategy_aggregates": [
+      {
+        "strategy": "uniform",
+        "median_rel_err": 0.06295,
+        "mean_rel_err": 0.15177,
+        "mean_sprd_crb": 1.0458,
+        "mean_fit_time_ms": 0.324,
+        "configurations": 12
+      },
+      {
+        "strategy": "log-spaced",
+        "median_rel_err": 0.06725,
+        "mean_rel_err": 0.16593,
+        "mean_sprd_crb": 1.0163,
+        "mean_fit_time_ms": 0.296,
+        "configurations": 12
+      },
+      {
+        "strategy": "early-heavy",
+        "median_rel_err": 0.06245,
+        "mean_rel_err": 0.15358,
+        "mean_sprd_crb": 1.0308,
+        "mean_fit_time_ms": 0.297,
+        "configurations": 12
+      },
+      {
+        "strategy": "late-heavy",
+        "median_rel_err": 0.05439,
+        "mean_rel_err": 0.1389,
+        "mean_sprd_crb": 1.0574,
+        "mean_fit_time_ms": 0.314,
+        "configurations": 12
+      },
+      {
+        "strategy": "information-weighted (oracle alpha)",
+        "median_rel_err": 0.0414,
+        "mean_rel_err": 0.10385,
+        "mean_sprd_crb": 1.0362,
+        "mean_fit_time_ms": 0.295,
+        "configurations": 12
+      },
+      {
+        "strategy": "all-at-t-star (oracle alpha)",
+        "median_rel_err": 0.0362,
+        "mean_rel_err": 0.0833,
+        "mean_sprd_crb": 1.0333,
+        "mean_fit_time_ms": 0.279,
+        "configurations": 12
+      },
+      {
+        "strategy": "two-stage deployable",
+        "median_rel_err": 0.04738,
+        "mean_rel_err": 0.11602,
+        "mean_sprd_crb": 1.0401,
+        "mean_fit_time_ms": 1.229,
+        "configurations": 12
+      }
+    ],
+    "sample_slice_n5_sig001": [
+      {
+        "strategy": "uniform",
+        "alpha_true": 0.005,
+        "med_rel_err": 0.10792,
+        "crb_rel": 0.15366,
+        "single_fit_time_ms": 0.413
+      },
+      {
+        "strategy": "log-spaced",
+        "alpha_true": 0.005,
+        "med_rel_err": 0.12746,
+        "crb_rel": 0.20124,
+        "single_fit_time_ms": 0.389
+      },
+      {
+        "strategy": "early-heavy",
+        "alpha_true": 0.005,
+        "med_rel_err": 0.11903,
+        "crb_rel": 0.17913,
+        "single_fit_time_ms": 0.349
+      },
+      {
+        "strategy": "late-heavy",
+        "alpha_true": 0.005,
+        "med_rel_err": 0.08994,
+        "crb_rel": 0.13021,
+        "single_fit_time_ms": 0.361
+      },
+      {
+        "strategy": "information-weighted (oracle alpha)",
+        "alpha_true": 0.005,
+        "med_rel_err": 0.08565,
+        "crb_rel": 0.1221,
+        "single_fit_time_ms": 0.351
+      },
+      {
+        "strategy": "all-at-t-star (oracle alpha)",
+        "alpha_true": 0.005,
+        "med_rel_err": 0.06641,
+        "crb_rel": 0.09521,
+        "single_fit_time_ms": 0.347
+      },
+      {
+        "strategy": "two-stage deployable",
+        "alpha_true": 0.005,
+        "med_rel_err": 0.08614,
+        "crb_rel": 0.12646,
+        "single_fit_time_ms": 1.332
+      },
+      {
+        "strategy": "uniform",
+        "alpha_true": 0.1,
+        "med_rel_err": 0.01039,
+        "crb_rel": 0.016,
+        "single_fit_time_ms": 0.282
+      },
+      {
+        "strategy": "log-spaced",
+        "alpha_true": 0.1,
+        "med_rel_err": 0.01454,
+        "crb_rel": 0.02256,
+        "single_fit_time_ms": 0.278
+      },
+      {
+        "strategy": "early-heavy",
+        "alpha_true": 0.1,
+        "med_rel_err": 0.01259,
+        "crb_rel": 0.01887,
+        "single_fit_time_ms": 0.278
+      },
+      {
+        "strategy": "late-heavy",
+        "alpha_true": 0.1,
+        "med_rel_err": 0.00926,
+        "crb_rel": 0.01452,
+        "single_fit_time_ms": 0.264
+      },
+      {
+        "strategy": "information-weighted (oracle alpha)",
+        "alpha_true": 0.1,
+        "med_rel_err": 0.00762,
+        "crb_rel": 0.0136,
+        "single_fit_time_ms": 0.276
+      },
+      {
+        "strategy": "all-at-t-star (oracle alpha)",
+        "alpha_true": 0.1,
+        "med_rel_err": 0.00726,
+        "crb_rel": 0.01216,
+        "single_fit_time_ms": 0.25
+      },
+      {
+        "strategy": "two-stage deployable",
+        "alpha_true": 0.1,
+        "med_rel_err": 0.00836,
+        "crb_rel": 0.01469,
+        "single_fit_time_ms": 1.03
+      },
+      {
+        "strategy": "uniform",
+        "alpha_true": 2.5,
+        "med_rel_err": 0.03618,
+        "crb_rel": 0.05179,
+        "single_fit_time_ms": 0.314
+      },
+      {
+        "strategy": "log-spaced",
+        "alpha_true": 2.5,
+        "med_rel_err": 0.01782,
+        "crb_rel": 0.02188,
+        "single_fit_time_ms": 0.221
+      },
+      {
+        "strategy": "early-heavy",
+        "alpha_true": 2.5,
+        "med_rel_err": 0.01999,
+        "crb_rel": 0.02796,
+        "single_fit_time_ms": 0.243
+      },
+      {
+        "strategy": "late-heavy",
+        "alpha_true": 2.5,
+        "med_rel_err": 0.03536,
+        "crb_rel": 0.05187,
+        "single_fit_time_ms": 0.334
+      },
+      {
+        "strategy": "information-weighted (oracle alpha)",
+        "alpha_true": 2.5,
+        "med_rel_err": 0.011,
+        "crb_rel": 0.01437,
+        "single_fit_time_ms": 0.255
+      },
+      {
+        "strategy": "all-at-t-star (oracle alpha)",
+        "alpha_true": 2.5,
+        "med_rel_err": 0.00912,
+        "crb_rel": 0.01216,
+        "single_fit_time_ms": 0.241
+      },
+      {
+        "strategy": "two-stage deployable",
+        "alpha_true": 2.5,
+        "med_rel_err": 0.01176,
+        "crb_rel": 0.01725,
+        "single_fit_time_ms": 1.08
+      }
+    ]
+  },
+  "anomaly_confusion_matrix": {
+    "primary_cell": {
+      "N": 10,
+      "sigma": 0.01,
+      "healthy_far_pct": 5.5,
+      "healthy_far_ci": [
+        3.1,
+        9.58
+      ],
+      "recalls": {
+        "H": {
+          "recall_pct": 94.5,
+          "ci": [
+            90.42,
+            96.9
+          ]
+        },
+        "A": {
+          "recall_pct": 97.0,
+          "ci": [
+            93.61,
+            98.62
+          ]
+        },
+        "F": {
+          "recall_pct": 80.0,
+          "ci": [
+            73.91,
+            84.95
+          ]
+        },
+        "C": {
+          "recall_pct": 94.0,
+          "ci": [
+            89.81,
+            96.53
+          ]
+        }
+      },
+      "confusion_matrix_counts": {
+        "H": {
+          "H": 189,
+          "A": 0,
+          "F": 3,
+          "C": 8
+        },
+        "A": {
+          "H": 0,
+          "A": 194,
+          "F": 0,
+          "C": 6
+        },
+        "F": {
+          "H": 17,
+          "A": 1,
+          "F": 160,
+          "C": 22
+        },
+        "C": {
+          "H": 1,
+          "A": 9,
+          "F": 2,
+          "C": 188
+        }
+      },
+      "confusion_matrix_pct": {
+        "H": {
+          "H": 94.5,
+          "A": 0.0,
+          "F": 1.5,
+          "C": 4.0
+        },
+        "A": {
+          "H": 0.0,
+          "A": 97.0,
+          "F": 0.0,
+          "C": 3.0
+        },
+        "F": {
+          "H": 8.5,
+          "A": 0.5,
+          "F": 80.0,
+          "C": 11.0
+        },
+        "C": {
+          "H": 0.5,
+          "A": 4.5,
+          "F": 1.0,
+          "C": 94.0
+        }
+      }
+    },
+    "all_cells": [
+      {
+        "N": 10,
+        "sigma": 0.01,
+        "healthy_far_pct": 5.5,
+        "healthy_far_ci": [
+          3.1,
+          9.58
+        ],
+        "recalls": {
+          "H": {
+            "recall_pct": 94.5,
+            "ci": [
+              90.42,
+              96.9
+            ]
+          },
+          "A": {
+            "recall_pct": 97.0,
+            "ci": [
+              93.61,
+              98.62
+            ]
+          },
+          "F": {
+            "recall_pct": 80.0,
+            "ci": [
+              73.91,
+              84.95
+            ]
+          },
+          "C": {
+            "recall_pct": 94.0,
+            "ci": [
+              89.81,
+              96.53
+            ]
+          }
+        },
+        "confusion_matrix_counts": {
+          "H": {
+            "H": 189,
+            "A": 0,
+            "F": 3,
+            "C": 8
+          },
+          "A": {
+            "H": 0,
+            "A": 194,
+            "F": 0,
+            "C": 6
+          },
+          "F": {
+            "H": 17,
+            "A": 1,
+            "F": 160,
+            "C": 22
+          },
+          "C": {
+            "H": 1,
+            "A": 9,
+            "F": 2,
+            "C": 188
+          }
+        },
+        "confusion_matrix_pct": {
+          "H": {
+            "H": 94.5,
+            "A": 0.0,
+            "F": 1.5,
+            "C": 4.0
+          },
+          "A": {
+            "H": 0.0,
+            "A": 97.0,
+            "F": 0.0,
+            "C": 3.0
+          },
+          "F": {
+            "H": 8.5,
+            "A": 0.5,
+            "F": 80.0,
+            "C": 11.0
+          },
+          "C": {
+            "H": 0.5,
+            "A": 4.5,
+            "F": 1.0,
+            "C": 94.0
+          }
+        }
+      },
+      {
+        "N": 10,
+        "sigma": 0.05,
+        "healthy_far_pct": 7.5,
+        "healthy_far_ci": [
+          4.6,
+          12.0
+        ],
+        "recalls": {
+          "H": {
+            "recall_pct": 92.5,
+            "ci": [
+              88.0,
+              95.4
+            ]
+          },
+          "A": {
+            "recall_pct": 93.0,
+            "ci": [
+              88.59,
+              95.78
+            ]
+          },
+          "F": {
+            "recall_pct": 82.0,
+            "ci": [
+              76.09,
+              86.71
+            ]
+          },
+          "C": {
+            "recall_pct": 51.0,
+            "ci": [
+              44.12,
+              57.84
+            ]
+          }
+        },
+        "confusion_matrix_counts": {
+          "H": {
+            "H": 185,
+            "A": 5,
+            "F": 8,
+            "C": 2
+          },
+          "A": {
+            "H": 0,
+            "A": 186,
+            "F": 4,
+            "C": 10
+          },
+          "F": {
+            "H": 24,
+            "A": 2,
+            "F": 164,
+            "C": 10
+          },
+          "C": {
+            "H": 78,
+            "A": 10,
+            "F": 10,
+            "C": 102
+          }
+        },
+        "confusion_matrix_pct": {
+          "H": {
+            "H": 92.5,
+            "A": 2.5,
+            "F": 4.0,
+            "C": 1.0
+          },
+          "A": {
+            "H": 0.0,
+            "A": 93.0,
+            "F": 2.0,
+            "C": 5.0
+          },
+          "F": {
+            "H": 12.0,
+            "A": 1.0,
+            "F": 82.0,
+            "C": 5.0
+          },
+          "C": {
+            "H": 39.0,
+            "A": 5.0,
+            "F": 5.0,
+            "C": 51.0
+          }
+        }
+      },
+      {
+        "N": 20,
+        "sigma": 0.01,
+        "healthy_far_pct": 8.0,
+        "healthy_far_ci": [
+          4.98,
+          12.6
+        ],
+        "recalls": {
+          "H": {
+            "recall_pct": 92.0,
+            "ci": [
+              87.4,
+              95.02
+            ]
+          },
+          "A": {
+            "recall_pct": 100.0,
+            "ci": [
+              98.12,
+              100.0
+            ]
+          },
+          "F": {
+            "recall_pct": 90.5,
+            "ci": [
+              85.64,
+              93.83
+            ]
+          },
+          "C": {
+            "recall_pct": 92.0,
+            "ci": [
+              87.4,
+              95.02
+            ]
+          }
+        },
+        "confusion_matrix_counts": {
+          "H": {
+            "H": 184,
+            "A": 0,
+            "F": 5,
+            "C": 11
+          },
+          "A": {
+            "H": 0,
+            "A": 200,
+            "F": 0,
+            "C": 0
+          },
+          "F": {
+            "H": 16,
+            "A": 0,
+            "F": 181,
+            "C": 3
+          },
+          "C": {
+            "H": 4,
+            "A": 11,
+            "F": 1,
+            "C": 184
+          }
+        },
+        "confusion_matrix_pct": {
+          "H": {
+            "H": 92.0,
+            "A": 0.0,
+            "F": 2.5,
+            "C": 5.5
+          },
+          "A": {
+            "H": 0.0,
+            "A": 100.0,
+            "F": 0.0,
+            "C": 0.0
+          },
+          "F": {
+            "H": 8.0,
+            "A": 0.0,
+            "F": 90.5,
+            "C": 1.5
+          },
+          "C": {
+            "H": 2.0,
+            "A": 5.5,
+            "F": 0.5,
+            "C": 92.0
+          }
+        }
+      },
+      {
+        "N": 20,
+        "sigma": 0.05,
+        "healthy_far_pct": 5.0,
+        "healthy_far_ci": [
+          2.74,
+          8.96
+        ],
+        "recalls": {
+          "H": {
+            "recall_pct": 95.0,
+            "ci": [
+              91.04,
+              97.26
+            ]
+          },
+          "A": {
+            "recall_pct": 99.5,
+            "ci": [
+              97.22,
+              99.91
+            ]
+          },
+          "F": {
+            "recall_pct": 83.5,
+            "ci": [
+              77.73,
+              88.0
+            ]
+          },
+          "C": {
+            "recall_pct": 59.0,
+            "ci": [
+              52.08,
+              65.58
+            ]
+          }
+        },
+        "confusion_matrix_counts": {
+          "H": {
+            "H": 190,
+            "A": 1,
+            "F": 2,
+            "C": 7
+          },
+          "A": {
+            "H": 0,
+            "A": 199,
+            "F": 0,
+            "C": 1
+          },
+          "F": {
+            "H": 29,
+            "A": 0,
+            "F": 167,
+            "C": 4
+          },
+          "C": {
+            "H": 69,
+            "A": 6,
+            "F": 7,
+            "C": 118
+          }
+        },
+        "confusion_matrix_pct": {
+          "H": {
+            "H": 95.0,
+            "A": 0.5,
+            "F": 1.0,
+            "C": 3.5
+          },
+          "A": {
+            "H": 0.0,
+            "A": 99.5,
+            "F": 0.0,
+            "C": 0.5
+          },
+          "F": {
+            "H": 14.5,
+            "A": 0.0,
+            "F": 83.5,
+            "C": 2.0
+          },
+          "C": {
+            "H": 34.5,
+            "A": 3.0,
+            "F": 3.5,
+            "C": 59.0
+          }
+        }
+      }
+    ]
+  },
+  "stress_summary": {
+    "by_module": [
+      {
+        "module": "Anomaly Cascade",
+        "total_cells": 39,
+        "pass_count": 29,
+        "fail_count": 10,
+        "pass_rate_pct": 74.4
+      },
+      {
+        "module": "Mode 2",
+        "total_cells": 39,
+        "pass_count": 18,
+        "fail_count": 21,
+        "pass_rate_pct": 46.2
+      },
+      {
+        "module": "Mode 3",
+        "total_cells": 39,
+        "pass_count": 18,
+        "fail_count": 21,
+        "pass_rate_pct": 46.2
+      },
+      {
+        "module": "Mode 3+",
+        "total_cells": 39,
+        "pass_count": 18,
+        "fail_count": 21,
+        "pass_rate_pct": 46.2
+      },
+      {
+        "module": "Two-Stage Placement",
+        "total_cells": 39,
+        "pass_count": 25,
+        "fail_count": 14,
+        "pass_rate_pct": 64.1
+      }
+    ],
+    "by_category": [
+      {
+        "category": "robustness",
+        "total_cells": 135,
+        "pass_count": 96,
+        "fail_count": 39,
+        "pass_rate_pct": 71.1
+      },
+      {
+        "category": "declared-scope violation",
+        "total_cells": 60,
+        "pass_count": 12,
+        "fail_count": 48,
+        "pass_rate_pct": 20.0
+      }
+    ],
+    "scenarios": [
+      {
+        "scenario_idx": 1,
+        "scenario_name": "Misspecified noise sigma",
+        "category": "robustness",
+        "total_tests": 15,
+        "passed": 6,
+        "failed": 9,
+        "pass_rate_pct": 40.0
+      },
+      {
+        "scenario_idx": 2,
+        "scenario_name": "Heavy-tailed noise",
+        "category": "robustness",
+        "total_tests": 15,
+        "passed": 12,
+        "failed": 3,
+        "pass_rate_pct": 80.0
+      },
+      {
+        "scenario_idx": 3,
+        "scenario_name": "Correlated noise",
+        "category": "robustness",
+        "total_tests": 15,
+        "passed": 8,
+        "failed": 7,
+        "pass_rate_pct": 53.3
+      },
+      {
+        "scenario_idx": 4,
+        "scenario_name": "Different initial condition",
+        "category": "declared-scope violation",
+        "total_tests": 15,
+        "passed": 3,
+        "failed": 12,
+        "pass_rate_pct": 20.0
+      },
+      {
+        "scenario_idx": 5,
+        "scenario_name": "Boundary mismatch",
+        "category": "declared-scope violation",
+        "total_tests": 15,
+        "passed": 3,
+        "failed": 12,
+        "pass_rate_pct": 20.0
+      },
+      {
+        "scenario_idx": 6,
+        "scenario_name": "Source-term / heating mismatch",
+        "category": "declared-scope violation",
+        "total_tests": 15,
+        "passed": 3,
+        "failed": 12,
+        "pass_rate_pct": 20.0
+      },
+      {
+        "scenario_idx": 7,
+        "scenario_name": "Variable diffusivity alpha(x)",
+        "category": "declared-scope violation",
+        "total_tests": 15,
+        "passed": 3,
+        "failed": 12,
+        "pass_rate_pct": 20.0
+      },
+      {
+        "scenario_idx": 8,
+        "scenario_name": "Sensor dropout",
+        "category": "robustness",
+        "total_tests": 15,
+        "passed": 15,
+        "failed": 0,
+        "pass_rate_pct": 100.0
+      },
+      {
+        "scenario_idx": 9,
+        "scenario_name": "Sensor position error and time jitter",
+        "category": "robustness",
+        "total_tests": 15,
+        "passed": 8,
+        "failed": 7,
+        "pass_rate_pct": 53.3
+      },
+      {
+        "scenario_idx": 10,
+        "scenario_name": "Constant sensor bias",
+        "category": "robustness",
+        "total_tests": 15,
+        "passed": 14,
+        "failed": 1,
+        "pass_rate_pct": 93.3
+      },
+      {
+        "scenario_idx": 11,
+        "scenario_name": "Very few sensors",
+        "category": "robustness",
+        "total_tests": 15,
+        "passed": 15,
+        "failed": 0,
+        "pass_rate_pct": 100.0
+      },
+      {
+        "scenario_idx": 12,
+        "scenario_name": "True alpha beyond the grid",
+        "category": "robustness",
+        "total_tests": 15,
+        "passed": 4,
+        "failed": 11,
+        "pass_rate_pct": 26.7
+      },
+      {
+        "scenario_idx": 13,
+        "scenario_name": "Baseline drift",
+        "category": "robustness",
+        "total_tests": 15,
+        "passed": 14,
+        "failed": 1,
+        "pass_rate_pct": 93.3
+      }
+    ]
+  },
+  "v2_before_after": {
+    "total_targets": 34,
+    "met_count": 24,
+    "missed_count": 10,
+    "records": [
+      {
+        "target_id": "D1",
+        "scenario": "S1 Sev 1 (true=0.01, assumed=0.05)",
+        "module": "Mode 2 (Sigma Est)",
+        "metric_name": "95% CI Coverage",
+        "before_value": "100.0% [96.3, 100.0]",
+        "after_value": "84.0% [75.58, 89.9]",
+        "target_spec": "Coverage >= 80.0%",
+        "target_status": "MET",
+        "notes": "Sigma estimated as 0.0098 (true=0.01)"
+      },
+      {
+        "target_id": "D1",
+        "scenario": "S1 Sev 1 (true=0.01, assumed=0.05)",
+        "module": "Anomaly Cascade (Sigma Est)",
+        "metric_name": "Healthy FAR",
+        "before_value": "0.0% [0.0, 3.7]",
+        "after_value": "11.0% [6.25, 18.63]",
+        "target_spec": "Healthy FAR <= 15.0%",
+        "target_status": "MET",
+        "notes": "Normalized by hat_sigma=0.0098"
+      },
+      {
+        "target_id": "D1",
+        "scenario": "S1 Sev 2 (true=0.05, assumed=0.01)",
+        "module": "Mode 2 (Sigma Est)",
+        "metric_name": "95% CI Coverage",
+        "before_value": "29.0% [21.01, 38.54]",
+        "after_value": "96.0% [90.16, 98.43]",
+        "target_spec": "Coverage >= 80.0%",
+        "target_status": "MET",
+        "notes": "Sigma estimated as 0.0491 (true=0.05)"
+      },
+      {
+        "target_id": "D1",
+        "scenario": "S1 Sev 2 (true=0.05, assumed=0.01)",
+        "module": "Anomaly Cascade (Sigma Est)",
+        "metric_name": "Healthy FAR",
+        "before_value": "100.0% [96.3, 100.0]",
+        "after_value": "6.0% [2.78, 12.48]",
+        "target_spec": "Healthy FAR <= 15.0%",
+        "target_status": "MET",
+        "notes": "Normalized by hat_sigma=0.0491"
+      },
+      {
+        "target_id": "D1",
+        "scenario": "S1 Sev 3 (true=0.03, assumed=0.01)",
+        "module": "Mode 2 (Sigma Est)",
+        "metric_name": "95% CI Coverage",
+        "before_value": "47.0% [37.51, 56.71]",
+        "after_value": "97.0% [91.55, 98.97]",
+        "target_spec": "Coverage >= 80.0%",
+        "target_status": "MET",
+        "notes": "Sigma estimated as 0.0291 (true=0.03)"
+      },
+      {
+        "target_id": "D1",
+        "scenario": "S1 Sev 3 (true=0.03, assumed=0.01)",
+        "module": "Anomaly Cascade (Sigma Est)",
+        "metric_name": "Healthy FAR",
+        "before_value": "99.0% [94.55, 99.82]",
+        "after_value": "4.0% [1.57, 9.84]",
+        "target_spec": "Healthy FAR <= 15.0%",
+        "target_status": "MET",
+        "notes": "Normalized by hat_sigma=0.0291"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "Healthy Control (sigma=0.01)",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Healthy False Flag Rate",
+        "before_value": "0.0% (Ungated)",
+        "after_value": "7.0% [3.43, 13.75]",
+        "target_spec": "False Flags <= 5.0%",
+        "target_status": "MISSED",
+        "notes": "Median chi2/dof = 0.928"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S3 Sev 1 (AR(1) rho = 0.50)",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "1.0% [0.18, 5.45]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MISSED",
+        "notes": "Median chi2/dof = 0.74"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S3 Sev 2 (AR(1) rho = 0.80)",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "2.0% [0.55, 7.0]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MISSED",
+        "notes": "Median chi2/dof = 0.52"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S3 Sev 3 (AR(1) rho = 0.95)",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "2.0% [0.55, 7.0]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MISSED",
+        "notes": "Median chi2/dof = 0.24"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S4 Sev 1 (Harmonic double mode sin(2 pi x))",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "100.0% [96.3, 100.0]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MET",
+        "notes": "Median chi2/dof = 2848.47"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S4 Sev 2 (Two-mode sum sin(pi x) + 0.5 sin(3 pi x))",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "100.0% [96.3, 100.0]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MET",
+        "notes": "Median chi2/dof = 358.37"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S4 Sev 3 (Gaussian bump exp(-(x-0.5)^2 / (2*0.08^2)))",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "100.0% [96.3, 100.0]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MET",
+        "notes": "Median chi2/dof = 639.53"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S5 Sev 1 (Small constant offset u_bc = 0.05)",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "28.0% [20.14, 37.49]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MISSED",
+        "notes": "Median chi2/dof = 1.38"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S5 Sev 2 (Moderate constant offset u_bc = 0.15)",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "60.0% [50.2, 69.06]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MISSED",
+        "notes": "Median chi2/dof = 2.14"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S5 Sev 3 (Linearly drifting boundary u_bc(t) = 0.20 * t)",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "36.0% [27.27, 45.76]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MISSED",
+        "notes": "Median chi2/dof = 1.63"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S6 Sev 1 (Small constant source s = 0.1)",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "69.0% [59.37, 77.22]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MISSED",
+        "notes": "Median chi2/dof = 2.57"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S6 Sev 2 (Moderate constant source s = 0.5)",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "100.0% [96.3, 100.0]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MET",
+        "notes": "Median chi2/dof = 51.01"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S6 Sev 3 (Strong constant source s = 2.0)",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "100.0% [96.3, 100.0]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MET",
+        "notes": "Median chi2/dof = 1505.22"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S7 Sev 1 (Mild linear ramp alpha(x) = alpha0*(1 + 0.5*(x-0.5)))",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "81.0% [72.22, 87.49]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MET",
+        "notes": "Median chi2/dof = 3.31"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S7 Sev 2 (Steep linear ramp alpha(x) = alpha0*(1 + 1.5*(x-0.5)))",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "99.0% [94.55, 99.82]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MET",
+        "notes": "Median chi2/dof = 10.59"
+      },
+      {
+        "target_id": "D2",
+        "scenario": "S7 Sev 3 (Step discontinuity alpha(x) = 2*alpha0 for x > 0.5)",
+        "module": "GOF Gate (chi2/dof > 1.878)",
+        "metric_name": "Model Invalid Flag Rate",
+        "before_value": "0.0% (Ungated silent fit)",
+        "after_value": "98.0% [93.0, 99.45]",
+        "target_spec": "Flag Rate >= 80.0%",
+        "target_status": "MET",
+        "notes": "Median chi2/dof = 6.14"
+      },
+      {
+        "target_id": "D3",
+        "scenario": "S12 Sev 1 (alpha=0.0005)",
+        "module": "Range Guard Mode 3",
+        "metric_name": "At Bound / Out-of-Range %",
+        "before_value": "51.0%",
+        "after_value": "72.0% [62.51, 79.86]",
+        "target_spec": "Out-of-grid Flagged >= 95.0%",
+        "target_status": "MISSED",
+        "notes": "Routed to M3+: 100.0%; Median hat: 0.0010"
+      },
+      {
+        "target_id": "D3",
+        "scenario": "S12 Sev 2 (alpha=5.0)",
+        "module": "Range Guard Mode 3",
+        "metric_name": "At Bound / Out-of-Range %",
+        "before_value": "0.0%",
+        "after_value": "0.0% [0.0, 3.7]",
+        "target_spec": "Inside grid: routed to Mode 3+",
+        "target_status": "MET",
+        "notes": "Routed to M3+: 100.0%; Median hat: 4.4626"
+      },
+      {
+        "target_id": "D3",
+        "scenario": "S12 Sev 3 (alpha=20.0)",
+        "module": "Range Guard Mode 3",
+        "metric_name": "At Bound / Out-of-Range %",
+        "before_value": "100.0%",
+        "after_value": "100.0% [96.3, 100.0]",
+        "target_spec": "Out-of-grid Flagged >= 95.0%",
+        "target_status": "MET",
+        "notes": "Routed to M3+: 100.0%; Median hat: 9.9988"
+      },
+      {
+        "target_id": "D4",
+        "scenario": "S4 Sev 1 (Harmonic double mode sin(2 pi x))",
+        "module": "Declared Physics General CN",
+        "metric_name": "Median Rel Error vs Clean",
+        "before_value": "98.998704 (8569.091x clean)",
+        "after_value": "0.0216 (1.87x clean)",
+        "target_spec": "Error <= 2.0x clean",
+        "target_status": "MET",
+        "notes": "Coverage: 82.0% [73.33, 88.3]"
+      },
+      {
+        "target_id": "D4",
+        "scenario": "S4 Sev 2 (Two-mode sum sin(pi x) + 0.5 sin(3 pi x))",
+        "module": "Declared Physics General CN",
+        "metric_name": "Median Rel Error vs Clean",
+        "before_value": "0.056251 (4.869x clean)",
+        "after_value": "0.0149 (1.29x clean)",
+        "target_spec": "Error <= 2.0x clean",
+        "target_status": "MET",
+        "notes": "Coverage: 88.0% [80.19, 93.0]"
+      },
+      {
+        "target_id": "D4",
+        "scenario": "S4 Sev 3 (Gaussian bump exp(-(x-0.5)^2 / (2*0.08^2)))",
+        "module": "Declared Physics General CN",
+        "metric_name": "Median Rel Error vs Clean",
+        "before_value": "26.14309 (2262.883x clean)",
+        "after_value": "0.0378 (3.27x clean)",
+        "target_spec": "Error <= 2.0x clean",
+        "target_status": "MISSED",
+        "notes": "Coverage: 82.0% [73.33, 88.3]"
+      },
+      {
+        "target_id": "D4",
+        "scenario": "S5 Sev 1 (Small constant offset u_bc = 0.05)",
+        "module": "Declared Physics General CN",
+        "metric_name": "Median Rel Error vs Clean",
+        "before_value": "0.069225 (5.992x clean)",
+        "after_value": "0.0156 (1.35x clean)",
+        "target_spec": "Error <= 2.0x clean",
+        "target_status": "MET",
+        "notes": "Coverage: 86.0% [77.86, 91.47]"
+      },
+      {
+        "target_id": "D4",
+        "scenario": "S5 Sev 2 (Moderate constant offset u_bc = 0.15)",
+        "module": "Declared Physics General CN",
+        "metric_name": "Median Rel Error vs Clean",
+        "before_value": "0.188555 (16.321x clean)",
+        "after_value": "0.0179 (1.55x clean)",
+        "target_spec": "Error <= 2.0x clean",
+        "target_status": "MET",
+        "notes": "Coverage: 93.0% [86.25, 96.57]"
+      },
+      {
+        "target_id": "D4",
+        "scenario": "S5 Sev 3 (Linearly drifting boundary u_bc(t) = 0.20 * t)",
+        "module": "Declared Physics General CN",
+        "metric_name": "Median Rel Error vs Clean",
+        "before_value": "0.100709 (8.717x clean)",
+        "after_value": "0.0141 (1.22x clean)",
+        "target_spec": "Error <= 2.0x clean",
+        "target_status": "MET",
+        "notes": "Coverage: 89.0% [81.37, 93.75]"
+      },
+      {
+        "target_id": "D4",
+        "scenario": "S6 Sev 1 (Small constant source s = 0.1)",
+        "module": "Declared Physics General CN",
+        "metric_name": "Median Rel Error vs Clean",
+        "before_value": "0.169442 (14.666x clean)",
+        "after_value": "0.0097 (0.84x clean)",
+        "target_spec": "Error <= 2.0x clean",
+        "target_status": "MET",
+        "notes": "Coverage: 93.0% [86.25, 96.57]"
+      },
+      {
+        "target_id": "D4",
+        "scenario": "S6 Sev 2 (Moderate constant source s = 0.5)",
+        "module": "Declared Physics General CN",
+        "metric_name": "Median Rel Error vs Clean",
+        "before_value": "0.714372 (61.834x clean)",
+        "after_value": "0.0120 (1.04x clean)",
+        "target_spec": "Error <= 2.0x clean",
+        "target_status": "MET",
+        "notes": "Coverage: 86.0% [77.86, 91.47]"
+      },
+      {
+        "target_id": "D4",
+        "scenario": "S6 Sev 3 (Strong constant source s = 2.0)",
+        "module": "Declared Physics General CN",
+        "metric_name": "Median Rel Error vs Clean",
+        "before_value": "0.99 (85.692x clean)",
+        "after_value": "0.0094 (0.82x clean)",
+        "target_spec": "Error <= 2.0x clean",
+        "target_status": "MET",
+        "notes": "Coverage: 76.0% [66.77, 83.31]"
+      }
+    ]
+  },
+  "stage2_methods": {
+    "benchmark_table": [
+      {
+        "split": "train",
+        "samples": 1000,
+        "fno_l2_med": 0.03287,
+        "fno_l2_p90": 0.052448,
+        "fno_l2_max": 0.211943,
+        "lin_l2_med": 3e-08,
+        "lin_l2_p90": 1e-07,
+        "lin_l2_max": 8.6e-07
+      },
+      {
+        "split": "val",
+        "samples": 100,
+        "fno_l2_med": 0.033455,
+        "fno_l2_p90": 0.088065,
+        "fno_l2_max": 0.166666,
+        "lin_l2_med": 4e-08,
+        "lin_l2_p90": 7.4e-07,
+        "lin_l2_max": 1.108e-05
+      },
+      {
+        "split": "test_interp",
+        "samples": 200,
+        "fno_l2_med": 0.033425,
+        "fno_l2_p90": 0.076015,
+        "fno_l2_max": 0.215046,
+        "lin_l2_med": 4e-08,
+        "lin_l2_p90": 5.5e-07,
+        "lin_l2_max": 7.66e-06
+      },
+      {
+        "split": "test_ood_narrow",
+        "samples": 200,
+        "fno_l2_med": 0.090019,
+        "fno_l2_p90": 0.282154,
+        "fno_l2_max": 0.741898,
+        "lin_l2_med": 0.00061458,
+        "lin_l2_p90": 0.00217542,
+        "lin_l2_max": 0.00615508
+      },
+      {
+        "split": "test_ood_count",
+        "samples": 200,
+        "fno_l2_med": 0.027709,
+        "fno_l2_p90": 0.044005,
+        "fno_l2_max": 0.068694,
+        "lin_l2_med": 1.3e-07,
+        "lin_l2_p90": 1.38e-06,
+        "lin_l2_max": 6.4e-06
+      },
+      {
+        "split": "test_ood_boundary",
+        "samples": 200,
+        "fno_l2_med": 0.141791,
+        "fno_l2_p90": 0.320987,
+        "fno_l2_max": 1.329223,
+        "lin_l2_med": 5.85e-06,
+        "lin_l2_p90": 0.00010968,
+        "lin_l2_max": 0.00234403
+      },
+      {
+        "split": "test_ood_highmodes",
+        "samples": 200,
+        "fno_l2_med": 0.804159,
+        "fno_l2_p90": 1.277729,
+        "fno_l2_max": 2.294483,
+        "lin_l2_med": 0.01499661,
+        "lin_l2_p90": 0.05798713,
+        "lin_l2_max": 0.09358868
+      }
+    ],
+    "timing_honesty": {
+      "solver_prefact_single_ms": 0.5010920000495389,
+      "solver_prefact_batch_per_query_ms": 0.2554520833352095,
+      "solver_fresh_fact_single_ms": 10.924970000147974,
+      "fno_single_ms": 20.477236000006087,
+      "fno_batch_per_query_ms": 5.590178437500981,
+      "linear_single_ms": 3.3329900000535417,
+      "linear_batch_per_query_ms": 0.3894923125017158,
+      "speedup_solver_vs_fno_single": 40.86522235035017,
+      "speedup_solver_vs_fno_batch": 21.883471704419154,
+      "honest_statement": "At 64x64 resolution, the classical sparse direct solver is vastly faster than FNO on CPU: 0.501 ms vs 20.477 ms single-query (40.9x faster), and 0.255 ms vs 5.590 ms batched (21.9x faster). Even rebuilding and re-factorizing the sparse matrix from scratch on every query (10.925 ms) is ~1.9x faster than FNO (20.477 ms) on CPU, 64x64. The classical solver is faster, exact, and zero-parameter at this scale."
+    }
+  },
+  "pinn_ablation_table": {
+    "forward_ablation_variants": [
+      {
+        "model": "pinn_base",
+        "split": "Interpolation",
+        "samples": 200,
+        "median_rel_l2": 0.027527,
+        "p90_rel_l2": 0.214742,
+        "median_t0_mae": 0.013906
+      },
+      {
+        "model": "pinn_expA",
+        "split": "Interpolation",
+        "samples": 200,
+        "median_rel_l2": 0.545629,
+        "p90_rel_l2": 1.067607,
+        "median_t0_mae": 0.33803833
+      },
+      {
+        "model": "pinn_expB",
+        "split": "Interpolation",
+        "samples": 200,
+        "median_rel_l2": 0.007752,
+        "p90_rel_l2": 0.050867,
+        "median_t0_mae": 5e-08
+      },
+      {
+        "model": "pinn_expD",
+        "split": "Interpolation",
+        "samples": 200,
+        "median_rel_l2": 0.008817,
+        "p90_rel_l2": 0.013027,
+        "median_t0_mae": 5e-08
+      },
+      {
+        "model": "pinn_base",
+        "split": "Low-alpha OOD",
+        "samples": 100,
+        "median_rel_l2": 0.096312,
+        "p90_rel_l2": 0.14902,
+        "median_t0_mae": 0.04539945
+      },
+      {
+        "model": "pinn_expA",
+        "split": "Low-alpha OOD",
+        "samples": 100,
+        "median_rel_l2": 0.607743,
+        "p90_rel_l2": 0.6272,
+        "median_t0_mae": 0.37215978
+      },
+      {
+        "model": "pinn_expB",
+        "split": "Low-alpha OOD",
+        "samples": 100,
+        "median_rel_l2": 0.038775,
+        "p90_rel_l2": 0.056948,
+        "median_t0_mae": 5e-08
+      },
+      {
+        "model": "pinn_expD",
+        "split": "Low-alpha OOD",
+        "samples": 100,
+        "median_rel_l2": 0.040845,
+        "p90_rel_l2": 0.056796,
+        "median_t0_mae": 5e-08
+      },
+      {
+        "model": "pinn_base",
+        "split": "High-alpha OOD",
+        "samples": 100,
+        "median_rel_l2": 1.123382,
+        "p90_rel_l2": 1.412382,
+        "median_t0_mae": 0.22140622
+      },
+      {
+        "model": "pinn_expA",
+        "split": "High-alpha OOD",
+        "samples": 100,
+        "median_rel_l2": 1.604464,
+        "p90_rel_l2": 1.682323,
+        "median_t0_mae": 0.41406935
+      },
+      {
+        "model": "pinn_expB",
+        "split": "High-alpha OOD",
+        "samples": 100,
+        "median_rel_l2": 1.00901,
+        "p90_rel_l2": 1.369808,
+        "median_t0_mae": 5e-08
+      },
+      {
+        "model": "pinn_expD",
+        "split": "High-alpha OOD",
+        "samples": 100,
+        "median_rel_l2": 0.655916,
+        "p90_rel_l2": 0.90527,
+        "median_t0_mae": 5e-08
+      }
+    ],
+    "mode1_inverse_summary": [
+      {
+        "alpha_true": 0.02,
+        "sensors": 5,
+        "sigma": 0.01,
+        "med_rel_err": 0.040178,
+        "mean_rel_err": 0.048472,
+        "single_fit_time_ms": 6.193
+      },
+      {
+        "alpha_true": 0.02,
+        "sensors": 5,
+        "sigma": 0.05,
+        "med_rel_err": 0.107307,
+        "mean_rel_err": 0.163069,
+        "single_fit_time_ms": 5.926
+      },
+      {
+        "alpha_true": 0.02,
+        "sensors": 20,
+        "sigma": 0.01,
+        "med_rel_err": 0.025189,
+        "mean_rel_err": 0.025618,
+        "single_fit_time_ms": 8.148
+      },
+      {
+        "alpha_true": 0.02,
+        "sensors": 20,
+        "sigma": 0.05,
+        "med_rel_err": 0.11552,
+        "mean_rel_err": 0.149214,
+        "single_fit_time_ms": 7.111
+      },
+      {
+        "alpha_true": 0.1,
+        "sensors": 5,
+        "sigma": 0.01,
+        "med_rel_err": 0.032183,
+        "mean_rel_err": 0.031369,
+        "single_fit_time_ms": 5.917
+      },
+      {
+        "alpha_true": 0.1,
+        "sensors": 5,
+        "sigma": 0.05,
+        "med_rel_err": 0.077259,
+        "mean_rel_err": 0.098813,
+        "single_fit_time_ms": 5.752
+      },
+      {
+        "alpha_true": 0.1,
+        "sensors": 20,
+        "sigma": 0.01,
+        "med_rel_err": 0.007995,
+        "mean_rel_err": 0.009958,
+        "single_fit_time_ms": 6.991
+      },
+      {
+        "alpha_true": 0.1,
+        "sensors": 20,
+        "sigma": 0.05,
+        "med_rel_err": 0.048655,
+        "mean_rel_err": 0.058885,
+        "single_fit_time_ms": 7.49
+      },
+      {
+        "alpha_true": 2.5,
+        "sensors": 5,
+        "sigma": 0.01,
+        "med_rel_err": 0.255977,
+        "mean_rel_err": 0.252487,
+        "single_fit_time_ms": 7.481
+      },
+      {
+        "alpha_true": 2.5,
+        "sensors": 5,
+        "sigma": 0.05,
+        "med_rel_err": 0.280079,
+        "mean_rel_err": 0.272588,
+        "single_fit_time_ms": 7.161
+      },
+      {
+        "alpha_true": 2.5,
+        "sensors": 20,
+        "sigma": 0.01,
+        "med_rel_err": 0.168372,
+        "mean_rel_err": 0.173581,
+        "single_fit_time_ms": 8.637
+      },
+      {
+        "alpha_true": 2.5,
+        "sensors": 20,
+        "sigma": 0.05,
+        "med_rel_err": 0.183756,
+        "mean_rel_err": 0.168967,
+        "single_fit_time_ms": 7.571
+      }
+    ]
+  },
+  "notes_and_caveats": {
+    "mode3_coverage_caveat": {
+      "mode3_mean_coverage_pct": 88.2,
+      "mode3plus_mean_coverage_pct": 94.0,
+      "statement": "Mode 3 FNO surrogate achieves sub-millisecond evaluation (0.68 ms) but drops mean 95% Wald coverage to 88.2% across benchmark cells (falling to 61.8% in Extended High-alpha OOD). Mode 3+ hybrid polish routes borderline estimates through localized live Crank-Nicolson solves, recovering 94.0% coverage at the expense of higher fit latency (138.8 ms).",
+      "source": "data/results/mode3_pipeline_results_v2.csv and data/results/mode3plus_hybrid_results.csv"
+    },
+    "fno_speed_honesty": {
+      "solver_prefact_single_ms": 0.501,
+      "fno_single_ms": 20.477,
+      "speedup_factor": 40.9,
+      "statement": "At 64x64 resolution on CPU, the classical sparse direct solver is vastly faster than FNO: 0.501 ms vs 20.477 ms single-query (40.9x faster) and 0.255 ms vs 5.590 ms batched (21.9x faster). The classical solver is exact, zero-parameter, and pre-factorized.",
+      "source": "data/results/timing_honesty.json"
+    },
+    "missed_v2_targets": {
+      "statement": "Empirical evaluation revealed that V2 targets D2 and D3 were missed under rigorous stress testing. D2 (Goodness-of-Fit Gate): chi2/dof thresholding failed to flag AR(1) correlated noise (flag rates 1.0% - 2.0% vs >=80.0% target) and low-severity boundary/source mismatches (28.0% - 69.0% vs >=80.0% target), while exhibiting a 7.0% false-alarm rate under healthy conditions (target <=5.0%). D3 (Range Guard): out-of-grid detection for alpha=0.0005 achieved 72.0% (target >=95.0%) due to finite confidence-interval pinning.",
+      "missed_items": [
+        {
+          "target_id": "D2",
+          "scenario": "Healthy Control (sigma=0.01)",
+          "metric": "Healthy False Flag Rate",
+          "observed": "7.0% [3.43, 13.75]",
+          "target_spec": "<= 5.0%"
+        },
+        {
+          "target_id": "D2",
+          "scenario": "S3 Sev 1 (AR(1) rho = 0.50)",
+          "metric": "Model Invalid Flag Rate",
+          "observed": "1.0% [0.18, 5.45]",
+          "target_spec": ">= 80.0%"
+        },
+        {
+          "target_id": "D2",
+          "scenario": "S5 Sev 1 (Constant offset u_bc = 0.05)",
+          "metric": "Model Invalid Flag Rate",
+          "observed": "28.0% [20.14, 37.49]",
+          "target_spec": ">= 80.0%"
+        },
+        {
+          "target_id": "D2",
+          "scenario": "S5 Sev 3 (Drifting boundary 0.20*t)",
+          "metric": "Model Invalid Flag Rate",
+          "observed": "36.0% [27.27, 45.76]",
+          "target_spec": ">= 80.0%"
+        },
+        {
+          "target_id": "D2",
+          "scenario": "S6 Sev 1 (Small source s = 0.1)",
+          "metric": "Model Invalid Flag Rate",
+          "observed": "69.0% [59.37, 77.22]",
+          "target_spec": ">= 80.0%"
+        },
+        {
+          "target_id": "D3",
+          "scenario": "S12 Sev 1 (alpha=0.0005)",
+          "metric": "At Bound / Out-of-Range %",
+          "observed": "72.0% [62.51, 79.86]",
+          "target_spec": ">= 95.0%"
+        }
+      ],
+      "source": "data/results/v2_before_after_summary.csv"
+    },
+    "poisson_high_mode_breakdown": {
+      "fno_high_mode_median_l2": 0.804159,
+      "linear_baseline_median_l2": 0.014997,
+      "statement": "On high-frequency / out-of-distribution Poisson source terms (wavenumbers m,n > 4), FNO error spikes to 80.4% median relative L2 (max 229.4%), whereas the linear ridge baseline maintains 1.5% median error and the exact sparse direct solver achieves exact numerical precision.",
+      "source": "data/results/poisson_v2_benchmark_table.csv"
+    }
+  }
+}

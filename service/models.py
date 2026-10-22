@@ -122,6 +122,7 @@ class FieldRequest(BaseModel):
     physics: Optional[Dict[str, Any]] = None
     Nx: Optional[int] = Field(101, ge=11, le=501)
     Nt: Optional[int] = Field(201, ge=11, le=1001)
+    method: Optional[str] = Field("auto", description="Execution method: 'auto' (default), 'solver', 'fno', or 'compare'")
 
     @field_validator('alpha')
     @classmethod
@@ -136,6 +137,10 @@ class FieldResponse(BaseModel):
     t_grid: List[float]
     method_used: str = Field(..., description="'fno' if alpha in [0.01, 1.0], otherwise 'numerical_solver'")
     timing_ms: float
+    fno_timing_ms: Optional[float] = None
+    solver_timing_ms: Optional[float] = None
+    relative_difference: Optional[float] = None
+    compare_grid: Optional[List[List[float]]] = None
 
 class PoissonGaussianSource(BaseModel):
     type: str = "gaussian"

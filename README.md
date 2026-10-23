@@ -1,4 +1,4 @@
-# Neural PDE Digital Twin: Physics-Informed Operator Learning
+# ThermaLens: Thermal & PDE Digital Twin
 
 A production-grade, mathematically verified digital twin platform combining classical numerical solvers with neural operators (FNO-2D) and physics-informed neural networks (PINN) for transient and steady-state partial differential equations.
 

@@ -42,7 +42,7 @@ def test_static_frontend_served(client):
     """Verify that GET / serves index.html, returns 200, and contains the title."""
     res = client.get("/")
     assert res.status_code == 200
-    assert "Novatore Digital Twin" in res.text
+    assert "ThermaLens" in res.text
     assert "<nav" in res.text
     assert "style.css" in res.text
     assert "app.js" in res.text
@@ -77,6 +77,7 @@ def test_version(client):
     res = client.get("/version")
     assert res.status_code == 200
     data = res.json()
+    assert data.get("name") == "ThermaLens"
     assert "git_commit" in data
     assert "git_tags" in data
     assert "checkpoint_sha256s" in data

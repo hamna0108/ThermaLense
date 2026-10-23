@@ -113,6 +113,11 @@ p {
   max-width: 78ch;
 }
 
+#view-overview p,
+#view-overview .card p {
+  max-width: none;
+}
+
 small, .text-muted {
   color: var(--text-muted);
   font-size: 0.85rem;
@@ -161,7 +166,8 @@ code {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--primary-navy);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  font-variant: small-caps;
   text-decoration: none;
 }
 
@@ -824,6 +830,28 @@ details.disclosure pre {
   .header-inner {
     flex-direction: column;
     align-items: flex-start;
+    padding: 0.5rem 0.85rem;
+    gap: 0.45rem;
+  }
+  .brand-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    width: 100%;
+  }
+  .brand-title {
+    font-size: 1.15rem;
+  }
+  .brand-subtitle {
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    line-height: 1.25;
+  }
+  .header-status-area {
+    width: 100%;
+    justify-content: space-between;
+    padding-top: 0.25rem;
+    border-top: 1px solid var(--rule-subtle);
   }
   .nav-inner {
     padding: 0 0.5rem;

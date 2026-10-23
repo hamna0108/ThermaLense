@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Novatore Digital Twin — Thermal Diffusion & Poisson Workbench</title>
+  <title>ThermaLens — Thermal PDE Inference &amp; Diagnostics Instrument</title>
   <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,8 +13,8 @@
   <header class="app-header">
     <div class="header-inner">
       <div class="brand-section">
-        <a href="#overview" class="brand-title" id="brand-link">NOVATORE TWIN</a>
-        <span class="brand-subtitle">Physical Parameter &amp; Diagnostics Instrument</span>
+        <a href="#overview" class="brand-title" id="brand-link">ThermaLens</a>
+        <span class="brand-subtitle">Thermal PDE Inference &amp; Diagnostics Instrument</span>
       </div>
       <div class="header-status-area">
         <span id="service-health-badge" class="health-badge healthy" title="Live status from /health">
@@ -50,17 +50,17 @@
          ==================================================================== -->
     <section id="view-overview" class="page-view active" aria-labelledby="heading-overview">
       <div class="page-intro">
-        <h1 id="heading-overview">Novatore Thermal &amp; PDE Digital Twin</h1>
+        <h1 id="heading-overview">ThermaLens: Thermal &amp; PDE Digital Twin</h1>
         <p class="page-desc">Mathematical framework, dual neural surrogate architecture, and operational findings.</p>
       </div>
 
       <div class="card">
         <h2 class="card-title">System Architecture &amp; Core Model</h2>
         <p id="overview-para-1">
-          The Novatore Digital Twin models unsteady one-dimensional thermal diffusion in a homogeneous bar governed by the parabolic partial differential equation ∂u/∂t = α ∂²u/∂x² on the spatial domain x ∈ [0, 1] and temporal interval t ∈ [0, 1], subject to homogeneous Dirichlet boundary conditions u(0, t) = u(1, t) = 0 and fundamental harmonic initial condition u(x, 0) = sin(πx). The twin pairs this unsteady diffusion process with a two-dimensional steady-state Poisson elliptic operator −∇²u = f on the unit square [0, 1]² with manufactured distributed heating sources.
+          ThermaLens models unsteady one-dimensional thermal diffusion in a homogeneous bar governed by the parabolic partial differential equation ∂u/∂t = α ∂²u/∂x² on the spatial domain x ∈ [0, 1] and temporal interval t ∈ [0, 1], subject to homogeneous Dirichlet boundary conditions u(0, t) = u(1, t) = 0 and fundamental harmonic initial condition u(x, 0) = sin(πx). The twin pairs this unsteady diffusion process with a two-dimensional steady-state Poisson elliptic operator −∇²u = f on the unit square [0, 1]² with manufactured distributed heating sources.
         </p>
         <p id="overview-para-2">
-          Rather than relying on isolated neural black boxes, the architecture implements a rigorous hybrid surrogate hierarchy: a pre-factorized Crank-Nicolson numerical solver guarantees exact finite-difference truth; a Fourier Neural Operator (FNO-2D) with hard boundary-mask constraints computes global spatiotemporal fields in sub-millisecond evaluation passes; and a bounded reparametrized Physics-Informed Neural Network (PINN Exp D) provides analytical autograd parameter gradients dL/dα without spatial meshing.
+          Rather than relying on isolated neural black boxes, the architecture implements a rigorous hybrid hierarchy where the Fourier Neural Operator (FNO) operates as an accelerated surrogate and the classical numerical solver serves as the ground-truth physical reference. On benchmark evaluations, the pre-factorized Crank-Nicolson numerical solver executes in ~1.4 ms (and fast Mode 3 inverse estimation runs in ~0.7 ms). In the 2D Poisson domain, the pre-factorized sparse direct LU solver completes in 0.5 ms compared to 20 ms for FNO neural evaluation. For 1D spatiotemporal fields in <code>/v1/field</code>, the FNO surrogate evaluates in ~4 ms versus ~1.4 ms for the pre-factorized solver. A bounded reparametrized Physics-Informed Neural Network (PINN Exp D) provides analytical autograd parameter gradients ∂L/∂α without spatial meshing.
         </p>
         <p id="overview-para-3">
           Operationally, the service provides real-time parameter inversion under sensor noise σ, goodness-of-fit gating (D2) to prevent silent model invalidity, a 4-hypothesis baseline-informed Generalized Likelihood Ratio (GLR) cascade for sensor fault and physical change detection, and a two-stage adaptive sensor placement schedule concentrated near peak Fisher information.
@@ -821,8 +821,8 @@
          ==================================================================== -->
     <section id="view-evidence" class="page-view" aria-labelledby="heading-evidence">
       <div class="page-intro">
-        <h1 id="heading-evidence">Empirical Evidence &amp; Verification Archive</h1>
-        <p class="page-desc">Complete tables and figures generated strictly from frozen benchmark files in <code>data/results/</code>. Every number traces to active repository commits.</p>
+        <h1 id="heading-evidence">ThermaLens: Empirical Evidence &amp; Verification Archive</h1>
+        <p class="page-desc">Complete tables and figures for ThermaLens generated strictly from frozen benchmark files in <code>data/results/</code>. Every number traces to active repository commits.</p>
       </div>
 
       <!-- Caveat Highlights Strip -->
@@ -1144,7 +1144,8 @@
   <footer class="app-footer">
     <div class="footer-inner">
       <div class="footer-meta">
-        <span><strong>Service:</strong> <span id="footer-service-name">digital-twin-service</span></span>
+        <span class="footer-brand" style="font-weight: 600; color: var(--primary-navy); margin-right: 0.5rem;">ThermaLens &middot; built at Novatore Solutions</span>
+        <span><strong>Service:</strong> <span id="footer-service-name">ThermaLens</span></span>
         <span><strong>Version:</strong> <span id="footer-version" class="mono">1.0.0</span></span>
         <span><strong>Git Commit:</strong> <span id="footer-commit" class="mono">unknown</span></span>
       </div>

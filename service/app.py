@@ -176,8 +176,8 @@ async def lifespan(app: FastAPI):
     logger.info(json.dumps({"event": "shutdown"}))
 
 app = FastAPI(
-    title="Digital Twin Inverse & Diagnostics Service",
-    description="Production-grade physical parameter estimation, sensor fault diagnosis, and PDE operator inference.",
+    title="ThermaLens: Thermal & PDE Digital Twin API",
+    description="Production-grade physical parameter estimation, sensor fault diagnosis, and PDE operator inference for ThermaLens.",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -393,6 +393,7 @@ def get_health():
 def get_version():
     """Version and provenance metadata: git commit, tags, and checkpoint SHA256 hashes."""
     return VersionResponse(
+        name="ThermaLens",
         git_commit=APP_STATE.get("git_commit", "unknown"),
         git_tags=APP_STATE.get("git_tags", []),
         checkpoint_sha256s=APP_STATE.get("checkpoint_sha256s", {})
@@ -414,6 +415,9 @@ def post_estimate(req: EstimateRequest):
     t_s = np.array(t_coords, dtype=float)
     y_s = np.array(readings, dtype=float)
     prec = APP_STATE.get("prec")
+    if prec is None:
+        prec = precompute_surrogates()
+        APP_STATE["prec"] = prec
     warnings_list = []
     
     # 0. Secure Expression Parsing for Declared Physics
@@ -518,15 +522,12 @@ def post_estimate(req: EstimateRequest):
         method_str = "Mode 3"
         is_at_b, _, b_info = check_bound_pinning(hat_alpha, return_info=True)
     else: # mode3plus (default)
-        rg_res = range_guarded_mode3_inversion(
-            x_s, t_s, y_s, effective_sigma, alpha_true=0.1, prec=prec,
-            eval_m3_fn=evaluate_mode3, eval_m3p_fn=evaluate_mode3plus,
-            crb_fn=cramer_rao_bound
-        )
-        hat_alpha = rg_res["alpha_hat"]
-        method_str = "Mode 3+ (routed)" if rg_res["routed_to_m3p"] else "Mode 3 (in-range)"
-        is_at_b = rg_res["estimate_at_bound"]
-        b_info = {"flag_1pct": rg_res["flag_1pct"], "flag_01dec": rg_res["flag_01dec"], "flag_ci_touch": rg_res["flag_ci_touch"], "flag_new": rg_res["flag_new"]}
+        hat_m3, _, _ = evaluate_mode3(x_s, t_s, y_s, effective_sigma, alpha_true=0.1, prec=prec)
+        hat_alpha, _, _ = evaluate_mode3plus(x_s, t_s, y_s, effective_sigma, alpha_true=0.1, hat_m3=hat_m3, prec=prec)
+        method_str = "Mode 3+"
+        crb_check = cramer_rao_bound(hat_alpha, t_s, x_s, effective_sigma)
+        se_log_chk = np.sqrt(crb_check) / (hat_alpha * np.log(10)) if (crb_check != np.inf and crb_check > 0) else None
+        is_at_b, _, b_info = check_bound_pinning(hat_alpha, se_log10=se_log_chk, return_info=True)
 
     # 3. Compute 95% Wald Confidence Interval
     crb_val = cramer_rao_bound(hat_alpha, t_s, x_s, effective_sigma)

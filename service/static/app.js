@@ -1,5 +1,5 @@
 /**
- * Novatore Digital Twin — Frontend Application Logic
+ * ThermaLens — Frontend Application Logic
  * Technology: Plain Vanilla JavaScript (ES6+), Zero Frameworks, Zero External CDNs.
  * Fully offline-capable for live demonstration.
  */
@@ -8,7 +8,7 @@
 const STATE = {
   evidence: null,
   activeRoute: 'overview',
-  theme: localStorage.getItem('novatore_theme') || 'light',
+  theme: localStorage.getItem('thermalens_theme') || localStorage.getItem('novatore_theme') || 'light',
   lastEstimateResult: null,
   lastDiagnoseResult: null,
   lastPlacementResult: null,
@@ -88,7 +88,7 @@ function getDivergingErrorColor(val, maxVal = 0.5) {
 function applyTheme(theme) {
   STATE.theme = theme;
   document.documentElement.setAttribute('data-theme', theme);
-  localStorage.setItem('novatore_theme', theme);
+  localStorage.setItem('thermalens_theme', theme);
   const btnText = document.getElementById('theme-toggle-text');
   if (btnText) {
     btnText.textContent = theme === 'dark' ? 'Light Theme' : 'Dark Theme';
@@ -685,37 +685,53 @@ async function executeDiagnosis() {
     badgeEl.className = `badge ${cInfo.badgeClass}`;
     nameEl.textContent = cInfo.name;
 
-    document.getElementById('diag-out-timing').textContent = data.timing_ms.toFixed(2);
+    document.getElementById('diag-out-timing').textContent = (typeof data.timing_ms === 'number') ? data.timing_ms.toFixed(2) : '-';
     document.getElementById('diag-ground-truth-badge').textContent = `Ground Truth: ${groundTruthText}`;
 
     // Specific Info details
     const specInfo = document.getElementById('diag-specific-info');
+    const es = data.evidence_stats || {};
+    const alphaFitted = (typeof es.alpha_fitted === 'number') ? es.alpha_fitted.toFixed(4) : (es.alpha_fitted || '-');
+    const alphaBaseline = (typeof es.alpha_baseline === 'number') ? es.alpha_baseline.toFixed(4) : (es.alpha_baseline || '-');
+
     if (data.assigned_class === 'F') {
+      const fIdx = (data.faulty_sensor_idx !== undefined && data.faulty_sensor_idx !== null) ? data.faulty_sensor_idx : '-';
       specInfo.innerHTML = `
-        <strong>Sensor Fault Isolation:</strong> Sensor <code>#${data.faulty_sensor_idx}</code> identified as the single sensor maximizing LOO model evidence.
+        <strong>Sensor Fault Isolation:</strong> Sensor <code>#${fIdx}</code> identified as the single sensor maximizing LOO model evidence.
         ${faultySensorIdx !== null ? `(Ground Truth Injected Fault: Sensor #${faultySensorIdx})` : ''}
       `;
     } else if (data.assigned_class === 'C') {
+      const tcVal = (typeof data.change_time === 'number') ? data.change_time.toFixed(3) : (data.change_time || '-');
       specInfo.innerHTML = `
-        <strong>Change-Point Estimated:</strong> Estimated jump time t_c = <code>${data.change_time ? data.change_time.toFixed(3) : '-'} s</code>.
+        <strong>Change-Point Estimated:</strong> Estimated jump time t_c = <code>${tcVal} s</code>.
         ${changeTimeTc !== null ? `(Ground Truth Injected t_c: ${changeTimeTc} s)` : ''}
       `;
     } else if (data.assigned_class === 'A') {
       specInfo.innerHTML = `
-        <strong>Anomalous Regime:</strong> Diffusivity estimate α̂ = ${data.evidence_stats.alpha_fitted.toFixed(4)} lies far outside nominal healthy envelope while maintaining spatial fit consistency.
+        <strong>Anomalous Regime:</strong> Diffusivity estimate &alpha; = ${alphaFitted} lies far outside nominal healthy envelope while maintaining spatial fit consistency.
       `;
     } else {
-      specInfo.innerHTML = `<strong>Healthy State Confirmed:</strong> Observations conform to calibrated baseline α_base = ${data.evidence_stats.alpha_baseline.toFixed(4)}.`;
+      specInfo.innerHTML = `<strong>Healthy State Confirmed:</strong> Observations conform to calibrated baseline &alpha;<sub>base</sub> = ${alphaBaseline}.`;
     }
 
     // Evidence stats table
     const tbody = document.getElementById('diag-evidence-tbody');
-    const es = data.evidence_stats;
+    const glrStat = (es.glr_stat !== undefined && es.glr_stat !== null) ? es.glr_stat : '-';
+    const glrThreshold = (es.glr_threshold !== undefined && es.glr_threshold !== null) ? es.glr_threshold : '-';
+    const bicHealthy = (es.bic_healthy !== undefined && es.bic_healthy !== null) ? es.bic_healthy : '-';
+    const bicFault = (es.bic_sensor_fault !== undefined && es.bic_sensor_fault !== null) ? es.bic_sensor_fault : '-';
+    const chi2Reduced = (es.chi2_reduced !== undefined && es.chi2_reduced !== null) ? es.chi2_reduced : '-';
+
+    const jumpTriggered = (typeof es.glr_stat === 'number' && typeof es.glr_threshold === 'number' && es.glr_stat > es.glr_threshold) ? 'Triggered Change-Point' : 'No Jump Detected';
+    const faultOutweighed = (typeof es.bic_sensor_fault === 'number' && typeof es.bic_healthy === 'number' && es.bic_sensor_fault < es.bic_healthy) ? 'Sensor Fault Outweighs Healthy' : 'Consistent with Healthy';
+    const chi2Verdict = (typeof es.chi2_reduced === 'number' && es.chi2_reduced < 2.0) ? 'Valid Smooth Field' : 'Model Mismatch / Elevated Variance';
+    const diffVerdict = (typeof es.alpha_fitted === 'number' && typeof es.alpha_baseline === 'number' && Math.abs(es.alpha_fitted - es.alpha_baseline) > 0.05) ? 'Substantial Diffusivity Shift' : 'Matches Baseline';
+
     tbody.innerHTML = `
-      <tr><td>GLR Jump Statistic</td><td class="mono">${es.glr_stat}</td><td class="mono">&gt; ${es.glr_threshold}</td><td>${es.glr_stat > es.glr_threshold ? 'Triggered Change-Point' : 'No Jump Detected'}</td></tr>
-      <tr><td>BIC Healthy vs Fault</td><td class="mono">H: ${es.bic_healthy} | F: ${es.bic_sensor_fault}</td><td class="mono">BIC(F) &lt; BIC(H)</td><td>${es.bic_sensor_fault < es.bic_healthy ? 'Sensor Fault Outweighs Healthy' : 'Consistent with Healthy'}</td></tr>
-      <tr><td>Reduced Chi-Square</td><td class="mono">${es.chi2_reduced}</td><td class="mono">&lt; 2.0</td><td>${es.chi2_reduced < 2.0 ? 'Valid Smooth Field' : 'Model Mismatch / Elevated Variance'}</td></tr>
-      <tr><td>Diffusivity (Fitted vs Base)</td><td class="mono">${es.alpha_fitted}</td><td class="mono">Base: ${es.alpha_baseline}</td><td>${Math.abs(es.alpha_fitted - es.alpha_baseline) > 0.05 ? 'Substantial Diffusivity Shift' : 'Matches Baseline'}</td></tr>
+      <tr><td>GLR Jump Statistic</td><td class="mono">${glrStat}</td><td class="mono">&gt; ${glrThreshold}</td><td>${jumpTriggered}</td></tr>
+      <tr><td>BIC Healthy vs Fault</td><td class="mono">H: ${bicHealthy} | F: ${bicFault}</td><td class="mono">BIC(F) &lt; BIC(H)</td><td>${faultOutweighed}</td></tr>
+      <tr><td>Reduced Chi-Square</td><td class="mono">${chi2Reduced}</td><td class="mono">&lt; 2.0</td><td>${chi2Verdict}</td></tr>
+      <tr><td>Diffusivity (Fitted vs Base)</td><td class="mono">${alphaFitted}</td><td class="mono">Base: ${alphaBaseline}</td><td>${diffVerdict}</td></tr>
     `;
 
     document.getElementById('diag-json-dump').textContent = JSON.stringify({ request: payload, response: data }, null, 2);
@@ -732,6 +748,8 @@ function renderDiagnoseChart() {
   if (!result || !result.request || !result.response) return;
 
   const svg = document.getElementById('diag-chart-svg');
+  if (!svg) return;
+
   const req = result.request;
   const res = result.response;
   const width = 540;
@@ -742,15 +760,22 @@ function renderDiagnoseChart() {
 
   svg.innerHTML = '';
 
-  const to = req.readings.t;
-  const yo = req.readings.y;
+  const rObj = req.readings || {};
+  const to = Array.isArray(rObj.t_coords) ? rObj.t_coords : (Array.isArray(rObj.t) ? rObj.t : (Array.isArray(req.t_coords) ? req.t_coords : []));
+  const yo = Array.isArray(rObj.readings) ? rObj.readings : (Array.isArray(rObj.y) ? rObj.y : (Array.isArray(req.readings) ? req.readings : []));
+
+  if (!to.length || !yo.length) {
+    svg.innerHTML = `<text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="var(--text-muted)" font-size="12">No observation coordinates to render</text>`;
+    return;
+  }
+
   const tMin = 0.0;
   const tMax = Math.max(1.0, ...to);
   const yMin = Math.min(-0.1, ...yo);
   const yMax = Math.max(1.2, ...yo);
 
-  const scaleX = t => pad.left + ((t - tMin) / (tMax - tMin)) * plotW;
-  const scaleY = y => pad.top + plotH - ((y - yMin) / (yMax - yMin)) * plotH;
+  const scaleX = t => pad.left + ((t - tMin) / Math.max(1e-6, tMax - tMin)) * plotW;
+  const scaleY = y => pad.top + plotH - ((y - yMin) / Math.max(1e-6, yMax - yMin)) * plotH;
 
   // Background Grid
   let gridLines = '';
@@ -762,7 +787,7 @@ function renderDiagnoseChart() {
   }
 
   // Baseline Curve: alpha_base
-  const alphaBase = (res.evidence_stats && res.evidence_stats.alpha_baseline) || 0.05;
+  const alphaBase = (res.evidence_stats && typeof res.evidence_stats.alpha_baseline === 'number') ? res.evidence_stats.alpha_baseline : 0.05;
   let baseD = [];
   for (let i = 0; i <= 100; i++) {
     const t = tMin + (i / 100) * (tMax - tMin);
@@ -773,7 +798,7 @@ function renderDiagnoseChart() {
 
   // Change time vertical line if Class C
   let tcLine = '';
-  if (res.assigned_class === 'C' && res.change_time) {
+  if (res.assigned_class === 'C' && typeof res.change_time === 'number') {
     const xTc = scaleX(res.change_time);
     tcLine = `
       <line x1="${xTc}" y1="${pad.top}" x2="${xTc}" y2="${pad.top + plotH}" stroke="#e67e22" stroke-width="2" stroke-dasharray="3 3"/>
@@ -786,7 +811,8 @@ function renderDiagnoseChart() {
     const isFault = (res.assigned_class === 'F' && res.faulty_sensor_idx === idx);
     const color = isFault ? '#c0392b' : '#2980b9';
     const r = isFault ? 6 : 4;
-    return `<circle cx="${scaleX(t)}" cy="${scaleY(yo[idx])}" r="${r}" fill="${color}" stroke="#fff" stroke-width="1.2"><title>Sensor #${idx}: t=${t.toFixed(3)}, y=${yo[idx].toFixed(4)}</title></circle>`;
+    const yVal = yo[idx] !== undefined ? yo[idx] : 0.0;
+    return `<circle cx="${scaleX(t)}" cy="${scaleY(yVal)}" r="${r}" fill="${color}" stroke="#fff" stroke-width="1.2"><title>Sensor #${idx}: t=${Number(t).toFixed(3)}, y=${Number(yVal).toFixed(4)}</title></circle>`;
   }).join('');
 
   svg.innerHTML = `

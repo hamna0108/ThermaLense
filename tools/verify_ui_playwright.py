@@ -160,6 +160,8 @@ def run_verification():
                         page.click("#diag-submit-btn")
                         page.wait_for_selector("#diag-result-panel", state="visible")
                         page.wait_for_timeout(200)
+                        # Explicit Playwright assertion: no error box on H, A, F, C scenarios
+                        assert page.locator("#diag-state-container .state-box.error").count() == 0, f"Error box detected in scenario {sc_val}"
                         shot_path = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_{sc_name}.png")
                         page.screenshot(path=shot_path, full_page=False)
                         screenshots_taken.append(shot_path)
@@ -335,9 +337,10 @@ def run_verification():
             
     print(f"\nVerification Complete! Captured {len(screenshots_taken)} screenshots in {SCREENSHOTS_DIR}.")
     if console_errors:
-        print(f"WARNING: Found {len(console_errors)} unexpected console errors:")
+        print(f"FAILED: Found {len(console_errors)} unexpected console errors:")
         for err in console_errors:
             print("  ", err)
+        assert len(console_errors) == 0, f"Playwright assertion failed: {len(console_errors)} console errors found: {console_errors}"
     else:
         print("Zero console errors! All requests succeeded.")
         

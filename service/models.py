@@ -304,6 +304,7 @@ class HealthResponse(BaseModel):
     timestamp: str
 
 class VersionResponse(BaseModel):
+    name: str = Field("ThermaLens", description="Product name")
     git_commit: str
     git_tags: List[str]
     checkpoint_sha256s: Dict[str, str]

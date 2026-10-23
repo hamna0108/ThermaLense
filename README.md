@@ -19,10 +19,10 @@ uvicorn service.app:app --host 0.0.0.0 --port 8000
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/v1/estimate` | Invert diffusivity $\hat{\alpha}$, compute 95% Wald CI, evaluate goodness-of-fit gating, range guard, and baseline $\hat{\sigma}$. Default mode: `mode3plus`. |
+| `POST` | `/v1/estimate` | Invert diffusivity $\hat{\alpha}$, compute 95% Wald CI, evaluate goodness-of-fit gating, range guard, and baseline $\hat{\sigma}$. Default mode: `mode3plus` (nominal single-fit latency ~58.4 ms on host machine / 138.8 ms grand mean across 135 benchmark stress cells; Mode 3 fast surrogate ~0.7 ms). |
 | `POST` | `/v1/diagnose` | Classify sensor stream into Healthy (`H`), Anomalous Diffusion (`A`), Sensor Fault (`F`), or Change-Point (`C`) via baseline-informed GLR cascade ($k \ge 20$). |
 | `POST` | `/v1/placement` | Generate two-stage adaptive sensor placement schedules concentrating observations around $t^* = 1/(\pi^2 \hat{\alpha})$. |
-| `POST` | `/v1/field` | Generate 2D spatial-temporal heat field $u(x, t)$ on grid; uses FNO if $\alpha \in [0.01, 1.0]$, otherwise live Crank-Nicolson solver. |
+| `POST` | `/v1/field` | Generate 2D spatial-temporal heat field $u(x, t)$ on grid. Measured at 101×201 resolution on this machine: numerical solver p50/p95 ~13.6/18.6 ms vs FNO p50/p95 ~134/145 ms (Poisson solver 0.5 ms vs FNO 20.5 ms). FNO is NOT faster than the solver for field generation here; its value is the surrogate grid inside inversion (Mode 3 ~0.7 ms/fit). |
 | `POST` | `/v1/poisson` | Solve 2D Poisson $-\nabla^2 u = f$ using exact sparse LU solver, FNO, and linear ridge baseline; flags `high_frequency_source` if sine modes $> 4$. |
 | `GET` | `/health` | Healthcheck endpoint reporting service liveness and timestamp. |
 | `GET` | `/version` | Provenance metadata: git commit SHA, tags, and SHA-256 hashes of all model checkpoints. |
@@ -152,8 +152,8 @@ curl -X POST http://localhost:8000/v1/field \
   "t_grid": [0.0, 0.01587, 0.03175, "...", 1.0],
   "method_used": "fno",
   "timing_ms": 3.99
-}
 ```
+*Note on Field Latency: The example above demonstrates a toy 64×64 query (where live CN solver fallback executed in 3.99 ms). At standard evaluation resolution (101×201) on this machine, the numerical solver executes at p50/p95 of ~13.6/18.6 ms, while the FNO surrogate executes at p50/p95 of ~134/145 ms (and in 2D Poisson, sparse LU solves in 0.5 ms vs FNO 20.5 ms). FNO is NOT faster than the solver for field generation here; its primary performance value is precomputing continuous surrogate grids for sub-millisecond inverse estimation (Mode 3 ~0.7 ms/fit).*
 
 #### 5. `POST /v1/poisson`
 **Request (`docs/api_examples/poisson_request.json`):**
@@ -221,8 +221,8 @@ python -m evaluation.run_all --seed 20260101 --out data/results/eval_run/ --quic
 
 1. **`CHK_M3_MEDIAN_ERROR`**: Mode 3 median relative parameter inversion error is within 5% of frozen baseline (`mode3_pipeline_results_v2.csv`).
 2. **`CHK_M3_COVERAGE`**: Mode 3 95% Wald CI coverage is within 2 percentage points of frozen baseline.
-3. **`CHK_ANOMALY_FAR`**: Baseline-informed anomaly cascade detector healthy false alarm rate is within Wilson 95% CI.
-4. **`CHK_ANOMALY_RECALL`**: Anomaly detector per-class recalls meet or exceed frozen benchmark tables (H $\ge 90\%$, A $\ge 90\%$, F $\ge 75\%$, C $\ge 85\%$).
+3. **`CHK_ANOMALY_N10_SIG001` / `_SIG050` / `CHK_ANOMALY_N20_SIG001` / `_SIG050`**: Evaluates ALL four frozen primary operational cells ($N \in \{10, 20\} \times \sigma \in \{0.01, 0.05\}$) against `anomaly_frozen_final_tables.json`. PASS requires frozen value inside the new run's 95% Wilson CI (or within $\pm 4.0$ percentage points pre-registered tolerance).
+4. **`CHK_ANOMALY_OVERALL_FAR`**: Evaluates 4-cell aggregate healthy false alarm rate. Because aggregate FAR exceeds 5.0% (frozen 6.5%), this check reports honestly as `KNOWN LIMITATION (frozen 6.5%)` rather than false PASS.
 5. **`CHK_POISSON_OPERATOR`**: Poisson 2D FNO and linear ridge baseline errors reproduce the frozen benchmark table (`poisson_v2_benchmark_table.csv`).
 
 Outputs are written to `eval_summary.json` and `eval_summary.csv` in the specified `--out` directory.

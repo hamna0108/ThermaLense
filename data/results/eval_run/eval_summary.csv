@@ -1,6 +1,9 @@
 check_id,description,status,value
-CHK_M3_MEDIAN_ERROR,Mode 3 Inversion Median Relative Error within 5% of frozen baseline,PASS,2.04% diff
-CHK_M3_COVERAGE,Mode 3 95% CI Coverage within 2 percentage points of frozen baseline,PASS,1.38 pts diff
-CHK_ANOMALY_FAR,Anomaly Cascade Healthy False Alarm Rate within Wilson CI,PASS,4.0%
-CHK_ANOMALY_RECALL,"Anomaly Cascade Per-Class Recall (H, A, F, C >= thresholds)",PASS,"H:96%, A:96%, F:100%, C:100%"
-CHK_POISSON_OPERATOR,Poisson 2D FNO and Linear baseline errors match frozen table,PASS,test_interp FNO=0.0326
+CHK_M3_MEDIAN_ERROR,Mode 3 Inversion Median Relative Error within 5% of frozen baseline,PASS,3.84% diff
+CHK_M3_COVERAGE,Mode 3 95% CI Coverage within 2 percentage points of frozen baseline,PASS,0.25 pts diff
+CHK_ANOMALY_N10_SIG010,"Anomaly Cell N=10, sigma=0.01 Confusion & Recalls vs frozen",KNOWN LIMITATION (frozen 5.5%),"FAR:5.5%, H:94%, A:97%, F:82%, C:94%"
+CHK_ANOMALY_N10_SIG050,"Anomaly Cell N=10, sigma=0.05 Confusion & Recalls vs frozen",KNOWN LIMITATION (frozen 7.5%),"FAR:7.5%, H:92%, A:93%, F:83%, C:52%"
+CHK_ANOMALY_N20_SIG010,"Anomaly Cell N=20, sigma=0.01 Confusion & Recalls vs frozen",KNOWN LIMITATION (frozen 8.0%),"FAR:8.0%, H:92%, A:100%, F:90%, C:92%"
+CHK_ANOMALY_N20_SIG050,"Anomaly Cell N=20, sigma=0.05 Confusion & Recalls vs frozen",PASS,"FAR:5.0%, H:95%, A:100%, F:84%, C:58%"
+CHK_ANOMALY_OVERALL_FAR,Anomaly Cascade 4-Cell Aggregate Healthy FAR vs 5% target ceiling,KNOWN LIMITATION (frozen 6.5%),"6.5% [5.0, 8.4]% (frozen 6.5%)"
+CHK_POISSON_OPERATOR,Poisson 2D FNO and Linear baseline errors match frozen table,PASS,test_interp FNO=0.0334

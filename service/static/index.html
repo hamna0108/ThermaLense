@@ -307,177 +307,115 @@
         <p class="page-desc">Enter your sensor readings and get the material's thermal diffusivity, with a range you can trust.</p>
       </div>
 
-      <div class="grid-2">
-        <!-- Input Form with 3 Steps -->
-        <div class="card">
-          <!-- Step 1: Your readings -->
-          <div class="step-card">
-            <div class="step-header">
-              <span class="step-badge">1</span>
-              <h2 class="step-title">Your readings</h2>
+      <div class="estimate-grid">
+        <!-- Left Column: Inputs (~45%) -->
+        <div class="estimate-input-col">
+          <!-- Card 1: Your readings -->
+          <div class="card" id="est-readings-card">
+            <div class="readings-toolbar">
+              <h2 class="card-title" style="margin-bottom: 0;">Your readings</h2>
+              <span class="readings-count-badge" id="est-readings-count">0 readings</span>
             </div>
-            <p class="form-help" style="margin-bottom: 0.6rem;">Paste temperature readings or upload a CSV file with columns: position, time, temperature.</p>
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+            
+            <div style="display: flex; gap: 0.4rem; margin-bottom: 0.6rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" id="est-add-row-btn">+ Add row</button>
               <input type="file" id="est-csv-upload" accept=".csv,.txt" style="display: none;">
               <button type="button" class="btn btn-secondary btn-sm" id="est-csv-btn">Upload CSV</button>
-              <button type="button" class="btn btn-secondary btn-sm" id="est-use-example-btn">Use example data</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="est-use-example-btn">Use example</button>
             </div>
-            <textarea id="est-paste-text" class="form-control mono" rows="6" placeholder="position, time, temperature&#10;0.50, 0.010, 0.980&#10;0.50, 0.017, 1.000&#10;..."></textarea>
-            <span class="form-help">One reading per row (position along the material, elapsed time, and measured temperature).</span>
 
-            <!-- Collapsed Demo & Testing Tools -->
-            <details class="disclosure" id="estimate-demo-details" style="margin-top: 0.75rem;">
-              <summary>Demo &amp; testing tools</summary>
-              <div style="margin-top: 0.6rem;">
-                <p class="form-help">Simulate readings for testing or learning with known parameters.</p>
-                <div class="btn-group" style="width: 100%; margin-bottom: 0.6rem;">
-                  <button type="button" class="btn btn-secondary btn-sm active" id="estimate-mode-paste-btn">Manual Readings</button>
-                  <button type="button" class="btn btn-secondary btn-sm" id="estimate-mode-synth-btn">Synthetic Generator</button>
-                </div>
-                <div class="form-group">
-                  <label for="est-true-alpha" class="form-label">Known material heat spread (ground truth α)</label>
-                  <input type="number" id="est-true-alpha" class="form-control mono" value="0.10" min="0.0001" max="100.0" step="0.01">
-                </div>
-                <div class="grid-2">
-                  <div class="form-group">
-                    <label for="est-num-sensors" class="form-label">Reading count</label>
-                    <input type="number" id="est-num-sensors" class="form-control mono" value="10" min="2" max="500" step="1">
-                  </div>
-                  <div class="form-group">
-                    <label for="est-seed" class="form-label">Random seed</label>
-                    <input type="number" id="est-seed" class="form-control mono" value="42" step="1">
-                  </div>
-                </div>
-                <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem; flex-wrap: wrap;">
-                  <button type="button" class="btn btn-secondary btn-sm" id="est-sample-synth-btn">Generate demo readings</button>
-                  <button type="button" class="btn btn-secondary btn-sm" id="est-rerun-demo-btn">Run again with new random readings</button>
-                </div>
+            <!-- Editable Table -->
+            <div class="readings-table-wrap">
+              <table class="readings-table" id="est-readings-table">
+                <thead>
+                  <tr>
+                    <th>Position</th>
+                    <th>Time</th>
+                    <th>Temperature</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="est-table-tbody">
+                  <!-- 8 initial rows inserted dynamically by app.js -->
+                </tbody>
+              </table>
+            </div>
+            <div class="table-validation-msg" id="est-table-validation-msg"></div>
+          </div>
+
+          <!-- Card 2: About your test -->
+          <div class="card" id="est-about-test-card">
+            <h2 class="card-title">About your test</h2>
+            <div class="test-config-row">
+              <div class="config-col">
+                <label for="est-sigma-val" class="form-label">
+                  Sensor accuracy (&plusmn;)
+                  <span class="info-tooltip" title="Typical error of your sensor. Not sure? Leave 0.01.">&#9432;</span>
+                </label>
+                <input type="number" id="est-sigma-val" class="form-control mono" value="0.01" min="0.0001" max="1.0" step="0.005">
               </div>
-            </details>
-          </div>
-
-          <!-- Step 2: Sensor accuracy -->
-          <div class="step-card">
-            <div class="step-header">
-              <span class="step-badge">2</span>
-              <h2 class="step-title">Sensor accuracy</h2>
-            </div>
-            <div class="form-group" style="margin-bottom: 0.5rem;">
-              <label for="est-sigma-val" class="form-label">How much do your sensors jitter?</label>
-              <input type="number" id="est-sigma-val" class="form-control mono" value="0.01" min="0.0001" max="1.0" step="0.005">
-              <span class="form-help">Typical reading fluctuation (standard deviation). Default is 0.01.</span>
-            </div>
-            <div style="margin-top: 0.4rem;">
-              <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
-                <input type="checkbox" id="est-baseline-toggle" style="margin-top: 0.25rem;">
-                <span>
-                  <strong>I don't know — estimate from a calm baseline</strong><br>
-                  <span class="text-muted" style="font-size: 0.82rem;">Needs 20 baseline readings taken while temperature is steady before the test.</span>
-                </span>
-              </label>
-              <!-- Hidden select to synchronize noise mode for API logic -->
-              <select id="est-noise-select" class="form-select" style="display: none;">
-                <option value="declared" selected>Declared / Known Noise Sigma</option>
-                <option value="baseline">Estimate from 20-Reading Baseline</option>
-                <option value="baseline_short">Invalid Baseline Test (k = 10, triggers refusal)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Step 3: Your setup (optional) -->
-          <div class="step-card">
-            <div class="step-header">
-              <span class="step-badge">3</span>
-              <h2 class="step-title">Your setup (optional)</h2>
-            </div>
-            <p class="form-help" style="margin-bottom: 0.6rem;">
-              Enter bar length and duration to get heat spread in real physical units (m²/s). If left blank, results are shown in normalised units.
-            </p>
-            <div class="grid-2">
-              <div class="form-group">
+              <div class="config-col">
                 <label for="est-bar-length" class="form-label">Bar length (m)</label>
-                <input type="number" id="est-bar-length" class="form-control mono" placeholder="e.g. 0.50" min="0.001" step="0.01">
+                <input type="number" id="est-bar-length" class="form-control mono" placeholder="Optional (e.g. 0.50)" min="0.001" step="0.01">
               </div>
-              <div class="form-group">
-                <label for="est-experiment-time" class="form-label">Experiment duration (s)</label>
-                <input type="number" id="est-experiment-time" class="form-control mono" placeholder="e.g. 10.0" min="0.001" step="0.1">
+              <div class="config-col">
+                <label for="est-experiment-time" class="form-label">Test duration (s)</label>
+                <input type="number" id="est-experiment-time" class="form-control mono" placeholder="Optional (e.g. 10.0)" min="0.001" step="0.1">
+              </div>
+              <div class="config-col config-col-units">
+                <span class="form-label">My values are:</span>
+                <div class="unit-toggle" id="est-unit-toggle" role="group" aria-label="Units scale">
+                  <button type="button" class="unit-toggle-btn active" id="est-unit-scaled-btn" data-unit="scaled">Scaled 0–1</button>
+                  <button type="button" class="unit-toggle-btn" id="est-unit-real-btn" data-unit="real">Real units (m, s)</button>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Execution Action Button -->
-          <button type="button" class="btn btn-primary" id="est-submit-btn" style="width: 100%; margin-top: 1rem; padding: 0.65rem 1rem; font-size: 1rem;">
-            Calculate heat spread
-          </button>
-
-          <!-- Collapsed Advanced Options -->
-          <details class="disclosure" id="est-advanced-disclosure" style="margin-top: 1rem;">
-            <summary>Advanced options</summary>
-            <div style="margin-top: 0.75rem;">
-              <div class="form-group">
-                <label for="est-method-select" class="form-label">Calculation method</label>
-                <select id="est-method-select" class="form-select">
-                  <option value="mode3plus" selected>Recommended (accurate, ~60 ms)</option>
-                  <option value="mode3">Fast (~1 ms, less reliable)</option>
-                  <option value="mode2">Reference solver</option>
-                  <option value="declared_physics">My setup is different</option>
-                </select>
-              </div>
-              <div id="est-method-guidance" style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 0.6rem;">
-                Best balance of speed and precision for standard setups (Mode 3+).
-              </div>
-
-              <div id="est-physics-config-group" style="display: none; margin-top: 0.75rem; border-top: 1px solid var(--rule-subtle); padding-top: 0.6rem;">
-                <label for="est-phys-u0" class="form-label">Starting temperature profile u₀(x)</label>
-                <input type="text" id="est-phys-u0" class="form-control mono" placeholder="sin(pi*x)" value="sin(pi*x)">
-                <span class="form-help">Custom initial heat shape across the bar.</span>
-              </div>
+          <!-- Primary Button & More options link -->
+          <div class="calculate-bar">
+            <button type="button" class="btn btn-primary btn-calculate" id="est-submit-btn">
+              Calculate
+            </button>
+            <div class="more-options-wrap">
+              <button type="button" class="more-options-link" id="est-more-options-btn">More options &#9662;</button>
             </div>
-          </details>
+          </div>
         </div>
 
-        <!-- Output Results Card -->
-        <div class="card" id="estimate-results-card">
-          <h2 class="card-title" style="margin-top: 0;">Estimation Result</h2>
+        <!-- Right Column: Result Card (~55%) -->
+        <div class="estimate-result-col">
+          <div class="card" id="estimate-results-card">
+            <h2 class="card-title">Estimation Result</h2>
 
-          <!-- State container -->
-          <div id="est-state-container">
-            <div class="state-box">
-              Click <strong>Calculate heat spread</strong> to evaluate your sensor readings.
-            </div>
-          </div>
+            <!-- State container (for loading / errors) -->
+            <div id="est-state-container"></div>
 
-          <!-- Result Panel (Shown on success) -->
-          <div id="est-result-panel" style="display: none;">
-            
-            <!-- Traffic-Light Banner -->
-            <div id="est-traffic-banner" class="traffic-light-banner green">
-              <div class="traffic-light-header">
-                <span class="traffic-light-icon" id="est-traffic-icon">●</span>
-                <span class="traffic-light-title" id="est-traffic-title">Result looks trustworthy</span>
-              </div>
-              <ul class="traffic-light-reasons" id="est-traffic-reasons" style="display: none;">
-              </ul>
+            <!-- Empty state (before first run; NEVER show stale results) -->
+            <div id="est-empty-state" class="empty-state">
+              <div class="empty-state-icon">&#9783;</div>
+              <p class="empty-state-text">Your result will appear here</p>
             </div>
 
-            <!-- Demo Mode Callout (shown only when running in demo mode) -->
-            <div id="est-demo-callout" class="demo-mode-callout" style="display: none;">
-            </div>
-
-            <!-- Plain Words Result -->
-            <div class="estimate-plain-result">
-              <div class="result-headline" id="est-plain-headline">
-                Heat spread (α): <span id="est-out-alpha-display">0.105</span> — most likely between <span id="est-out-ci-lo">0.102</span> and <span id="est-out-ci-hi">0.109</span>
-              </div>
-              <div class="result-subline" id="est-plain-subline">
-                Diffusivity is shown in normalised units because bar length and duration were left blank.
-              </div>
-              <!-- Hidden span for legacy est-out-alpha so automated checks still find it -->
+            <!-- Result Panel (Shown on success) -->
+            <div id="est-result-panel" style="display: none;">
+              <!-- Headline & Subline -->
+              <div class="result-headline" id="est-plain-headline">Heat spread: 0.098</div>
+              <div class="result-subline" id="est-plain-subline">Most likely between 0.095 and 0.102</div>
               <span id="est-out-alpha" style="display: none;">-</span>
-            </div>
 
-            <!-- Fitted Chart -->
-            <figure style="margin-top: 1rem;">
+              <!-- ONE Traffic-Light Line -->
+              <div id="est-traffic-banner" class="traffic-light-line green">
+                <span class="traffic-light-dot" id="est-traffic-icon">●</span>
+                <span class="traffic-light-text" id="est-traffic-title">Result looks trustworthy</span>
+                <span id="est-traffic-reasons" style="display: none;"></span>
+              </div>
+
+              <!-- Demo Mode Callout (shown only when running in demo mode) -->
+              <div id="est-demo-callout" class="demo-mode-callout" style="display: none;"></div>
+
+              <!-- Chart: Measured vs fitted -->
+              <div class="chart-title">Measured vs fitted</div>
               <div class="chart-wrapper">
                 <svg id="est-chart-svg" class="chart-svg" viewBox="0 0 540 260" preserveAspectRatio="xMidYMid meet"></svg>
                 <div class="chart-legend" id="est-chart-legend">
@@ -487,51 +425,125 @@
                   <div class="legend-item" id="est-chart-truth-legend" style="display: none;"><span class="legend-line" style="border-top: 2px dashed #e67e22;"></span> Actual test material (ground truth)</div>
                 </div>
               </div>
-              <figcaption id="est-chart-caption">
-                <strong>Measured vs fitted cooling curve.</strong> Your sensor readings (dots) plotted alongside the fitted cooling curve and the 95% confidence range.
+              <figcaption id="est-chart-caption" style="margin-top: 0.4rem; font-size: var(--fs-small); color: var(--text-muted);">
+                Measured vs fitted cooling curve.
               </figcaption>
-            </figure>
 
-            <!-- Collapsed Technical Details -->
-            <details class="disclosure" id="est-technical-details" style="margin-top: 1.25rem;">
-              <summary>Technical details</summary>
-              <div style="margin-top: 0.85rem;">
-                <table class="data-table" style="font-size: 0.85rem; width: 100%; margin-bottom: 0.75rem;">
-                  <tbody>
-                    <tr>
-                      <td style="font-weight: 600; width: 45%;">95% Wald interval</td>
-                      <td id="est-out-ci" class="mono">[-, -]</td>
-                    </tr>
-                    <tr>
-                      <td style="font-weight: 600;">Goodness-of-fit (χ²/dof)</td>
-                      <td id="est-out-chi2" class="mono">-</td>
-                    </tr>
-                    <tr>
-                      <td style="font-weight: 600;">Durbin-Watson statistic</td>
-                      <td id="est-out-dw" class="mono">-</td>
-                    </tr>
-                    <tr>
-                      <td style="font-weight: 600;">Solver timing</td>
-                      <td><span id="est-out-timing" class="mono">-</span> ms (<span id="est-out-method">mode3plus</span>)</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <!-- ONE Collapsed "Show details" -->
+              <details class="disclosure" id="est-technical-details" style="margin-top: 1rem;">
+                <summary>Show details</summary>
+                <div style="margin-top: 0.75rem;">
+                  <table class="data-table" style="font-size: 0.85rem; width: 100%; margin-bottom: 0.75rem;">
+                    <tbody>
+                      <tr>
+                        <td style="font-weight: 600; width: 45%;">95% Wald interval</td>
+                        <td id="est-out-ci" class="mono">[-, -]</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight: 600;">Goodness-of-fit (χ²/dof)</td>
+                        <td id="est-out-chi2" class="mono">-</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight: 600;">Durbin-Watson statistic</td>
+                        <td id="est-out-dw" class="mono">-</td>
+                      </tr>
+                      <tr>
+                        <td style="font-weight: 600;">Solver timing</td>
+                        <td><span id="est-out-timing" class="mono">-</span> ms (<span id="est-out-method">mode3plus</span>)</td>
+                      </tr>
+                    </tbody>
+                  </table>
 
-                <div id="est-badges-container" style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
-                  <!-- Diagnostic badges -->
+                  <div id="est-badges-container" style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.75rem;"></div>
+
+                  <div style="display: flex; justify-content: flex-start; margin-bottom: 0.75rem;">
+                    <button type="button" class="btn btn-secondary btn-sm" id="est-download-btn">Download Result (JSON)</button>
+                  </div>
+
+                  <div>
+                    <span class="text-muted" style="font-size: 0.8rem; font-weight: 600;">Request &amp; Response Payloads</span>
+                    <pre id="est-json-dump" class="mono" style="font-size: 0.75rem; max-height: 220px; overflow-y: auto; background-color: var(--code-bg); padding: 0.5rem; border-radius: var(--radius-sm); margin-top: 0.3rem;"></pre>
+                  </div>
                 </div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                <div style="display: flex; justify-content: flex-start; margin-bottom: 0.75rem;">
-                  <button type="button" class="btn btn-secondary btn-sm" id="est-download-btn">Download Result (JSON)</button>
-                </div>
+      <!-- Side Drawer for "More options" -->
+      <div class="side-drawer-overlay" id="est-drawer-overlay"></div>
+      <div class="side-drawer" id="est-more-drawer" aria-hidden="true">
+        <div class="side-drawer-header">
+          <h3>More options</h3>
+          <button type="button" class="side-drawer-close" id="est-drawer-close-btn" aria-label="Close options">&times;</button>
+        </div>
+        <div class="side-drawer-body">
+          <!-- 1. Calculation Method -->
+          <div class="form-group">
+            <label for="est-method-select" class="form-label">Calculation method</label>
+            <select id="est-method-select" class="form-select">
+              <option value="mode3plus" selected>Recommended (accurate, ~60 ms)</option>
+              <option value="mode3">Fast (~1 ms, less reliable)</option>
+              <option value="mode2">Reference solver</option>
+              <option value="declared_physics">My setup is different</option>
+            </select>
+            <div id="est-method-guidance" class="form-help">Best balance of speed and precision for standard setups (Mode 3+).</div>
+          </div>
 
-                <div>
-                  <span class="text-muted" style="font-size: 0.8rem; font-weight: 600;">Request &amp; Response Payloads</span>
-                  <pre id="est-json-dump" class="mono" style="font-size: 0.75rem; max-height: 220px; overflow-y: auto; background-color: var(--code-bg); padding: 0.5rem; border-radius: var(--radius-sm); margin-top: 0.3rem;"></pre>
-                </div>
+          <!-- 2. Declared Physics -->
+          <div id="est-physics-config-group" style="display: none;" class="form-group">
+            <label for="est-phys-u0" class="form-label">Initial temperature profile u₀(x)</label>
+            <input type="text" id="est-phys-u0" class="form-control mono" value="sin(pi*x)" placeholder="sin(pi*x)">
+            <div class="form-help">Custom initial heat distribution across the bar.</div>
+          </div>
+
+          <!-- 3. Baseline-based accuracy estimate -->
+          <div class="drawer-section">
+            <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">
+              <input type="checkbox" id="est-baseline-toggle" style="margin-top: 0.25rem;">
+              <span>
+                <strong>Estimate accuracy from a calm baseline</strong><br>
+                <span class="text-muted" style="font-size: 0.82rem;">Needs 20 steady baseline readings before test.</span>
+              </span>
+            </label>
+            <select id="est-noise-select" style="display: none;">
+              <option value="declared" selected>Declared</option>
+              <option value="baseline">Baseline</option>
+              <option value="baseline_short">Baseline Short</option>
+            </select>
+          </div>
+
+          <!-- 4. Demo & testing tools -->
+          <div class="drawer-section">
+            <h4 style="font-size: var(--fs-label); margin-bottom: 0.5rem;">Demo &amp; testing tools</h4>
+            <div class="form-group">
+              <label for="est-true-alpha" class="form-label">Known heat spread (ground truth α)</label>
+              <input type="number" id="est-true-alpha" class="form-control mono" value="0.10" min="0.0001" max="100.0" step="0.01">
+            </div>
+            <div class="grid-2">
+              <div class="form-group">
+                <label for="est-num-sensors" class="form-label">Sensor count</label>
+                <input type="number" id="est-num-sensors" class="form-control mono" value="10" min="2" max="500" step="1">
               </div>
-            </details>
-
+              <div class="form-group">
+                <label for="est-seed" class="form-label">Random seed</label>
+                <input type="number" id="est-seed" class="form-control mono" value="42" step="1">
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="est-sample-synth-btn">Generate demo readings</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="est-rerun-demo-btn">Rerun with new seed</button>
+            </div>
+            
+            <!-- Compatibility elements for existing tests -->
+            <div style="display: none;">
+              <button type="button" id="estimate-mode-paste-btn" class="active">Paste</button>
+              <button type="button" id="estimate-mode-synth-btn">Synth</button>
+              <textarea id="est-paste-text"></textarea>
+              <details id="estimate-demo-details"></details>
+              <details id="est-advanced-disclosure"></details>
+            </div>
           </div>
         </div>
       </div>

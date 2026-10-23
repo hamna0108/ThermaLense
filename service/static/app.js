@@ -286,21 +286,177 @@ function handleTryExample(action) {
 // 3. Page 2: Estimate Workbench
 // -------------------------------------------------------------------------------------------------
 
-const DEFAULT_ESTIMATE_EXAMPLE = [
-  "0.5000, 0.0100, 0.97980",
-  "0.5000, 0.0167, 0.99967",
-  "0.5000, 0.0278, 0.95759",
-  "0.5000, 0.0464, 0.97235",
-  "0.5000, 0.0774, 0.93489",
-  "0.5000, 0.1292, 0.88456",
-  "0.5000, 0.2154, 0.81665",
-  "0.5000, 0.3594, 0.70014",
-  "0.5000, 0.5995, 0.55152",
-  "0.5000, 1.0000, 0.38029"
-].join('\n');
+const DEFAULT_ESTIMATE_EXAMPLE_ROWS = [
+  { x: 0.50, t: 0.0100, u: 0.9951 },
+  { x: 0.50, t: 0.0167, u: 0.9823 },
+  { x: 0.50, t: 0.0278, u: 0.9794 },
+  { x: 0.50, t: 0.0464, u: 0.9705 },
+  { x: 0.50, t: 0.0774, u: 0.9241 },
+  { x: 0.50, t: 0.1292, u: 0.8780 },
+  { x: 0.50, t: 0.2154, u: 0.8242 },
+  { x: 0.50, t: 0.3594, u: 0.7091 },
+  { x: 0.50, t: 0.5995, u: 0.5487 },
+  { x: 0.50, t: 1.0000, u: 0.3781 }
+];
+
+const DEFAULT_ESTIMATE_EXAMPLE = DEFAULT_ESTIMATE_EXAMPLE_ROWS.map(r => `${r.x.toFixed(4)}, ${r.t.toFixed(4)}, ${r.u.toFixed(4)}`).join('\n');
+
+function createEstimateTableRow(x = '', t = '', u = '') {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="cell-input" data-col="x" value="${x}" placeholder="0.50" autocomplete="off" spellcheck="false"></td>
+    <td><input type="text" class="cell-input" data-col="t" value="${t}" placeholder="0.01" autocomplete="off" spellcheck="false"></td>
+    <td><input type="text" class="cell-input" data-col="u" value="${u}" placeholder="0.98" autocomplete="off" spellcheck="false"></td>
+    <td style="text-align: center;"><button type="button" class="btn-cell-delete" title="Delete row" aria-label="Delete row">&times;</button></td>
+  `;
+  return tr;
+}
+
+function clearEstimateResultState() {
+  const resultPanel = document.getElementById('est-result-panel');
+  const emptyState = document.getElementById('est-empty-state');
+  const stateContainer = document.getElementById('est-state-container');
+  if (resultPanel) resultPanel.style.display = 'none';
+  if (emptyState) emptyState.style.display = 'flex';
+  if (stateContainer) stateContainer.innerHTML = '';
+}
+
+function validateEstimateTable() {
+  const tbody = document.getElementById('est-table-tbody');
+  const validationMsg = document.getElementById('est-table-validation-msg');
+  const countBadge = document.getElementById('est-readings-count');
+  const unitRealBtn = document.getElementById('est-unit-real-btn');
+  const isRealUnits = unitRealBtn && unitRealBtn.classList.contains('active');
+
+  const barLengthInput = document.getElementById('est-bar-length');
+  const barLength = barLengthInput ? parseFloat(barLengthInput.value) : NaN;
+  const hasBarLength = (!isNaN(barLength) && barLength > 0);
+
+  if (!tbody) return { validCount: 0, hasErrors: false, readings: [], firstErrorMessage: '' };
+
+  const rows = Array.from(tbody.children);
+  let validCount = 0;
+  let hasErrors = false;
+  let firstErrorMessage = '';
+  const readings = [];
+
+  rows.forEach((tr) => {
+    const inputs = tr.querySelectorAll('.cell-input');
+    if (inputs.length < 3) return;
+
+    const xInput = inputs[0];
+    const tInput = inputs[1];
+    const uInput = inputs[2];
+
+    const xVal = xInput.value.trim();
+    const tVal = tInput.value.trim();
+    const uVal = uInput.value.trim();
+
+    // Reset error styling
+    xInput.classList.remove('cell-error');
+    tInput.classList.remove('cell-error');
+    uInput.classList.remove('cell-error');
+
+    // If completely empty row, ignore it
+    if (!xVal && !tVal && !uVal) {
+      return;
+    }
+
+    let rowHasError = false;
+
+    // Check numbers for filled cells first
+    const xNum = parseFloat(xVal);
+    const tNum = parseFloat(tVal);
+    const uNum = parseFloat(uVal);
+
+    if (xVal && (isNaN(xNum) || !isFinite(xNum))) {
+      xInput.classList.add('cell-error');
+      rowHasError = true;
+      if (!firstErrorMessage) firstErrorMessage = 'Position must be a number';
+    }
+    if (tVal && (isNaN(tNum) || !isFinite(tNum))) {
+      tInput.classList.add('cell-error');
+      rowHasError = true;
+      if (!firstErrorMessage) firstErrorMessage = 'Time must be a number';
+    }
+    if (uVal && (isNaN(uNum) || !isFinite(uNum))) {
+      uInput.classList.add('cell-error');
+      rowHasError = true;
+      if (!firstErrorMessage) firstErrorMessage = 'Temperature must be a number';
+    }
+
+    // Value bounds check
+    if (!isNaN(tNum) && isFinite(tNum)) {
+      if (tNum <= 0) {
+        tInput.classList.add('cell-error');
+        rowHasError = true;
+        if (!firstErrorMessage) firstErrorMessage = 'Time must be greater than 0';
+      }
+    }
+
+    if (!isNaN(xNum) && isFinite(xNum)) {
+      if (!isRealUnits) {
+        // Scaled 0-1
+        if (xNum < 0 || xNum > 1) {
+          xInput.classList.add('cell-error');
+          rowHasError = true;
+          if (!firstErrorMessage) firstErrorMessage = 'Position must be between 0 and 1 (or within the bar length)';
+        }
+      } else {
+        // Real units
+        if (hasBarLength) {
+          if (xNum < 0 || xNum > barLength) {
+            xInput.classList.add('cell-error');
+            rowHasError = true;
+            if (!firstErrorMessage) firstErrorMessage = `Position must be between 0 and ${barLength} (or within the bar length)`;
+          }
+        } else {
+          if (xNum < 0) {
+            xInput.classList.add('cell-error');
+            rowHasError = true;
+            if (!firstErrorMessage) firstErrorMessage = 'Position must be between 0 and 1 (or within the bar length)';
+          }
+        }
+      }
+    }
+
+    // Check partial row if incomplete
+    if (!xVal || !tVal || !uVal) {
+      if (!xVal) xInput.classList.add('cell-error');
+      if (!tVal) tInput.classList.add('cell-error');
+      if (!uVal) uInput.classList.add('cell-error');
+      rowHasError = true;
+      if (!firstErrorMessage) firstErrorMessage = 'All 3 columns (Position, Time, Temperature) are required for each reading.';
+    }
+
+    if (rowHasError) {
+      hasErrors = true;
+    } else {
+      validCount++;
+      readings.push({ x: xNum, t: tNum, u: uNum });
+    }
+  });
+
+  if (countBadge) {
+    countBadge.textContent = `${validCount} reading${validCount === 1 ? '' : 's'}`;
+  }
+
+  if (validationMsg) {
+    validationMsg.textContent = firstErrorMessage;
+  }
+
+  // Sync to hidden paste text for compatibility
+  const hiddenPaste = document.getElementById('est-paste-text');
+  if (hiddenPaste) {
+    hiddenPaste.value = readings.map(r => `${r.x}, ${r.t}, ${r.u}`).join('\n');
+  }
+
+  return { validCount, hasErrors, readings, firstErrorMessage };
+}
 
 function initEstimateWorkbench() {
-  const pasteText = document.getElementById('est-paste-text');
+  const tbody = document.getElementById('est-table-tbody');
+  const addRowBtn = document.getElementById('est-add-row-btn');
   const useExampleBtn = document.getElementById('est-use-example-btn');
   const csvBtn = document.getElementById('est-csv-btn');
   const csvUpload = document.getElementById('est-csv-upload');
@@ -316,19 +472,121 @@ function initEstimateWorkbench() {
   const downloadBtn = document.getElementById('est-download-btn');
   const synthBtn = document.getElementById('estimate-mode-synth-btn');
   const pasteBtn = document.getElementById('estimate-mode-paste-btn');
+  const pasteText = document.getElementById('est-paste-text');
+  const unitScaledBtn = document.getElementById('est-unit-scaled-btn');
+  const unitRealBtn = document.getElementById('est-unit-real-btn');
+  const moreOptionsBtn = document.getElementById('est-more-options-btn');
+  const drawer = document.getElementById('est-more-drawer');
+  const drawerOverlay = document.getElementById('est-drawer-overlay');
+  const drawerCloseBtn = document.getElementById('est-drawer-close-btn');
 
-  // Pre-populate working example data
-  if (pasteText && !pasteText.value.trim()) {
-    pasteText.value = DEFAULT_ESTIMATE_EXAMPLE;
+  // Initialize table with 8 empty rows
+  if (tbody && tbody.children.length === 0) {
+    for (let i = 0; i < 8; i++) {
+      tbody.appendChild(createEstimateTableRow());
+    }
+  }
+
+  validateEstimateTable();
+  clearEstimateResultState();
+
+  // Add row button
+  if (addRowBtn) {
+    addRowBtn.addEventListener('click', () => {
+      if (tbody) {
+        const tr = createEstimateTableRow();
+        tbody.appendChild(tr);
+        validateEstimateTable();
+        clearEstimateResultState();
+        const firstInput = tr.querySelector('.cell-input');
+        if (firstInput) firstInput.focus();
+      }
+    });
+  }
+
+  // Delete row delegation and input validation
+  if (tbody) {
+    tbody.addEventListener('click', (e) => {
+      const delBtn = e.target.closest('.btn-cell-delete');
+      if (!delBtn) return;
+      const tr = delBtn.closest('tr');
+      if (tr) {
+        tr.remove();
+        if (tbody.children.length === 0) {
+          tbody.appendChild(createEstimateTableRow());
+        }
+        validateEstimateTable();
+        clearEstimateResultState();
+      }
+    });
+
+    tbody.addEventListener('input', (e) => {
+      if (e.target.classList.contains('cell-input')) {
+        validateEstimateTable();
+        clearEstimateResultState();
+      }
+    });
+
+    // Multi-row paste directly into table
+    tbody.addEventListener('paste', (e) => {
+      const targetInput = e.target.closest('.cell-input');
+      if (!targetInput) return;
+      const clipText = (e.clipboardData || window.clipboardData).getData('text');
+      if (!clipText) return;
+
+      const lines = clipText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if (lines.length === 0) return;
+
+      const firstLineParts = lines[0].split(/[,\t\s]+/).filter(Boolean);
+      if (lines.length > 1 || firstLineParts.length > 1) {
+        e.preventDefault();
+
+        let targetRow = targetInput.closest('tr');
+        let targetRowIndex = Array.from(tbody.children).indexOf(targetRow);
+        if (targetRowIndex < 0) targetRowIndex = 0;
+
+        let startIdx = 0;
+        // Skip header if non-numeric
+        if (isNaN(parseFloat(firstLineParts[0])) && isNaN(parseFloat(firstLineParts[1] || ''))) {
+          startIdx = 1;
+        }
+
+        for (let i = startIdx; i < lines.length; i++) {
+          const line = lines[i];
+          if (!line || line.startsWith('#')) continue;
+          const parts = line.split(/[,\t]+/).map(p => p.trim()).filter(Boolean);
+          if (parts.length === 0) continue;
+
+          const rowIndex = targetRowIndex + (i - startIdx);
+          while (tbody.children.length <= rowIndex) {
+            tbody.appendChild(createEstimateTableRow());
+          }
+
+          const row = tbody.children[rowIndex];
+          const inputs = row.querySelectorAll('.cell-input');
+          if (parts[0] !== undefined && inputs[0]) inputs[0].value = parts[0];
+          if (parts[1] !== undefined && inputs[1]) inputs[1].value = parts[1];
+          if (parts[2] !== undefined && inputs[2]) inputs[2].value = parts[2];
+        }
+
+        validateEstimateTable();
+        clearEstimateResultState();
+      }
+    });
   }
 
   // Use example data button
   if (useExampleBtn) {
     useExampleBtn.addEventListener('click', () => {
-      if (pasteText) pasteText.value = DEFAULT_ESTIMATE_EXAMPLE;
-      STATE.isEstimateDemo = false;
-      if (pasteBtn) pasteBtn.classList.add('active');
-      if (synthBtn) synthBtn.classList.remove('active');
+      if (tbody) {
+        tbody.innerHTML = '';
+        DEFAULT_ESTIMATE_EXAMPLE_ROWS.forEach(r => {
+          tbody.appendChild(createEstimateTableRow(r.x.toFixed(2), r.t.toFixed(4), r.u.toFixed(4)));
+        });
+        STATE.isEstimateDemo = false;
+        validateEstimateTable();
+        clearEstimateResultState();
+      }
     });
   }
 
@@ -340,16 +598,102 @@ function initEstimateWorkbench() {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = (evt) => {
-        if (pasteText) pasteText.value = evt.target.result;
+        const text = evt.target.result;
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        if (tbody) {
+          tbody.innerHTML = '';
+          let added = 0;
+          for (let line of lines) {
+            if (!line || line.startsWith('#')) continue;
+            const parts = line.split(/[,\t]+/).map(p => p.trim()).filter(Boolean);
+            if (parts.length >= 3) {
+              if (isNaN(parseFloat(parts[0])) && isNaN(parseFloat(parts[1]))) continue; // header
+              tbody.appendChild(createEstimateTableRow(parts[0], parts[1], parts[2]));
+              added++;
+            }
+          }
+          if (added === 0) {
+            for (let i = 0; i < 8; i++) tbody.appendChild(createEstimateTableRow());
+          }
+        }
         STATE.isEstimateDemo = false;
-        if (pasteBtn) pasteBtn.classList.add('active');
-        if (synthBtn) synthBtn.classList.remove('active');
+        validateEstimateTable();
+        clearEstimateResultState();
+        csvUpload.value = '';
       };
       reader.readAsText(file);
     });
   }
 
-  // Step 2: Sensor accuracy baseline toggle
+  // Unit toggle
+  if (unitScaledBtn && unitRealBtn) {
+    unitScaledBtn.addEventListener('click', () => {
+      unitScaledBtn.classList.add('active');
+      unitRealBtn.classList.remove('active');
+      validateEstimateTable();
+      clearEstimateResultState();
+    });
+    unitRealBtn.addEventListener('click', () => {
+      unitRealBtn.classList.add('active');
+      unitScaledBtn.classList.remove('active');
+      validateEstimateTable();
+      clearEstimateResultState();
+    });
+  }
+
+  // Side drawer open/close
+  function openDrawer() {
+    if (drawer) {
+      drawer.classList.add('open');
+      drawer.setAttribute('aria-hidden', 'false');
+    }
+    if (drawerOverlay) drawerOverlay.classList.add('open');
+  }
+
+  function closeDrawer() {
+    if (drawer) {
+      drawer.classList.remove('open');
+      drawer.setAttribute('aria-hidden', 'true');
+    }
+    if (drawerOverlay) drawerOverlay.classList.remove('open');
+  }
+
+  if (moreOptionsBtn) moreOptionsBtn.addEventListener('click', openDrawer);
+  if (drawerCloseBtn) drawerCloseBtn.addEventListener('click', closeDrawer);
+  if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
+  });
+
+  // Backward compatibility with pasteText input
+  if (pasteText) {
+    pasteText.addEventListener('input', () => {
+      const rawText = pasteText.value.trim();
+      if (!rawText || !tbody) return;
+      const lines = rawText.split('\n');
+      tbody.innerHTML = '';
+      let added = 0;
+      for (let l of lines) {
+        const cleanLine = l.trim();
+        if (!cleanLine || cleanLine.startsWith('#')) continue;
+        const parts = cleanLine.split(/[,\t]+/).map(p => p.trim()).filter(Boolean);
+        if (parts.length >= 3) {
+          tbody.appendChild(createEstimateTableRow(parts[0], parts[1], parts[2]));
+          added++;
+        } else if (parts.length > 0) {
+          tbody.appendChild(createEstimateTableRow(parts[0] || '', parts[1] || '', parts[2] || ''));
+          added++;
+        }
+      }
+      if (added === 0) {
+        for (let i = 0; i < 8; i++) tbody.appendChild(createEstimateTableRow());
+      }
+      validateEstimateTable();
+      clearEstimateResultState();
+    });
+  }
+
+  // Sensor accuracy baseline toggle (inside More options)
   if (baselineToggle) {
     baselineToggle.addEventListener('change', () => {
       if (baselineToggle.checked) {
@@ -362,7 +706,7 @@ function initEstimateWorkbench() {
     });
   }
 
-  // Advanced options method guidance
+  // Calculation method guidance
   const METHOD_GUIDANCE_TEXT = {
     mode3plus: "Recommended for all standard tests. High accuracy with verified 94% confidence intervals.",
     mode3: "Ultra-fast calculation (~1 ms). Best for continuous live monitoring where speed matters more than confidence bounds.",
@@ -438,63 +782,39 @@ function generateEstimateSample() {
   const seed = parseInt(document.getElementById('est-seed').value) || 42;
   const rng = mulberry32(seed);
 
-  const rows = [];
-  for (let i = 0; i < N; i++) {
-    const x = 0.50;
-    // Log-spaced time points in [0.01, 1.0]
-    const t = Math.pow(10, Math.log10(0.01) + (i / Math.max(1, N - 1)) * (Math.log10(1.0) - Math.log10(0.01)));
-    const uExact = Math.sin(Math.PI * x) * Math.exp(-alphaTrue * Math.PI * Math.PI * t);
-    const noise = randomNormal(rng, 0, sigma);
-    const y = uExact + noise;
-    rows.push(`${x.toFixed(4)}, ${t.toFixed(4)}, ${y.toFixed(5)}`);
+  const tbody = document.getElementById('est-table-tbody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    for (let i = 0; i < N; i++) {
+      const x = 0.50;
+      // Log-spaced time points in [0.01, 1.0]
+      const t = Math.pow(10, Math.log10(0.01) + (i / Math.max(1, N - 1)) * (Math.log10(1.0) - Math.log10(0.01)));
+      const uExact = Math.sin(Math.PI * x) * Math.exp(-alphaTrue * Math.PI * Math.PI * t);
+      const noise = randomNormal(rng, 0, sigma);
+      const y = uExact + noise;
+      tbody.appendChild(createEstimateTableRow(x.toFixed(4), t.toFixed(4), y.toFixed(5)));
+    }
   }
 
-  const pasteEl = document.getElementById('est-paste-text');
-  if (pasteEl) pasteEl.value = rows.join('\n');
+  STATE.isEstimateDemo = true;
+  validateEstimateTable();
+  clearEstimateResultState();
 }
 
 async function executeParameterEstimate() {
   const stateContainer = document.getElementById('est-state-container');
   const resultPanel = document.getElementById('est-result-panel');
+  const emptyState = document.getElementById('est-empty-state');
+  const validationMsg = document.getElementById('est-table-validation-msg');
   const synthBtn = document.getElementById('estimate-mode-synth-btn');
   const isSynthetic = Boolean(STATE.isEstimateDemo || (synthBtn && synthBtn.classList.contains('active')));
-  const noiseMode = document.getElementById('est-noise-select') ? document.getElementById('est-noise-select').value : 'declared';
-  const methodMode = document.getElementById('est-method-select') ? document.getElementById('est-method-select').value : 'mode3plus';
+  const trueAlpha = parseFloat(document.getElementById('est-true-alpha').value) || 0.10;
 
-  stateContainer.innerHTML = '<div class="state-box loading"><span class="spinner"></span> Calculating heat spread...</div>';
-  resultPanel.style.display = 'none';
+  let xList = [];
+  let tList = [];
+  let yList = [];
 
-  let xList = [], tList = [], yList = [];
-  let trueAlpha = parseFloat(document.getElementById('est-true-alpha').value) || 0.10;
-
-  if (!isSynthetic) {
-    const rawText = document.getElementById('est-paste-text').value.trim();
-    if (!rawText) {
-      stateContainer.innerHTML = '<div class="state-box error"><strong>Input Error:</strong> No coordinates provided. Paste x,t,y rows or use the synthetic generator.</div>';
-      return;
-    }
-    const lines = rawText.split('\n');
-    for (let l of lines) {
-      const cleanLine = l.trim();
-      if (!cleanLine || cleanLine.startsWith('#')) continue;
-      const parts = cleanLine.split(/[,\t\s]+/).filter(Boolean);
-      if (parts.length >= 3) {
-        const x = parseFloat(parts[0]);
-        const t = parseFloat(parts[1]);
-        const y = parseFloat(parts[2]);
-        if (!isNaN(x) && !isNaN(t) && !isNaN(y)) {
-          xList.push(x);
-          tList.push(t);
-          yList.push(y);
-        }
-      }
-    }
-    if (xList.length < 2) {
-      stateContainer.innerHTML = '<div class="state-box error"><strong>Input Error:</strong> At least 2 valid (x, t, y) readings are required.</div>';
-      return;
-    }
-  } else {
-    // Generate synthetic on the fly
+  if (isSynthetic) {
     const N = parseInt(document.getElementById('est-num-sensors').value) || 10;
     const sigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.01;
     const seed = parseInt(document.getElementById('est-seed').value) || 42;
@@ -509,25 +829,60 @@ async function executeParameterEstimate() {
       tList.push(t);
       yList.push(uExact + noise);
     }
+  } else {
+    // Validate table
+    const { validCount, hasErrors, readings, firstErrorMessage } = validateEstimateTable();
+
+    if (hasErrors) {
+      if (validationMsg) validationMsg.textContent = firstErrorMessage;
+      if (stateContainer) {
+        stateContainer.innerHTML = `<div class="state-box error"><strong>Input Error:</strong> ${firstErrorMessage}</div>`;
+      }
+      return;
+    }
+
+    if (validCount < 3) {
+      const msg = 'Please enter at least 3 readings to calculate.';
+      if (validationMsg) validationMsg.textContent = msg;
+      if (stateContainer) {
+        stateContainer.innerHTML = `<div class="state-box error"><strong>Input Error:</strong> ${msg}</div>`;
+      }
+      return;
+    }
+
+    xList = readings.map(r => r.x);
+    tList = readings.map(r => r.t);
+    yList = readings.map(r => r.u);
   }
 
-  // Step 3 (Optional setup conversion):
+  if (validationMsg) validationMsg.textContent = '';
+  if (emptyState) emptyState.style.display = 'none';
+  if (stateContainer) {
+    stateContainer.innerHTML = '<div class="state-box loading"><span class="spinner"></span> Calculating heat spread...</div>';
+  }
+  if (resultPanel) resultPanel.style.display = 'none';
+
+  // Check physical setup and real units toggle
   const barLengthInput = document.getElementById('est-bar-length');
   const expDurationInput = document.getElementById('est-experiment-time');
   const barLength = barLengthInput ? parseFloat(barLengthInput.value) : NaN;
   const expDuration = expDurationInput ? parseFloat(expDurationInput.value) : NaN;
+  const unitRealBtn = document.getElementById('est-unit-real-btn');
+  const isRealUnits = (unitRealBtn && unitRealBtn.classList.contains('active')) || (!isNaN(barLength) && barLength > 0 && !isNaN(expDuration) && expDuration > 0);
   const hasPhysicalSetup = (!isNaN(barLength) && barLength > 0 && !isNaN(expDuration) && expDuration > 0);
 
   let xPayload = [...xList];
   let tPayload = [...tList];
 
-  if (hasPhysicalSetup) {
-    // Convert readings to normalised coordinates internally
+  if (hasPhysicalSetup && isRealUnits) {
     xPayload = xList.map(x => x / barLength);
     tPayload = tList.map(t => t / expDuration);
   }
 
-  // Construct payload
+  const methodSelect = document.getElementById('est-method-select');
+  const methodMode = methodSelect ? methodSelect.value : 'mode3plus';
+  const noiseMode = document.getElementById('est-noise-select') ? document.getElementById('est-noise-select').value : 'declared';
+
   const payload = {
     x: xPayload,
     t: tPayload,
@@ -571,12 +926,14 @@ async function executeParameterEstimate() {
     });
 
     const data = await res.json();
+
     STATE.lastEstimateResult = { 
       request: payload, 
       response: data, 
       isDemoMode: isSynthetic, 
       trueAlpha,
       hasPhysicalSetup,
+      isRealUnits,
       barLength,
       expDuration
     };
@@ -584,24 +941,26 @@ async function executeParameterEstimate() {
     if (!res.ok) {
       const errCode = data.error_code || 'ERROR';
       const msg = data.message || (typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
-      stateContainer.innerHTML = `
-        <div class="state-box refusal">
-          <div style="font-weight: 700; margin-bottom: 0.3rem;">Request Refusal (${errCode})</div>
-          <div>${msg}</div>
-        </div>
-      `;
+      if (stateContainer) {
+        stateContainer.innerHTML = `
+          <div class="state-box refusal">
+            <div style="font-weight: 700; margin-bottom: 0.3rem;">Request Refusal (${errCode})</div>
+            <div>${msg}</div>
+          </div>
+        `;
+      }
       return;
     }
 
-    stateContainer.innerHTML = '';
-    resultPanel.style.display = 'block';
+    if (stateContainer) stateContainer.innerHTML = '';
+    if (resultPanel) resultPanel.style.display = 'block';
 
     const alphaHat = data.alpha_hat;
     const ci95 = data.ci95;
     const flags = data.flags || {};
     const warnings = flags.warnings || [];
 
-    // 1. Result card in plain words: "Heat spread (α): 0.105 — most likely between 0.102 and 0.109"
+    // Headline & Subline
     const headlineEl = document.getElementById('est-plain-headline');
     const sublineEl = document.getElementById('est-plain-subline');
     const outAlphaHidden = document.getElementById('est-out-alpha');
@@ -615,103 +974,83 @@ async function executeParameterEstimate() {
       return v.toFixed(3);
     }
 
-    if (hasPhysicalSetup) {
+    if (hasPhysicalSetup && isRealUnits) {
       const scale = (barLength * barLength) / expDuration;
       const alphaReal = alphaHat * scale;
       const ciLoReal = ci95[0] * scale;
       const ciHiReal = ci95[1] * scale;
 
-      headlineEl.innerHTML = `Heat spread (&alpha;): <strong>${alphaHat.toFixed(3)}</strong> &mdash; most likely between <strong>${ci95[0].toFixed(3)}</strong> and <strong>${ci95[1].toFixed(3)}</strong>`;
-      sublineEl.innerHTML = `In real units: <strong>${formatAlphaVal(alphaReal)} m&sup2;/s</strong> (range: ${formatAlphaVal(ciLoReal)} to ${formatAlphaVal(ciHiReal)} m&sup2;/s) using bar length ${barLength.toFixed(2)} m and duration ${expDuration.toFixed(1)} s.`;
+      headlineEl.innerHTML = `Heat spread: <strong>${formatAlphaVal(alphaReal)} m&sup2;/s</strong>`;
+      sublineEl.innerHTML = `Most likely between <strong>${formatAlphaVal(ciLoReal)}</strong> and <strong>${formatAlphaVal(ciHiReal)} m&sup2;/s</strong> <span class="mono" style="opacity: 0.8; font-size: 0.9em;">(normalized &alpha;&#770; = ${alphaHat.toFixed(3)})</span>`;
     } else {
-      headlineEl.innerHTML = `Heat spread (&alpha;): <strong>${alphaHat.toFixed(3)}</strong> &mdash; most likely between <strong>${ci95[0].toFixed(3)}</strong> and <strong>${ci95[1].toFixed(3)}</strong>`;
-      sublineEl.textContent = 'Diffusivity is shown in normalised units because bar length and duration were left blank.';
+      headlineEl.innerHTML = `Heat spread: <strong>${alphaHat.toFixed(3)}</strong>`;
+      sublineEl.innerHTML = `Most likely between <strong>${ci95[0].toFixed(3)}</strong> and <strong>${ci95[1].toFixed(3)}</strong>`;
     }
 
-    // 2. Traffic-light banner mapping
+    // ONE Traffic-Light Line
     const banner = document.getElementById('est-traffic-banner');
     const bannerTitle = document.getElementById('est-traffic-title');
     const bannerReasons = document.getElementById('est-traffic-reasons');
     let bannerLevel = 'green';
-    let bannerTitleText = 'Result looks trustworthy';
-    let plainReasons = [];
+    let bannerText = 'Result looks trustworthy';
 
     if (flags.model_invalid) {
       bannerLevel = 'red';
-      bannerTitleText = 'We cannot give a reliable number';
-      plainReasons.push('your readings do not fit the heat model');
-    }
-
-    if (flags.out_of_range || flags.at_bound) {
-      if (bannerLevel !== 'red') {
-        bannerLevel = 'amber';
-        bannerTitleText = 'Check this result';
-      }
-      plainReasons.push('value is near the edge of the tested range');
-    }
-
-    let hasCorrelatedErrors = false;
-    warnings.forEach(w => {
-      const wl = w.toLowerCase();
-      if (wl.includes('autocorrelation') || wl.includes('durbin-watson') || wl.includes('correlated')) {
-        hasCorrelatedErrors = true;
-      }
-    });
-
-    if (hasCorrelatedErrors) {
-      if (bannerLevel !== 'red') {
-        bannerLevel = 'amber';
-        bannerTitleText = 'Check this result';
-      }
-      plainReasons.push('errors look correlated');
-    }
-
-    warnings.forEach(w => {
-      const wl = w.toLowerCase();
-      if (!wl.includes('model invalid') && !wl.includes('autocorrelation') && !wl.includes('durbin-watson') && !wl.includes('chi2')) {
-        if (bannerLevel === 'green') {
-          bannerLevel = 'amber';
-          bannerTitleText = 'Check this result';
-        }
-        plainReasons.push(w);
-      }
-    });
-
-    banner.className = `traffic-light-banner ${bannerLevel}`;
-    bannerTitle.textContent = bannerTitleText;
-    if (plainReasons.length > 0) {
-      bannerReasons.style.display = 'block';
-      bannerReasons.innerHTML = plainReasons.map(r => `<li>${r}</li>`).join('');
+      bannerText = "We can't give a reliable number: your readings do not fit the heat model";
+    } else if (flags.out_of_range || flags.at_bound) {
+      bannerLevel = 'amber';
+      bannerText = 'Check this result: value is near the edge of the tested range';
     } else {
-      bannerReasons.style.display = 'none';
-      bannerReasons.innerHTML = '';
+      let hasCorrelatedErrors = false;
+      warnings.forEach(w => {
+        const wl = w.toLowerCase();
+        if (wl.includes('autocorrelation') || wl.includes('durbin-watson') || wl.includes('correlated')) {
+          hasCorrelatedErrors = true;
+        }
+      });
+      if (hasCorrelatedErrors) {
+        bannerLevel = 'amber';
+        bannerText = 'Check this result: errors look correlated';
+      } else if (warnings.length > 0) {
+        bannerLevel = 'amber';
+        bannerText = `Check this result: ${warnings[0]}`;
+      } else {
+        bannerLevel = 'green';
+        bannerText = 'Result looks trustworthy';
+      }
     }
 
-    // 3. Demo mode callout (never show "True alpha OUTSIDE CI" unless demo mode is on)
+    if (banner) banner.className = `traffic-light-line ${bannerLevel}`;
+    if (bannerTitle) bannerTitle.textContent = bannerText;
+    if (bannerReasons) bannerReasons.style.display = 'none';
+
+    // Demo Mode Callout
     const demoCallout = document.getElementById('est-demo-callout');
     const chartTruthLegend = document.getElementById('est-chart-truth-legend');
     if (isSynthetic) {
       const inInterval = (trueAlpha >= ci95[0] && trueAlpha <= ci95[1]);
-      demoCallout.style.display = 'flex';
-      demoCallout.innerHTML = `
-        <div>
-          <strong>Demo mode:</strong> 
-          ${inInterval 
-            ? 'Truth was inside the range.' 
-            : 'Truth was outside the range (about 1 in 20 runs misses by design).'}
-          <span class="mono" style="margin-left: 0.5rem; opacity: 0.85;">(Simulated true &alpha; = ${trueAlpha.toFixed(4)})</span>
-        </div>
-        <button type="button" class="btn btn-secondary btn-sm" id="est-rerun-demo-btn-inline">Run again with new random readings</button>
-      `;
-      const rerunInline = document.getElementById('est-rerun-demo-btn-inline');
-      if (rerunInline) rerunInline.addEventListener('click', runRandomDemo);
+      if (demoCallout) {
+        demoCallout.style.display = 'flex';
+        demoCallout.innerHTML = `
+          <div>
+            <strong>Demo mode:</strong> 
+            ${inInterval 
+              ? 'Truth was inside the range.' 
+              : 'Truth was outside the range (about 1 in 20 runs misses by design).'}
+            <span class="mono" style="margin-left: 0.5rem; opacity: 0.85;">(Simulated true &alpha; = ${trueAlpha.toFixed(4)})</span>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" id="est-rerun-demo-btn-inline">Run again with new seed</button>
+        `;
+        const rerunInline = document.getElementById('est-rerun-demo-btn-inline');
+        if (rerunInline) rerunInline.addEventListener('click', runRandomDemo);
+      }
       if (chartTruthLegend) chartTruthLegend.style.display = 'flex';
     } else {
-      demoCallout.style.display = 'none';
+      if (demoCallout) demoCallout.style.display = 'none';
       if (chartTruthLegend) chartTruthLegend.style.display = 'none';
     }
 
-    // 4. Collapsed Technical Details
+    // Details disclosure
     document.getElementById('est-out-ci').textContent = `[${ci95[0].toFixed(5)}, ${ci95[1].toFixed(5)}]`;
     document.getElementById('est-out-method').textContent = data.method;
     document.getElementById('est-out-timing').textContent = data.timing_ms.toFixed(2);
@@ -723,35 +1062,42 @@ async function executeParameterEstimate() {
 
     const dwEl = document.getElementById('est-out-dw');
     if (dwEl) {
-      dwEl.textContent = (data.dw_stat !== undefined ? data.dw_stat.toFixed(3) : (hasCorrelatedErrors ? 'Flagged (< 1.2 or > 2.8)' : '2.00 (uncorrelated)'));
+      dwEl.textContent = (data.dw_stat !== undefined ? data.dw_stat.toFixed(3) : (bannerLevel === 'amber' && bannerText.includes('correlated') ? 'Flagged (< 1.2 or > 2.8)' : '2.00 (uncorrelated)'));
     }
 
     // Diagnostic Badges
     const badgesContainer = document.getElementById('est-badges-container');
-    badgesContainer.innerHTML = '';
-    if (flags.model_invalid) {
-      badgesContainer.innerHTML += '<span class="badge badge-danger">FLAG: model_invalid</span>';
-    }
-    if (flags.out_of_range) {
-      badgesContainer.innerHTML += '<span class="badge badge-warning">FLAG: out_of_range</span>';
-    }
-    if (flags.at_bound) {
-      badgesContainer.innerHTML += '<span class="badge badge-warning">FLAG: at_bound</span>';
-    }
-    warnings.forEach(w => {
-      badgesContainer.innerHTML += `<span class="badge badge-warning">${w}</span>`;
-    });
-    if (!flags.model_invalid && !flags.out_of_range && !flags.at_bound && warnings.length === 0) {
-      badgesContainer.innerHTML += '<span class="badge badge-success">Model Valid</span>';
+    if (badgesContainer) {
+      badgesContainer.innerHTML = '';
+      if (flags.model_invalid) {
+        badgesContainer.innerHTML += '<span class="badge badge-danger">FLAG: model_invalid</span>';
+      }
+      if (flags.out_of_range) {
+        badgesContainer.innerHTML += '<span class="badge badge-warning">FLAG: out_of_range</span>';
+      }
+      if (flags.at_bound) {
+        badgesContainer.innerHTML += '<span class="badge badge-warning">FLAG: at_bound</span>';
+      }
+      warnings.forEach(w => {
+        badgesContainer.innerHTML += `<span class="badge badge-warning">${w}</span>`;
+      });
+      if (!flags.model_invalid && !flags.out_of_range && !flags.at_bound && warnings.length === 0) {
+        badgesContainer.innerHTML += '<span class="badge badge-success">Model Valid</span>';
+      }
     }
 
     // JSON Dump
-    document.getElementById('est-json-dump').textContent = JSON.stringify({ request: payload, response: data }, null, 2);
+    const jsonDump = document.getElementById('est-json-dump');
+    if (jsonDump) {
+      jsonDump.textContent = JSON.stringify({ request: payload, response: data }, null, 2);
+    }
 
     renderEstimateChart();
 
   } catch (err) {
-    stateContainer.innerHTML = `<div class="state-box error"><strong>Network/Service Error:</strong> ${err.message}</div>`;
+    if (stateContainer) {
+      stateContainer.innerHTML = `<div class="state-box error"><strong>Network/Service Error:</strong> ${err.message}</div>`;
+    }
   }
 }
 

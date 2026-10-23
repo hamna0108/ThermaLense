@@ -24,6 +24,7 @@ import sys
 import time
 import socket
 import subprocess
+import json
 from playwright.sync_api import sync_playwright
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -142,30 +143,188 @@ def run_verification():
                     page.wait_for_timeout(200)
                     
                     # -------------------------------------------------------------
-                    # FLOW 2: Estimate (Mode 3+ and Mode 2)
+                    # TYPE SCALE CHECK (Requirement 6)
+                    # -------------------------------------------------------------
+                    if vp_name == "desktop_1440" and theme == "light":
+                        print("  [TypeScale Check] Verifying H1, H2, and body computed font sizes across all 8 tabs...")
+                        tabs_to_check = [
+                            ("overview", "#view-overview"),
+                            ("estimate", "#view-estimate"),
+                            ("diagnose", "#view-diagnose"),
+                            ("placement", "#view-placement"),
+                            ("field", "#view-field"),
+                            ("poisson", "#view-poisson"),
+                            ("evidence", "#view-evidence"),
+                            ("limits", "#view-limits"),
+                        ]
+                        h1_sizes = {}
+                        h2_sizes = {}
+                        body_sizes = {}
+                        for t_name, t_sel in tabs_to_check:
+                            page.goto(f"http://127.0.0.1:{port}/#{t_name}")
+                            page.wait_for_selector(f"{t_sel}.active")
+                            h1_sz = page.evaluate(f"window.getComputedStyle(document.querySelector('{t_sel} h1')).fontSize")
+                            h2_sz = page.evaluate(f"window.getComputedStyle(document.querySelector('{t_sel} h2')).fontSize")
+                            body_sz = page.evaluate(f"window.getComputedStyle(document.querySelector('{t_sel} p')).fontSize")
+                            h1_sizes[t_name] = h1_sz
+                            h2_sizes[t_name] = h2_sz
+                            body_sizes[t_name] = body_sz
+                        
+                        assert len(set(h1_sizes.values())) == 1, f"H1 font-size mismatch across tabs: {h1_sizes}"
+                        assert len(set(h2_sizes.values())) == 1, f"H2 font-size mismatch across tabs: {h2_sizes}"
+                        assert len(set(body_sizes.values())) == 1, f"Body font-size mismatch across tabs: {body_sizes}"
+                        print(f"  [TypeScale Check] PASSED: All 8 tabs share identical scales: H1={list(h1_sizes.values())[0]}, H2={list(h2_sizes.values())[0]}, body={list(body_sizes.values())[0]}")
+
+                    # -------------------------------------------------------------
+                    # FLOW 2: Estimate (Simplified Table, 4 Flows, Drawer, Errors)
                     # -------------------------------------------------------------
                     page.goto(f"http://127.0.0.1:{port}/#estimate")
                     page.wait_for_selector("#view-estimate.active")
+
+                    # 2a. Verify Empty State & Table Initialization
+                    page.wait_for_selector("#est-empty-state", state="visible")
+                    assert page.locator("#est-result-panel").is_hidden(), "Result panel should NOT be visible on fresh load"
+                    assert page.locator("#est-readings-table tbody tr").count() == 8, "Expected 8 initial table rows"
+                    assert "0 reading" in page.locator("#est-readings-count").text_content(), "Expected 0 readings on fresh load"
+
+                    # 2b. Verify Validation on Empty Table (< 3 readings)
+                    page.click("#est-submit-btn")
+                    page.wait_for_timeout(100)
+                    assert page.locator("#est-result-panel").is_hidden(), "Result panel should NOT appear with fewer than 3 readings"
+                    val_msg = page.locator("#est-table-validation-msg").text_content()
+                    assert "3 readings" in val_msg or "3 readings" in page.locator("#est-state-container").text_content()
+
+                    # 2c. Verify Cell Error Validation (non-numeric Time, out-of-bounds Position)
+                    first_row_inputs = page.locator("#est-readings-table tbody tr:first-child .cell-input")
+                    first_row_inputs.nth(1).fill("not_a_number")
+                    page.wait_for_timeout(100)
+                    assert "cell-error" in (first_row_inputs.nth(1).get_attribute("class") or ""), "Expected .cell-error on invalid Time cell"
+                    assert "Time must be a number" in page.locator("#est-table-validation-msg").text_content()
+
+                    first_row_inputs.nth(0).fill("2.5")  # Position out of bounds [0, 1]
+                    first_row_inputs.nth(1).fill("0.05")
+                    first_row_inputs.nth(2).fill("0.95")
+                    page.wait_for_timeout(100)
+                    assert "cell-error" in (first_row_inputs.nth(0).get_attribute("class") or ""), "Expected .cell-error on out-of-bounds Position cell"
+                    assert "Position must be between 0 and 1" in page.locator("#est-table-validation-msg").text_content()
+
+                    # Clear row 0
+                    first_row_inputs.nth(0).fill("")
+                    first_row_inputs.nth(1).fill("")
+                    first_row_inputs.nth(2).fill("")
+                    page.wait_for_timeout(100)
+
+                    # 2d. FLOW A: "Use example" Button Flow
+                    page.click("#est-use-example-btn")
+                    page.wait_for_timeout(100)
+                    assert page.locator("#est-readings-table tbody tr").count() == 10, "Expected 10 rows after 'Use example'"
+                    assert "10 reading" in page.locator("#est-readings-count").text_content()
+
                     page.click("#est-submit-btn")
                     page.wait_for_selector("#est-result-panel", state="visible")
                     page.wait_for_timeout(250)
+
+                    # Assert Result Card contents
+                    assert "Heat spread:" in page.locator("#est-plain-headline").text_content()
+                    assert "Most likely between" in page.locator("#est-plain-subline").text_content()
+                    assert page.locator("#est-traffic-banner.green").count() == 1, "Expected green traffic-light line"
+                    assert "Result looks trustworthy" in page.locator("#est-traffic-title").text_content()
+                    assert page.locator("#est-chart-svg").is_visible(), "Measured vs fitted chart must be visible"
+
                     page.evaluate("window.scrollTo(0, 0)")
-                    page.wait_for_timeout(100)
                     shot_path = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02_estimate_mode3plus.png")
                     page.screenshot(path=shot_path, full_page=False)
                     screenshots_taken.append(shot_path)
-                    
-                    # Switch to Mode 2 (under collapsed Advanced options)
-                    page.locator("#est-advanced-disclosure").evaluate("el => el.open = true")
+
+                    # 2e. "More options" Side Drawer & Mode 2 Test
+                    page.click("#est-more-options-btn")
+                    page.wait_for_selector("#est-more-drawer.open", state="visible")
                     page.select_option("#est-method-select", "mode2")
+                    page.click("#est-drawer-close-btn")
+                    page.wait_for_timeout(150)
+
                     page.click("#est-submit-btn")
                     page.wait_for_selector("#est-result-panel", state="visible")
                     page.wait_for_timeout(200)
+
+                    # Open details disclosure and verify Mode 2
+                    page.locator("#est-technical-details").evaluate("el => el.open = true")
+                    method_txt = page.locator("#est-out-method").text_content().lower()
+                    assert "mode 2" in method_txt or "mode2" in method_txt, f"Expected Mode 2 method, got {method_txt}"
+
                     page.evaluate("window.scrollTo(0, 0)")
-                    page.wait_for_timeout(100)
                     shot_path = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02b_estimate_mode2.png")
                     page.screenshot(path=shot_path, full_page=False)
                     screenshots_taken.append(shot_path)
+
+                    # Reset method back to mode3plus in drawer
+                    page.click("#est-more-options-btn")
+                    page.wait_for_selector("#est-more-drawer.open", state="visible")
+                    page.select_option("#est-method-select", "mode3plus")
+                    page.click("#est-drawer-close-btn")
+                    page.wait_for_timeout(150)
+
+                    # Test remaining flows in desktop view to avoid redundant slow requests
+                    if vp_name == "desktop_1440" and theme == "light":
+                        # 2f. FLOW B: Manual Typing Flow
+                        print("  [Flow B: Manual Typing] Entering 4 manual readings...")
+                        page.locator("#est-table-tbody").evaluate("el => el.innerHTML = ''")
+                        for _ in range(4):
+                            page.click("#est-add-row-btn")
+                        rows = page.locator("#est-table-tbody tr")
+                        manual_vals = [
+                            ("0.50", "0.020", "0.960"),
+                            ("0.50", "0.080", "0.880"),
+                            ("0.50", "0.250", "0.650"),
+                            ("0.50", "0.600", "0.300")
+                        ]
+                        for idx, (x_v, t_v, u_v) in enumerate(manual_vals):
+                            r_inputs = rows.nth(idx).locator(".cell-input")
+                            r_inputs.nth(0).fill(x_v)
+                            r_inputs.nth(1).fill(t_v)
+                            r_inputs.nth(2).fill(u_v)
+                        page.wait_for_timeout(100)
+                        assert "4 reading" in page.locator("#est-readings-count").text_content()
+                        page.click("#est-submit-btn")
+                        page.wait_for_selector("#est-result-panel", state="visible")
+                        print("  [Flow B: Manual Typing] Succeeded!")
+
+                        # 2g. FLOW C: Paste Flow (Tab-separated multi-row data)
+                        print("  [Flow C: Paste Flow] Pasting multi-row TSV data...")
+                        page.locator("#est-table-tbody").evaluate("el => el.innerHTML = ''")
+                        page.click("#est-add-row-btn")
+                        paste_data = "0.50\t0.030\t0.950\n0.50\t0.100\t0.850\n0.50\t0.300\t0.600\n0.50\t0.700\t0.250"
+                        page.evaluate(f"""() => {{
+                            const dt = new DataTransfer();
+                            dt.setData('text/plain', {json.dumps(paste_data)});
+                            const input = document.querySelector('#est-table-tbody .cell-input');
+                            const ev = new ClipboardEvent('paste', {{ clipboardData: dt, bubbles: true, cancelable: true }});
+                            input.dispatchEvent(ev);
+                        }}""")
+                        page.wait_for_timeout(150)
+                        assert "4 reading" in page.locator("#est-readings-count").text_content()
+                        page.click("#est-submit-btn")
+                        page.wait_for_selector("#est-result-panel", state="visible")
+                        print("  [Flow C: Paste Flow] Succeeded!")
+
+                        # 2h. FLOW D: CSV Upload Flow
+                        print("  [Flow D: CSV Upload] Uploading test CSV...")
+                        test_csv_path = os.path.join(scratch_dir, "playwright_sample.csv")
+                        with open(test_csv_path, "w", encoding="utf-8") as f_csv:
+                            f_csv.write("Position,Time,Temperature\n0.50,0.015,0.970\n0.50,0.050,0.910\n0.50,0.150,0.760\n0.50,0.400,0.500\n0.50,0.900,0.200\n")
+                        page.set_input_files("#est-csv-upload", test_csv_path)
+                        page.wait_for_timeout(200)
+                        assert "5 reading" in page.locator("#est-readings-count").text_content()
+                        page.click("#est-submit-btn")
+                        page.wait_for_selector("#est-result-panel", state="visible")
+                        print("  [Flow D: CSV Upload] Succeeded!")
+
+                    # 2i. Mobile 390px Viewport Checks
+                    if vp_name == "mobile_390":
+                        has_hscroll = page.evaluate("document.documentElement.scrollWidth > document.documentElement.clientWidth")
+                        assert not has_hscroll, "Horizontal overflow detected on mobile 390px viewport!"
+                        assert page.locator("#est-readings-table").is_visible(), "Table must be visible and usable on mobile"
+                        assert page.locator("#est-submit-btn").is_visible(), "Calculate button must be visible on mobile"
                     
                     # -------------------------------------------------------------
                     # FLOW 3: Diagnose (All Scenarios)
@@ -300,12 +459,13 @@ def run_verification():
                     page.screenshot(path=shot_path, full_page=False)
                     screenshots_taken.append(shot_path)
                     
-                    # 9b. Malformed pasted rows on estimate
+                    # 9b. Malformed input on estimate
                     page.goto(f"http://127.0.0.1:{port}/#estimate")
                     page.wait_for_selector("#view-estimate.active")
-                    page.locator("#estimate-demo-details").evaluate("el => el.open = true")
-                    page.click("#estimate-mode-paste-btn")
-                    page.fill("#est-paste-text", "bad data, not numbers\nonly_one_col")
+                    r0 = page.locator("#est-readings-table tbody tr:first-child .cell-input")
+                    r0.nth(0).fill("bad data")
+                    r0.nth(1).fill("not numbers")
+                    r0.nth(2).fill("only_one_col")
                     page.click("#est-submit-btn")
                     page.wait_for_selector("#est-state-container .state-box.error", state="visible")
                     shot_path = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_09b_failure_malformed_input.png")
@@ -313,8 +473,11 @@ def run_verification():
                     screenshots_taken.append(shot_path)
 
                     # 9c. Out of range alpha (alpha = 20.0)
-                    page.click("#estimate-mode-synth-btn")
+                    page.click("#est-more-options-btn")
+                    page.wait_for_selector("#est-more-drawer.open", state="visible")
                     page.fill("#est-true-alpha", "20.0")
+                    page.click("#est-sample-synth-btn")
+                    page.click("#est-drawer-close-btn")
                     page.click("#est-submit-btn")
                     page.wait_for_selector("#est-result-panel", state="visible")
                     page.locator("#est-technical-details").evaluate("el => el.open = true")

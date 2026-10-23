@@ -50,47 +50,252 @@
          ==================================================================== -->
     <section id="view-overview" class="page-view active" aria-labelledby="heading-overview">
       <div class="page-intro">
-        <h1 id="heading-overview">ThermaLens: Thermal &amp; PDE Digital Twin</h1>
-        <p class="page-desc">Mathematical framework, dual neural surrogate architecture, and operational findings.</p>
+        <h1 id="heading-overview">ThermaLens</h1>
+        <p class="page-desc">A thermal digital twin for plant engineers and operators to monitor heat dissipation, detect faulty temperature sensors, and simulate thermal profiles in real time.</p>
       </div>
 
-      <div class="card">
-        <h2 class="card-title">System Architecture &amp; Core Model</h2>
-        <p id="overview-para-1">
-          ThermaLens models unsteady one-dimensional thermal diffusion in a homogeneous bar governed by the parabolic partial differential equation ∂u/∂t = α ∂²u/∂x² on the spatial domain x ∈ [0, 1] and temporal interval t ∈ [0, 1], subject to homogeneous Dirichlet boundary conditions u(0, t) = u(1, t) = 0 and fundamental harmonic initial condition u(x, 0) = sin(πx). The twin pairs this unsteady diffusion process with a two-dimensional steady-state Poisson elliptic operator −∇²u = f on the unit square [0, 1]² with manufactured distributed heating sources.
-        </p>
-        <p id="overview-para-2">
-          Rather than relying on isolated neural black boxes, the architecture implements a rigorous hybrid hierarchy where the Fourier Neural Operator (FNO) operates as an accelerated surrogate and the classical numerical solver serves as the ground-truth physical reference. Measured at 101&times;201 resolution on this machine, the numerical solver achieves latency of 7.3–18.6 ms (p50: 7.3 ms, p95: 18.0–18.6 ms), while the FNO surrogate achieves 134–166 ms (p50: 134–144 ms, p95: 145–166 ms). In the 2D Poisson domain, the pre-factorized sparse direct LU solver completes in 0.50 ms compared to 20.5 ms for FNO neural evaluation. <strong>State plainly: FNO is NOT faster than the solver for field generation here; its value is the surrogate grid inside inversion (Mode 3 ~0.7 ms/fit).</strong> For parameter inversion, the Mode 3+ live Crank-Nicolson polish nominal latency for the default case (layout: N=10 log-spaced sensors t &isin; [0.01, 1.0], x &isin; [0.2, 0.8], &alpha;=0.10, &sigma;=0.01) is ~58.4 ms (service endpoint) / ~49.3 ms (direct polish), with 138.8 ms labelled "mean over all 135 cells incl. stiff OOD". A bounded reparametrized Physics-Informed Neural Network (PINN Exp D) provides analytical autograd parameter gradients &part;L/&part;&alpha; without spatial meshing.
-        </p>
-        <p id="overview-para-3">
-          Operationally, the service provides real-time parameter inversion under sensor noise σ, goodness-of-fit gating (D2) to prevent silent model invalidity, a 4-hypothesis baseline-informed Generalized Likelihood Ratio (GLR) cascade for sensor fault and physical change detection, and a two-stage adaptive sensor placement schedule concentrated near peak Fisher information.
-        </p>
-      </div>
+      <!-- Operational Task Cards -->
+      <div class="task-section">
+        <h2 class="section-heading">Operational Tasks</h2>
+        <div class="task-cards-grid">
+          <!-- Task 1: Estimate heat-spread -->
+          <div class="card task-card" id="task-card-estimate">
+            <div class="task-card-header">
+              <span class="task-card-tag">Thermal Inversion</span>
+              <h3 class="task-card-title">Estimate heat-spread</h3>
+            </div>
+            <p class="task-card-desc">Estimate the rate of heat dissipation through a material from temperature sensor measurements.</p>
+            <div class="task-card-specs">
+              <div class="task-card-spec-item">
+                <span class="spec-label">What you enter:</span>
+                <span class="spec-value">Sensor positions, timestamps, and observed temperature readings.</span>
+              </div>
+              <div class="task-card-spec-item">
+                <span class="spec-label">What you get:</span>
+                <span class="spec-value">Estimated thermal diffusivity rate (&alpha;&#770;) with 95% confidence interval and fit verification.</span>
+              </div>
+            </div>
+            <div class="task-card-footer">
+              <button type="button" class="btn btn-primary btn-sm try-example-btn" data-action="try-estimate" id="try-example-estimate-btn">
+                Try example &rarr;
+              </button>
+            </div>
+          </div>
 
-      <!-- Headline Findings dynamically loaded from evidence.json -->
-      <h2>Headline Benchmark Findings</h2>
-      <div class="headline-grid" id="headline-findings-container">
-        <!-- Rendered dynamically by app.js from evidence.json -->
-        <div class="headline-card">
-          <div class="headline-stat">...</div>
-          <div class="headline-title">Loading findings...</div>
-          <div class="headline-detail">Fetching verified numbers from evidence.json.</div>
+          <!-- Task 2: Check sensors for faults -->
+          <div class="card task-card" id="task-card-diagnose">
+            <div class="task-card-header">
+              <span class="task-card-tag">Diagnostics &amp; Health</span>
+              <h3 class="task-card-title">Check sensors for faults</h3>
+            </div>
+            <p class="task-card-desc">Detect whether temperature deviations are caused by genuine thermal changes or sensor hardware faults.</p>
+            <div class="task-card-specs">
+              <div class="task-card-spec-item">
+                <span class="spec-label">What you enter:</span>
+                <span class="spec-value">A 20-reading healthy baseline followed by operational sensor measurements.</span>
+              </div>
+              <div class="task-card-spec-item">
+                <span class="spec-label">What you get:</span>
+                <span class="spec-value">Automated status verdict (Healthy, Anomalous Heat, Sensor Fault, or Sudden Change).</span>
+              </div>
+            </div>
+            <div class="task-card-footer">
+              <button type="button" class="btn btn-primary btn-sm try-example-btn" data-action="try-diagnose" id="try-example-diagnose-btn">
+                Try example &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- Task 3: Plan sensor timing -->
+          <div class="card task-card" id="task-card-placement">
+            <div class="task-card-header">
+              <span class="task-card-tag">Optimal Scheduling</span>
+              <h3 class="task-card-title">Plan sensor timing</h3>
+            </div>
+            <p class="task-card-desc">Optimize measurement timestamps to capture the most informative temperature changes with fewer sensors.</p>
+            <div class="task-card-specs">
+              <div class="task-card-spec-item">
+                <span class="spec-label">What you enter:</span>
+                <span class="spec-value">Sensor budget, physical sensor position, noise tolerance, and time window.</span>
+              </div>
+              <div class="task-card-spec-item">
+                <span class="spec-label">What you get:</span>
+                <span class="spec-value">An optimized two-stage measurement schedule concentrated near peak information.</span>
+              </div>
+            </div>
+            <div class="task-card-footer">
+              <button type="button" class="btn btn-primary btn-sm try-example-btn" data-action="try-placement" id="try-example-placement-btn">
+                Try example &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- Task 4: See the heat map -->
+          <div class="card task-card" id="task-card-field">
+            <div class="task-card-header">
+              <span class="task-card-tag">1D Simulation</span>
+              <h3 class="task-card-title">See the heat map</h3>
+            </div>
+            <p class="task-card-desc">Simulate and visualize how heat propagates across a 1D thermal bar through space and time.</p>
+            <div class="task-card-specs">
+              <div class="task-card-spec-item">
+                <span class="spec-label">What you enter:</span>
+                <span class="spec-value">Diffusivity rate, spatial resolution, and time snapshot to evaluate.</span>
+              </div>
+              <div class="task-card-spec-item">
+                <span class="spec-label">What you get:</span>
+                <span class="spec-value">Interactive color heat map, cross-section temperature curve, and model comparison.</span>
+              </div>
+            </div>
+            <div class="task-card-footer">
+              <button type="button" class="btn btn-primary btn-sm try-example-btn" data-action="try-field" id="try-example-field-btn">
+                Try example &rarr;
+              </button>
+            </div>
+          </div>
+
+          <!-- Task 5: Poisson Card -->
+          <div class="card task-card" id="task-card-poisson">
+            <div class="task-card-header">
+              <span class="task-card-tag">2D Surface Heat</span>
+              <h3 class="task-card-title">2D steady-state heat sources</h3>
+            </div>
+            <p class="task-card-desc">Calculate equilibrium temperature distributions across a 2D surface under distributed heaters.</p>
+            <div class="task-card-specs">
+              <div class="task-card-spec-item">
+                <span class="spec-label">What you enter:</span>
+                <span class="spec-value">Heating pattern (harmonic wave frequencies or localized spot heaters) and grid size.</span>
+              </div>
+              <div class="task-card-spec-item">
+                <span class="spec-label">What you get:</span>
+                <span class="spec-value">2D temperature contour field, solver accuracy comparisons, and high-frequency safety alerts.</span>
+              </div>
+            </div>
+            <div class="task-card-footer">
+              <button type="button" class="btn btn-primary btn-sm try-example-btn" data-action="try-poisson" id="try-example-poisson-btn">
+                Try example &rarr;
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="card">
-        <h2 class="card-title">Workbench Demonstration Quickstart</h2>
-        <p>Explore each operational subsystem through the live interactive workbench panels:</p>
-        <ul style="margin-left: 1.5rem; line-height: 1.8;">
-          <li><a href="#estimate" style="color: var(--primary-navy); font-weight: 600;">Parameter Estimation</a> — Invert thermal diffusivity α̂ from synthetic or raw sensor readings with Wald 95% confidence intervals and range-guard routing.</li>
-          <li><a href="#diagnose" style="color: var(--primary-navy); font-weight: 600;">Anomaly &amp; Change Diagnostics</a> — Classify operational states into Healthy, Anomalous Diffusion, Sensor Fault, or Physical Change with ground-truth comparison.</li>
-          <li><a href="#placement" style="color: var(--primary-navy); font-weight: 600;">Sensor Placement</a> — Compute optimal two-stage temporal sampling points clustered near optimal Fisher sensitivity.</li>
-          <li><a href="#field" style="color: var(--primary-navy); font-weight: 600;">Forward Heat Field</a> — Generate and inspect spatiotemporal solution heatmaps u(x, t) with side-by-side Numerical Solver vs FNO comparison.</li>
-          <li><a href="#poisson" style="color: var(--primary-navy); font-weight: 600;">Stage 2 Poisson</a> — Synthesize custom Gaussian hotspots or harmonic wave sources and compare exact sparse direct solves with FNO and Linear baseline fields.</li>
-          <li><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Empirical Evidence Tables</a> — Inspect complete audit tables, confusion matrices, and ablation runs traceable to raw data files.</li>
-          <li><a href="#limits" style="color: var(--primary-navy); font-weight: 600;">Operational Limits</a> — Review honest boundaries and physical constraints of the twin.</li>
+      <!-- "How good is it?" Row of 3 numbers -->
+      <div class="accuracy-section">
+        <h2 class="section-heading">How good is it?</h2>
+        <div class="headline-grid" id="headline-findings-container">
+          <!-- Card 1: Pooled Anomaly Confusion -->
+          <div class="headline-card">
+            <div class="headline-stat">84.0%</div>
+            <div class="headline-title">Sensor Fault Detection</div>
+            <div class="headline-detail">Healthy retention 93.5%, sensor-fault recall 84.0%, and healthy false-alarm rate 6.5% (above the 5% target).</div>
+            <div class="headline-test"><span class="text-muted">From:</span> Pooled anomaly confusion across 3,200 episodes (all cells)</div>
+            <div class="headline-link-wrap">
+              <a href="#evidence" class="evidence-link">View in Evidence &rarr;</a>
+            </div>
+          </div>
+
+          <!-- Card 2: Mode 3+ Coverage -->
+          <div class="headline-card">
+            <div class="headline-stat">94.0%</div>
+            <div class="headline-title">Production Estimate Accuracy</div>
+            <div class="headline-detail">94.0% 95% Wald CI coverage across all 135 parameter cells with Mode 3+ Crank-Nicolson polish.</div>
+            <div class="headline-test"><span class="text-muted">From:</span> 135-cell benchmark matrix (including stiff and OOD)</div>
+            <div class="headline-link-wrap">
+              <a href="#evidence" class="evidence-link">View in Evidence &rarr;</a>
+            </div>
+          </div>
+
+          <!-- Card 3: Mode 3 Coverage -->
+          <div class="headline-card">
+            <div class="headline-stat">95.4% / 88.2%</div>
+            <div class="headline-title">Fast Surrogate Coverage</div>
+            <div class="headline-detail">Mode 3 surrogate achieves 95.4% nominal coverage and 88.2% across all 135 cells without polish.</div>
+            <div class="headline-test"><span class="text-muted">From:</span> Mode 3 evaluation over 120/135 cells</div>
+            <div class="headline-link-wrap">
+              <a href="#evidence" class="evidence-link">View in Evidence &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- "Know the limits" strip -->
+      <div class="card limits-strip" id="overview-limits-strip">
+        <div class="limits-strip-header">
+          <div class="limits-strip-title-area">
+            <h2 class="card-title" style="margin-bottom: 0.25rem;">Know the limits</h2>
+            <p class="limits-strip-subtitle">Key physical and operational boundaries to know before operating the twin:</p>
+          </div>
+          <a href="#limits" class="btn btn-secondary btn-sm" id="overview-limits-link">Read all operational limits &rarr;</a>
+        </div>
+        <ul class="limits-bullets-list">
+          <li><strong>Assumed edge temperature &amp; initial profile:</strong> Standard models assume the bar edges stay at a fixed zero temperature and heat starts in a pure sine shape; custom boundaries or non-standard heating require declared physics or the twin will flag invalidity.</li>
+          <li><strong>At least 20 normal baseline readings:</strong> The fault detector needs at least 20 healthy sensor readings to establish a reliable noise benchmark; requests with fewer readings cause high false alarms and are strictly refused by the service.</li>
+          <li><strong>Verified thermal diffusivity range:</strong> Neural surrogate calculations are validated for thermal diffusivity &alpha; between 0.01 and 1.0; outside this range the system automatically routes to the classical numerical solver to avoid extrapolation errors.</li>
         </ul>
       </div>
+
+      <!-- Collapsed Technical Details Section -->
+      <details class="disclosure technical-details-card" id="overview-technical-details">
+        <summary class="technical-details-summary">Technical details &amp; Mathematical formulation</summary>
+        <div class="technical-details-content">
+          <h3 style="font-size: 1.05rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">Governing Equations &amp; Boundary Conditions</h3>
+          <p id="overview-tech-pde" style="line-height: 1.6; font-size: 0.9rem;">
+            ThermaLens models unsteady one-dimensional thermal diffusion in a homogeneous bar governed by the parabolic partial differential equation 
+            <code>∂u/∂t = α ∂²u/∂x²</code> on the spatial domain <code>x ∈ [0, 1]</code> and temporal interval <code>t ∈ [0, 1]</code>, subject to homogeneous Dirichlet boundary conditions <code>u(0, t) = u(1, t) = 0</code> and fundamental harmonic initial condition <code>u(x, 0) = sin(πx)</code>. 
+            For two-dimensional steady-state heat conduction, the twin pairs this unsteady diffusion process with a Poisson elliptic operator <code>−∇²u = f(x, y)</code> on the unit square <code>[0, 1]²</code> with distributed source heating.
+          </p>
+
+          <h3 style="font-size: 1.05rem; margin-top: 1rem; margin-bottom: 0.5rem;">Neural Surrogate Hierarchy &amp; Numerical Solver Ground Truth</h3>
+          <p id="overview-tech-hierarchy" style="line-height: 1.6; font-size: 0.9rem;">
+            Rather than relying on isolated neural black boxes, the architecture implements a hybrid hierarchy where the Fourier Neural Operator (FNO) operates as an accelerated surrogate and the classical numerical solver serves as the ground-truth physical reference. 
+            FNO is not faster than the solver for field generation here; its primary value is providing a fast surrogate grid inside parameter inversion (Mode 3 ~0.7 ms/fit). 
+            For parameter inversion, the Mode 3+ live Crank-Nicolson polish nominal latency for the default case (layout: N=10 log-spaced sensors <code>t ∈ [0.01, 1.0]</code>, <code>x ∈ [0.2, 0.8]</code>, <code>α=0.10</code>, <code>σ=0.01</code>) is ~58.4 ms (service endpoint) / ~49.3 ms (direct polish), with 138.8 ms mean over all 135 benchmark cells including stiff out-of-distribution regimes. 
+            A bounded reparametrized Physics-Informed Neural Network (PINN Exp D) provides analytical autograd parameter gradients <code>∂L/∂α</code> without spatial meshing.
+          </p>
+
+          <h3 style="font-size: 1.05rem; margin-top: 1rem; margin-bottom: 0.5rem;">Execution Latency &amp; Speed Comparison</h3>
+          <div class="table-container" style="margin-top: 0.5rem;">
+            <table class="booktabs">
+              <thead>
+                <tr>
+                  <th>Task / Domain</th>
+                  <th>Classical Numerical Solver</th>
+                  <th>FNO Neural Surrogate</th>
+                  <th>Hybrid / Mode 3+ Polish</th>
+                  <th>Speed Verdict</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>1D Heat Field (101 &times; 201)</strong></td>
+                  <td class="mono">7.3–18.6 ms (p50: 7.3 ms)</td>
+                  <td class="mono">134–166 ms (p50: 134 ms)</td>
+                  <td>—</td>
+                  <td>Classical solver is <strong>7–18&times; faster</strong> than FNO</td>
+                </tr>
+                <tr>
+                  <td><strong>2D Poisson Field (64 &times; 64)</strong></td>
+                  <td class="mono">0.50 ms (Pre-fact Sparse LU)</td>
+                  <td class="mono">20.48 ms</td>
+                  <td>—</td>
+                  <td>Classical direct solver is <strong>40.9&times; faster</strong> than FNO</td>
+                </tr>
+                <tr>
+                  <td><strong>Diffusivity Inversion (&alpha;&#770;)</strong></td>
+                  <td class="mono">1.9 ms (Mode 2 Brent)</td>
+                  <td class="mono">0.68 ms (Mode 3 fit)</td>
+                  <td class="mono">49.3 ms nom / 138.8 ms all</td>
+                  <td>FNO surrogate accelerates search; Mode 3+ guarantees 94% coverage</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.5rem; margin-bottom: 0;">
+            * Measured on host CPU. Direct solvers benefit from fixed-grid sparsity and cache-efficient sparse LU factorization. Full audit data available in <a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence</a>.
+          </p>
+        </div>
+      </details>
     </section>
 
     <!-- ====================================================================

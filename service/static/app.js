@@ -197,8 +197,92 @@ function populateHeadlineFindings() {
       <div class="headline-stat">${item.stat}</div>
       <div class="headline-title">${item.title}</div>
       <div class="headline-detail">${item.detail}</div>
+      ${item.test ? `<div class="headline-test"><span class="text-muted">From:</span> ${item.test}</div>` : ''}
+      <div class="headline-link-wrap">
+        <a href="${item.link || '#evidence'}" class="evidence-link">View in Evidence &rarr;</a>
+      </div>
     </div>
   `).join('');
+}
+
+function initOverviewTaskCards() {
+  document.querySelectorAll('.try-example-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const action = btn.getAttribute('data-action');
+      handleTryExample(action);
+    });
+  });
+}
+
+function handleTryExample(action) {
+  if (action === 'try-estimate') {
+    window.location.hash = '#estimate';
+    setTimeout(() => {
+      const synthBtn = document.getElementById('estimate-mode-synth-btn');
+      if (synthBtn) synthBtn.click();
+      const alphaInput = document.getElementById('est-true-alpha');
+      if (alphaInput) alphaInput.value = '0.10';
+      const numInput = document.getElementById('est-num-sensors');
+      if (numInput) numInput.value = '10';
+      const seedInput = document.getElementById('est-seed');
+      if (seedInput) seedInput.value = '42';
+      const sigmaInput = document.getElementById('est-sigma-val');
+      if (sigmaInput) sigmaInput.value = '0.01';
+      const methodSelect = document.getElementById('est-method-select');
+      if (methodSelect) methodSelect.value = 'mode3plus';
+      const submitBtn = document.getElementById('est-submit-btn');
+      if (submitBtn) submitBtn.click();
+    }, 60);
+  } else if (action === 'try-diagnose') {
+    window.location.hash = '#diagnose';
+    setTimeout(() => {
+      const scenarioSelect = document.getElementById('diag-scenario-select');
+      if (scenarioSelect) {
+        scenarioSelect.value = 'F_stuck';
+        scenarioSelect.dispatchEvent(new Event('change'));
+      }
+      const submitBtn = document.getElementById('diag-submit-btn');
+      if (submitBtn) submitBtn.click();
+    }, 60);
+  } else if (action === 'try-placement') {
+    window.location.hash = '#placement';
+    setTimeout(() => {
+      const nInput = document.getElementById('place-n');
+      if (nInput) nInput.value = '20';
+      const sigmaInput = document.getElementById('place-sigma');
+      if (sigmaInput) sigmaInput.value = '0.01';
+      const xInput = document.getElementById('place-sensor-x');
+      if (xInput) xInput.value = '0.50';
+      const tmin = document.getElementById('place-tmin');
+      if (tmin) tmin.value = '0.01';
+      const tmax = document.getElementById('place-tmax');
+      if (tmax) tmax.value = '1.0';
+      const submitBtn = document.getElementById('place-submit-btn');
+      if (submitBtn) submitBtn.click();
+    }, 60);
+  } else if (action === 'try-field') {
+    window.location.hash = '#field';
+    setTimeout(() => {
+      const compareBtn = document.getElementById('field-method-compare-btn');
+      if (compareBtn) compareBtn.click();
+      const alphaInput = document.getElementById('field-alpha');
+      if (alphaInput) alphaInput.value = '0.10';
+      const submitBtn = document.getElementById('field-submit-btn');
+      if (submitBtn) submitBtn.click();
+    }, 60);
+  } else if (action === 'try-poisson') {
+    window.location.hash = '#poisson';
+    setTimeout(() => {
+      const presetSelect = document.getElementById('poi-presets-select');
+      if (presetSelect) {
+        presetSelect.value = 'sine_low';
+        presetSelect.dispatchEvent(new Event('change'));
+      }
+      const submitBtn = document.getElementById('poi-submit-btn');
+      if (submitBtn) submitBtn.click();
+    }, 60);
+  }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -1685,6 +1769,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initPlacementWorkbench();
   initFieldWorkbench();
   initPoissonWorkbench();
+  initOverviewTaskCards();
 
   window.addEventListener('hashchange', handleRoute);
   handleRoute();

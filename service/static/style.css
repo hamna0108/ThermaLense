@@ -716,12 +716,120 @@ details.disclosure pre {
   min-height: 1.6em;
 }
 
-/* Headline Finding Cards (Overview Page) */
+/* Section Headings */
+.section-heading {
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.75rem 0 0.85rem 0;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--rule-subtle);
+  padding-bottom: 0.35rem;
+}
+
+/* Task Cards Grid (Overview Page) */
+.task-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 1.75rem;
+}
+
+@media (max-width: 720px) {
+  .task-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.task-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid var(--rule-hairline);
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 1.25rem;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+
+.task-card:hover {
+  border-color: var(--primary-navy);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.task-card-header {
+  margin-bottom: 0.5rem;
+}
+
+.task-card-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--primary-navy);
+  margin-bottom: 0.25rem;
+}
+
+.task-card-title {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.task-card-desc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+.task-card-specs {
+  background-color: var(--bg-surface-raised);
+  border: 1px solid var(--rule-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  margin-bottom: 1.1rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.task-card-spec-item {
+  margin-bottom: 0.45rem;
+}
+
+.task-card-spec-item:last-child {
+  margin-bottom: 0;
+}
+
+.spec-label {
+  display: block;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  margin-bottom: 0.15rem;
+}
+
+.spec-value {
+  color: var(--text-main);
+}
+
+.task-card-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Headline Finding Cards (Overview Page "How good is it?") */
 .headline-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.25rem;
-  margin: 1.5rem 0;
+  margin: 1rem 0 1.75rem 0;
 }
 
 @media (max-width: 800px) {
@@ -736,14 +844,16 @@ details.disclosure pre {
   padding: 1.25rem;
   border-radius: var(--radius-sm);
   border-top: 3px solid var(--primary-navy);
+  display: flex;
+  flex-direction: column;
 }
 
 .headline-stat {
   font-family: var(--font-mono);
-  font-size: 1.9rem;
+  font-size: 1.85rem;
   font-weight: 700;
   color: var(--primary-navy);
-  line-height: 1.1;
+  line-height: 1.15;
   margin-bottom: 0.4rem;
 }
 
@@ -759,6 +869,107 @@ details.disclosure pre {
   font-size: 0.82rem;
   color: var(--text-muted);
   line-height: 1.4;
+  margin-bottom: auto;
+}
+
+.headline-test {
+  margin-top: 0.65rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--rule-subtle);
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.headline-link-wrap {
+  margin-top: 0.5rem;
+}
+
+.evidence-link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary-navy);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.evidence-link:hover {
+  text-decoration: underline;
+}
+
+/* Limits Strip (Overview Page) */
+.limits-strip {
+  border-left: 4px solid var(--accent-amber);
+  background-color: var(--bg-surface);
+  padding: 1.25rem;
+  margin: 1.75rem 0;
+}
+
+.limits-strip-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.limits-strip-title-area {
+  flex: 1;
+  min-width: 250px;
+}
+
+.limits-strip-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.limits-bullets-list {
+  margin-left: 1.4rem;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text-main);
+}
+
+.limits-bullets-list li {
+  margin-bottom: 0.4rem;
+}
+
+.limits-bullets-list li:last-child {
+  margin-bottom: 0;
+}
+
+/* Technical Details Disclosure (Overview Page) */
+details.technical-details-card {
+  border: 1px solid var(--rule-hairline);
+  background-color: var(--bg-surface);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem 1.25rem;
+  margin: 1.75rem 0 1rem 0;
+}
+
+details.technical-details-card summary.technical-details-summary {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--primary-navy);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  padding: 0.2rem 0;
+}
+
+details.technical-details-card summary.technical-details-summary:hover {
+  text-decoration: underline;
+}
+
+.technical-details-content {
+  margin-top: 1rem;
+  border-top: 1px solid var(--rule-subtle);
+  padding-top: 0.85rem;
 }
 
 /* Loading, Empty, Refusal States */

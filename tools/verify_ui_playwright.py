@@ -115,11 +115,28 @@ def run_verification():
                     # FLOW 1: Overview
                     # -------------------------------------------------------------
                     page.goto(f"http://127.0.0.1:{port}/#overview")
+                    page.wait_for_selector("#task-card-estimate")
+                    page.wait_for_selector("#task-card-diagnose")
+                    page.wait_for_selector("#task-card-placement")
+                    page.wait_for_selector("#task-card-field")
+                    page.wait_for_selector("#task-card-poisson")
                     page.wait_for_selector("#headline-findings-container .headline-card")
+                    page.wait_for_selector("#overview-limits-strip")
+                    page.wait_for_selector("#overview-technical-details")
                     page.wait_for_timeout(200)
                     shot_path = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_01_overview.png")
                     page.screenshot(path=shot_path, full_page=False)
                     screenshots_taken.append(shot_path)
+
+                    shot_path_full = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_01_overview_full.png")
+                    page.screenshot(path=shot_path_full, full_page=True)
+                    screenshots_taken.append(shot_path_full)
+
+                    # Verify "Try example" button functionality
+                    page.click("#try-example-diagnose-btn")
+                    page.wait_for_selector("#view-diagnose.active")
+                    page.wait_for_selector("#diag-result-panel", state="visible")
+                    page.wait_for_timeout(200)
                     
                     # -------------------------------------------------------------
                     # FLOW 2: Estimate (Mode 3+ and Mode 2)

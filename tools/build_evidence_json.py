@@ -567,21 +567,27 @@ def main():
         "headline_findings": [
             {
                 "id": "headline_1",
-                "title": "Sub-Millisecond Inversion with Hybrid Polish",
-                "stat": "0.68 ms",
-                "detail": "Mode 3 FNO spline inversion executes in 0.68 ms. Mode 3+ hybrid polish recovers 94.0% Wald CI coverage across 135 parameter cells."
+                "title": "Sensor Fault Detection",
+                "stat": "84.0%",
+                "detail": "Healthy retention 93.5%, sensor-fault recall 84.0%, and healthy false-alarm rate 6.5% (above the 5% target).",
+                "test": "Pooled anomaly confusion across 3,200 episodes (all cells)",
+                "link": "#evidence"
             },
             {
                 "id": "headline_2",
-                "title": "Exact Sparse Solver 40.9x Faster than FNO on CPU",
-                "stat": "40.9x",
-                "detail": "At 64x64 grid resolution on CPU, the classical pre-factorized sparse Poisson solver solves in 0.50 ms vs 20.48 ms for FNO."
+                "title": "Production Estimate Accuracy",
+                "stat": "94.0%",
+                "detail": "94.0% 95% Wald CI coverage across all 135 parameter cells with Mode 3+ Crank-Nicolson polish.",
+                "test": "135-cell benchmark matrix (including stiff and OOD)",
+                "link": "#evidence"
             },
             {
                 "id": "headline_3",
-                "title": "Full Factorial Sensor Fault Recall",
-                "stat": "80.0% Recall",
-                "detail": "The integrated GLR-BIC anomaly cascade achieves 80.0% sensor fault recall and 94.5% healthy retention on fresh test seeds."
+                "title": "Fast Surrogate Coverage",
+                "stat": "95.4% / 88.2%",
+                "detail": "Mode 3 surrogate achieves 95.4% nominal coverage and 88.2% across all 135 cells without polish.",
+                "test": "Mode 3 evaluation over 120/135 cells",
+                "link": "#evidence"
             }
         ],
         "stage1_inverse_modes": build_stage1_inverse_modes(),

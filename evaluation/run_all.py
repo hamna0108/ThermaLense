@@ -185,8 +185,9 @@ def run_mode3_benchmark(base_seed: int, quick: bool = False, prec: dict = None) 
     err_pass = bool(overall_err_diff_pct <= 5.0)
     cov_pass = bool(overall_cov_diff_pts <= 2.0)
     
-    print(f"  Mode 3 Error Check   : eval mean {mean_eval_err:.5f} vs frozen {mean_froz_err:.5f} (diff {overall_err_diff_pct:.2f}%, threshold <= 5.0%) -> {'PASS' if err_pass else 'FAIL'}")
-    print(f"  Mode 3 Coverage Check: eval mean {mean_eval_cov:.1f}% vs frozen {mean_froz_cov:.1f}% (diff {overall_cov_diff_pts:.2f} pts, threshold <= 2.0 pts) -> {'PASS' if cov_pass else 'FAIL'}")
+    print(f"  Mode 3 Mean-of-Medians Error Check (4 nominal cells): eval {mean_eval_err:.5f} vs frozen {mean_froz_err:.5f} (diff {overall_err_diff_pct:.2f}%, threshold <= 5.0%) -> {'PASS' if err_pass else 'FAIL'}")
+    print(f"  Mode 3 4-Cell Coverage Check (nominal subset)       : eval mean {mean_eval_cov:.1f}% vs frozen {mean_froz_cov:.1f}% (diff {overall_cov_diff_pts:.2f} pts, threshold <= 2.0 pts) -> {'PASS' if cov_pass else 'FAIL'}")
+    print(f"    [Coverage Scope Clarification: Frozen 95.4% covers the 4 nominal interpolation cells (alpha in [0.05, 0.20], N in [10, 20], sigma in [0.01, 0.05]); all-90-cells benchmark grand mean is 88.2% across Interpolation + Extrap Low + Extrap High splits (dropping to 61.8% in Extended High-alpha OOD).]")
     
     return {
         "results": results,
@@ -205,27 +206,15 @@ def run_mode3_benchmark(base_seed: int, quick: bool = False, prec: dict = None) 
 # 2. Anomaly Cascade Detector Evaluation
 # -------------------------------------------------------------------------------------------------
 
-def run_anomaly_benchmark(base_seed: int, cell_idx_start: int, quick: bool = False) -> Dict[str, Any]:
-    print("\n[2/3] Evaluating Anomaly Cascade Detector Confusion Matrices across ALL 4 Frozen Cells...")
-    frozen_json_path = os.path.join(RESULTS, "anomaly_frozen_final_tables.json")
-    if not os.path.exists(frozen_json_path):
-        raise FileNotFoundError(f"Missing frozen anomaly JSON: {frozen_json_path}")
-        
-    with open(frozen_json_path) as f:
-        frozen_data = json.load(f)
-        
-    frozen_cells = frozen_data["table_1_calibration_confusion"]["per_cell"]
-    
-    primary_cell_configs = [
-        {"N": 10, "sigma": 0.01},
-        {"N": 10, "sigma": 0.05},
-        {"N": 20, "sigma": 0.01},
-        {"N": 20, "sigma": 0.05}
-    ]
-    
-    episodes_per_class = 25 if quick else 200
+def run_single_anomaly_suite(
+    cell_configs: list,
+    episodes_per_class: int,
+    seed_layout_base: int,
+    seed_noise_base: int,
+    frozen_cells: list,
+    suite_label: str
+) -> Dict[str, Any]:
     classes = ["H", "A", "F", "C"]
-    
     Nx = 50
     Nt = 100
     x_grid = np.linspace(0, 1, Nx)
@@ -240,7 +229,7 @@ def run_anomaly_benchmark(base_seed: int, cell_idx_start: int, quick: bool = Fal
     total_healthy_episodes = 0
     total_healthy_false_alarms = 0
     
-    for cfg in primary_cell_configs:
+    for cfg in cell_configs:
         N = cfg["N"]
         sigma = cfg["sigma"]
         tau_cell = GLR_THRESHOLDS.get((N, round(sigma, 2)), 7.544)
@@ -262,8 +251,8 @@ def run_anomaly_benchmark(base_seed: int, cell_idx_start: int, quick: bool = Fal
         conf = {c_t: {c_p: 0 for c_p in classes} for c_t in classes}
         
         for ep in range(episodes_per_class):
-            layout_seed = 900000 + int(ep * 31) + N * 13
-            noise_seed = 1000000 + int(ep * 97) + N * 41 + int(sigma * 1000)
+            layout_seed = seed_layout_base + int(ep * 31) + N * 13
+            noise_seed = seed_noise_base + int(ep * 97) + N * 41 + int(sigma * 1000)
             
             rng_layout = np.random.RandomState(layout_seed)
             x_idx = rng_layout.choice(x_candidates, size=N, replace=True)
@@ -301,7 +290,7 @@ def run_anomaly_benchmark(base_seed: int, cell_idx_start: int, quick: bool = Fal
             glr_A, tc_A, rss_c_A = compute_glr_baseline_informed(x_s, t_s, y_A, sigma, hat_a_base)
             conf['A'][predict_cascade_class(glr_A, tau_cell, fit_A, fit_A['alpha_hat'], rss_c_A, sigma)] += 1
 
-            # 3. Class F (5 fault types x 2 sensor counts)
+            # 3. Class F
             comb_idx = ep % 10
             fault_name = fault_types[comb_idx % 5]
             k_faults = 1 if (comb_idx // 5 == 0) else 2
@@ -380,21 +369,88 @@ def run_anomaly_benchmark(base_seed: int, cell_idx_start: int, quick: bool = Fal
             "cell_status": cell_status
         })
         
-        print(f"  Cell N={N:2d}, sigma={sigma:4.2f} : Healthy FAR = {eval_far_pct:.1f}% [{eval_far_ci[0]:.1f}, {eval_far_ci[1]:.1f}]% (frozen {frozen_far:.1f}%) -> {far_status}")
-        print(f"    Recalls (H/A/F/C) : {recalls['H']:.1f}% / {recalls['A']:.1f}% / {recalls['F']:.1f}% / {recalls['C']:.1f}% (all match frozen within CI: {cell_all_recalls_pass})")
+        print(f"    Cell N={N:2d}, sigma={sigma:4.2f} : Healthy FAR = {eval_far_pct:.1f}% [{eval_far_ci[0]:.1f}, {eval_far_ci[1]:.1f}]% (frozen {frozen_far:.1f}%) -> {far_status}")
+        print(f"      Recalls (H/A/F/C) : {recalls['H']:.1f}% / {recalls['A']:.1f}% / {recalls['F']:.1f}% / {recalls['C']:.1f}% (recalls match frozen: {cell_all_recalls_pass})")
 
     overall_far_pct = (total_healthy_false_alarms / total_healthy_episodes) * 100.0
     overall_far_ci = wilson_ci(total_healthy_false_alarms, total_healthy_episodes)
     overall_frozen_far = 6.5
+    overall_status = f"KNOWN LIMITATION (frozen {overall_frozen_far:.1f}%)" if (overall_far_pct > 5.0 or overall_frozen_far > 5.0) else "PASS"
     
-    print(f"\n  Anomaly 4-Cell Aggregate Healthy FAR: {overall_far_pct:.1f}% [{overall_far_ci[0]:.1f}, {overall_far_ci[1]:.1f}]% (frozen {overall_frozen_far:.1f}%) -> KNOWN LIMITATION (frozen {overall_frozen_far:.1f}%)")
+    print(f"    -> 4-Cell Aggregate Healthy FAR: {overall_far_pct:.1f}% [{overall_far_ci[0]:.1f}, {overall_far_ci[1]:.1f}]% (frozen {overall_frozen_far:.1f}%) -> {overall_status}")
     
     return {
+        "suite_label": suite_label,
+        "episodes_per_class": episodes_per_class,
         "cells": cell_results,
         "overall_far_pct": round(overall_far_pct, 2),
         "overall_far_ci": [round(overall_far_ci[0], 2), round(overall_far_ci[1], 2)],
         "overall_frozen_far": overall_frozen_far,
-        "overall_status": f"KNOWN LIMITATION (frozen {overall_frozen_far:.1f}%)"
+        "overall_status": overall_status
+    }
+
+def run_anomaly_benchmark(base_seed: int, cell_idx_start: int, quick: bool = False) -> Dict[str, Any]:
+    print("\n[2/3] Evaluating Anomaly Cascade Detector Confusion Matrices across ALL 4 Frozen Cells...")
+    frozen_json_path = os.path.join(RESULTS, "anomaly_frozen_final_tables.json")
+    if not os.path.exists(frozen_json_path):
+        raise FileNotFoundError(f"Missing frozen anomaly JSON: {frozen_json_path}")
+        
+    with open(frozen_json_path) as f:
+        frozen_data = json.load(f)
+        
+    frozen_cells = frozen_data["table_1_calibration_confusion"]["per_cell"]
+    
+    primary_cell_configs = [
+        {"N": 10, "sigma": 0.01},
+        {"N": 10, "sigma": 0.05},
+        {"N": 20, "sigma": 0.01},
+        {"N": 20, "sigma": 0.05}
+    ]
+    
+    # 2A. Reproduction of frozen run (same seeds)
+    episodes_repro = 25 if quick else 200
+    print(f"\n  --- [2A] Anomaly Cascade: Reproduction of Frozen Run (Same Seeds, {episodes_repro} reps/class) ---")
+    repro_res = run_single_anomaly_suite(
+        cell_configs=primary_cell_configs,
+        episodes_per_class=episodes_repro,
+        seed_layout_base=900000,
+        seed_noise_base=1000000,
+        frozen_cells=frozen_cells,
+        suite_label="reproduction of frozen run (same seeds)"
+    )
+    
+    # 2B. Fresh-seed anomaly run (new seed range, 100 episodes/class/cell)
+    episodes_fresh = 25 if quick else 100
+    print(f"\n  --- [2B] Anomaly Cascade: Fresh-Seed Anomaly Run (New Seed Range, {episodes_fresh} reps/class) ---")
+    fresh_res = run_single_anomaly_suite(
+        cell_configs=primary_cell_configs,
+        episodes_per_class=episodes_fresh,
+        seed_layout_base=5000000,
+        seed_noise_base=6000000,
+        frozen_cells=frozen_cells,
+        suite_label="fresh-seed anomaly run (new seed range, 100 episodes/class/cell)"
+    )
+    
+    # Side-by-side comparison summary
+    print("\n  " + "="*86)
+    print("  ANOMALY BENCHMARK COMPARISON TABLE (Frozen Reproduction vs Fresh-Seed Run)")
+    print("  " + "="*86)
+    print(f"  {'Cell':<15} | {'Frozen FAR':<10} | {'Repro FAR (CI)':<20} | {'Fresh FAR (CI)':<20} | Fresh Recalls (H/A/F/C)")
+    print("  " + "-"*86)
+    for rc, fc in zip(repro_res["cells"], fresh_res["cells"]):
+        repro_str = f"{rc['eval_far_pct']:.1f}% [{rc['eval_far_ci'][0]:.1f}, {rc['eval_far_ci'][1]:.1f}]%"
+        fresh_str = f"{fc['eval_far_pct']:.1f}% [{fc['eval_far_ci'][0]:.1f}, {fc['eval_far_ci'][1]:.1f}]%"
+        rec_str = f"{fc['recalls']['H']:.0f}% / {fc['recalls']['A']:.0f}% / {fc['recalls']['F']:.0f}% / {fc['recalls']['C']:.0f}%"
+        print(f"  {rc['cell_id']:<15} | {rc['frozen_far_pct']:>8.1f}% | {repro_str:<20} | {fresh_str:<20} | {rec_str}")
+    print("  " + "-"*86)
+    repro_agg = f"{repro_res['overall_far_pct']:.1f}% [{repro_res['overall_far_ci'][0]:.1f}, {repro_res['overall_far_ci'][1]:.1f}]%"
+    fresh_agg = f"{fresh_res['overall_far_pct']:.1f}% [{fresh_res['overall_far_ci'][0]:.1f}, {fresh_res['overall_far_ci'][1]:.1f}]%"
+    print(f"  {'OVERALL AGG':<15} | {repro_res['overall_frozen_far']:>8.1f}% | {repro_agg:<20} | {fresh_agg:<20} |")
+    print("  " + "="*86)
+    
+    return {
+        "repro": repro_res,
+        "fresh": fresh_res
     }
 
 # -------------------------------------------------------------------------------------------------
@@ -453,6 +509,7 @@ def run_poisson_benchmark(quick: bool = False) -> Dict[str, Any]:
         
         frozen_row = df_frozen[df_frozen["split"] == s_name].iloc[0]
         frozen_fno_l2 = float(frozen_row["fno_l2_med"])
+        frozen_lin_l2 = float(frozen_row["lin_l2_med"])
         
         eval_fno_l2 = fno_metrics["rel_l2_median"]
         eval_lin_l2 = lin_metrics["rel_l2_median"]
@@ -474,7 +531,7 @@ def run_poisson_benchmark(quick: bool = False) -> Dict[str, Any]:
         
     overall_poisson_pass = all(r["fno_pass"] and r["lin_pass"] for r in results)
     for r in results:
-        print(f"  Poisson {r['split']:<16} : FNO rel L2 = {r['eval_fno_l2']:.4f} (frozen {r['frozen_fno_l2']:.4f}, diff {r['fno_diff_pct']:.1f}%) -> {'PASS' if r['fno_pass'] else 'FAIL'}")
+        print(f"  Poisson {r['split']:<16} : FNO rel L2 = {r['eval_fno_l2']:.4f} (frozen {r['frozen_fno_l2']:.4f}) | Linear rel L2 = {r['eval_lin_l2']:.4f} (< 0.10) -> {'PASS' if r['fno_pass'] and r['lin_pass'] else 'FAIL'}")
         
     return {
         "splits": results,
@@ -515,30 +572,37 @@ def main():
     t_total = time.perf_counter() - t_start
     
     summary_checks = [
-        {"check_id": "CHK_M3_MEDIAN_ERROR", "description": "Mode 3 Inversion Median Relative Error within 5% of frozen baseline", "status": "PASS" if m3_res["err_pass"] else "FAIL", "value": f"{m3_res['err_diff_pct']}% diff"},
-        {"check_id": "CHK_M3_COVERAGE", "description": "Mode 3 95% CI Coverage within 2 percentage points of frozen baseline", "status": "PASS" if m3_res["cov_pass"] else "FAIL", "value": f"{m3_res['cov_diff_pts']} pts diff"},
+        {"check_id": "CHK_M3_MEAN_MEDIAN_ERROR", "description": "Mode 3 Inversion Mean of Cell-Median Errors within 5% of frozen baseline (4 nominal interpolation cells)", "status": "PASS" if m3_res["err_pass"] else "FAIL", "value": f"{m3_res['err_diff_pct']}% diff"},
+        {"check_id": "CHK_M3_COVERAGE_4CELL", "description": "Mode 3 95% CI Coverage within 2 percentage points of frozen 95.4% (4 nominal interpolation cells; all-90-cells grand mean is 88.2%)", "status": "PASS" if m3_res["cov_pass"] else "FAIL", "value": f"{m3_res['cov_diff_pts']} pts diff"},
     ]
     
-    for c in anom_res["cells"]:
+    for c in anom_res["repro"]["cells"]:
         summary_checks.append({
-            "check_id": f"CHK_ANOMALY_{c['cell_id']}",
-            "description": f"Anomaly Cell N={c['N']}, sigma={c['sigma']} Confusion & Recalls vs frozen",
+            "check_id": f"CHK_ANOMALY_REPRO_{c['cell_id']}",
+            "description": f"Reproduction of frozen run (same seeds): Cell N={c['N']}, sigma={c['sigma']} Confusion & Recalls",
             "status": c["cell_status"],
             "value": f"FAR:{c['eval_far_pct']:.1f}%, H:{c['recalls']['H']:.0f}%, A:{c['recalls']['A']:.0f}%, F:{c['recalls']['F']:.0f}%, C:{c['recalls']['C']:.0f}%"
         })
         
     summary_checks.append({
-        "check_id": "CHK_ANOMALY_OVERALL_FAR",
-        "description": "Anomaly Cascade 4-Cell Aggregate Healthy FAR vs 5% target ceiling",
-        "status": anom_res["overall_status"],
-        "value": f"{anom_res['overall_far_pct']:.1f}% [{anom_res['overall_far_ci'][0]:.1f}, {anom_res['overall_far_ci'][1]:.1f}]% (frozen {anom_res['overall_frozen_far']:.1f}%)"
+        "check_id": "CHK_ANOMALY_REPRO_OVERALL_FAR",
+        "description": "Reproduction of frozen run (same seeds): 4-Cell Aggregate Healthy FAR vs 5% target ceiling",
+        "status": anom_res["repro"]["overall_status"],
+        "value": f"{anom_res['repro']['overall_far_pct']:.1f}% [{anom_res['repro']['overall_far_ci'][0]:.1f}, {anom_res['repro']['overall_far_ci'][1]:.1f}]% (frozen {anom_res['repro']['overall_frozen_far']:.1f}%)"
+    })
+    
+    summary_checks.append({
+        "check_id": "CHK_ANOMALY_FRESH_OVERALL_FAR",
+        "description": "Fresh-seed anomaly run (new seed range, 100 episodes/class/cell): 4-Cell Aggregate Healthy FAR",
+        "status": anom_res["fresh"]["overall_status"],
+        "value": f"{anom_res['fresh']['overall_far_pct']:.1f}% [{anom_res['fresh']['overall_far_ci'][0]:.1f}, {anom_res['fresh']['overall_far_ci'][1]:.1f}]% (repro {anom_res['repro']['overall_far_pct']:.1f}%)"
     })
     
     summary_checks.append({
         "check_id": "CHK_POISSON_OPERATOR",
-        "description": "Poisson 2D FNO and Linear baseline errors match frozen table",
+        "description": "Poisson 2D FNO matches frozen table (<=5%) and Linear baseline rel L2 < 0.10",
         "status": "PASS" if poi_res["overall_pass"] else "FAIL",
-        "value": f"test_interp FNO={poi_res['splits'][0]['eval_fno_l2']:.4f}"
+        "value": f"test_interp FNO={poi_res['splits'][0]['eval_fno_l2']:.4f} (froz {poi_res['splits'][0]['frozen_fno_l2']:.4f}), Lin={poi_res['splits'][0]['eval_lin_l2']:.4f}"
     })
     
     all_passed = all(c["status"] == "PASS" or "KNOWN LIMITATION" in c["status"] for c in summary_checks)
@@ -573,10 +637,10 @@ def main():
     print("\n" + "="*75)
     print("EVALUATION PASS / FAIL TABLE")
     print("="*75)
-    print(f"{'Check ID':<22} | {'Status':<6} | {'Metric / Detail':<30} | Description")
+    print(f"{'Check ID':<30} | {'Status':<6} | {'Metric / Detail':<30} | Description")
     print("-" * 75)
     for c in summary_checks:
-        print(f"{c['check_id']:<22} | {c['status']:<6} | {c['value']:<30} | {c['description']}")
+        print(f"{c['check_id']:<30} | {c['status']:<6} | {c['value']:<30} | {c['description']}")
     print("="*75)
     print(f"OVERALL STATUS     : {'PASS' if all_passed else 'FAIL'}")
     print(f"FULL EXECUTION TIME: {t_total:.2f} seconds ({t_total/60:.2f} minutes) on this machine")

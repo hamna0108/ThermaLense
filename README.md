@@ -19,10 +19,10 @@ uvicorn service.app:app --host 0.0.0.0 --port 8000
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `POST` | `/v1/estimate` | Invert diffusivity $\hat{\alpha}$, compute 95% Wald CI, evaluate goodness-of-fit gating, range guard, and baseline $\hat{\sigma}$. Default mode: `mode3plus` (nominal single-fit latency ~58.4 ms on host machine / 138.8 ms grand mean across 135 benchmark stress cells; Mode 3 fast surrogate ~0.7 ms). |
+| `POST` | `/v1/estimate` | Invert diffusivity $\hat{\alpha}$, compute 95% Wald CI, evaluate goodness-of-fit gating, range guard, and baseline $\hat{\sigma}$. Default mode: `mode3plus` (nominal latency for default case with $N=10$ log-spaced sensors $t \in [0.01, 1.0]$, $x \in [0.2, 0.8]$, $\alpha=0.10, \sigma=0.01$: ~58.4 ms service endpoint / ~49.3 ms direct CN polish; 138.8 ms mean over all 135 cells incl. stiff OOD from `mode3plus_hybrid_results.csv`; Mode 3 fast surrogate ~0.7 ms). |
 | `POST` | `/v1/diagnose` | Classify sensor stream into Healthy (`H`), Anomalous Diffusion (`A`), Sensor Fault (`F`), or Change-Point (`C`) via baseline-informed GLR cascade ($k \ge 20$). |
 | `POST` | `/v1/placement` | Generate two-stage adaptive sensor placement schedules concentrating observations around $t^* = 1/(\pi^2 \hat{\alpha})$. |
-| `POST` | `/v1/field` | Generate 2D spatial-temporal heat field $u(x, t)$ on grid. Measured at 101×201 resolution on this machine: numerical solver p50/p95 ~13.6/18.6 ms vs FNO p50/p95 ~134/145 ms (Poisson solver 0.5 ms vs FNO 20.5 ms). FNO is NOT faster than the solver for field generation here; its value is the surrogate grid inside inversion (Mode 3 ~0.7 ms/fit). |
+| `POST` | `/v1/field` | Generate 2D spatial-temporal heat field $u(x, t)$ on grid. Measured at 101×201 resolution on this machine: numerical solver 7.3–18.6 ms (p50: 7.3 ms, p95: 18.0–18.6 ms) vs FNO surrogate 134–166 ms (p50: 134–144 ms, p95: 145–166 ms); Poisson solver 0.5 ms vs FNO 20.5 ms. FNO is NOT faster than the solver for field generation here; its value is the surrogate grid inside inversion (Mode 3 ~0.7 ms/fit). |
 | `POST` | `/v1/poisson` | Solve 2D Poisson $-\nabla^2 u = f$ using exact sparse LU solver, FNO, and linear ridge baseline; flags `high_frequency_source` if sine modes $> 4$. |
 | `GET` | `/health` | Healthcheck endpoint reporting service liveness and timestamp. |
 | `GET` | `/version` | Provenance metadata: git commit SHA, tags, and SHA-256 hashes of all model checkpoints. |
@@ -153,7 +153,7 @@ curl -X POST http://localhost:8000/v1/field \
   "method_used": "fno",
   "timing_ms": 3.99
 ```
-*Note on Field Latency: The example above demonstrates a toy 64×64 query (where live CN solver fallback executed in 3.99 ms). At standard evaluation resolution (101×201) on this machine, the numerical solver executes at p50/p95 of ~13.6/18.6 ms, while the FNO surrogate executes at p50/p95 of ~134/145 ms (and in 2D Poisson, sparse LU solves in 0.5 ms vs FNO 20.5 ms). FNO is NOT faster than the solver for field generation here; its primary performance value is precomputing continuous surrogate grids for sub-millisecond inverse estimation (Mode 3 ~0.7 ms/fit).*
+*Note on Field Latency: The example above demonstrates a toy 64×64 query (where live CN solver fallback executed in 3.99 ms). At standard evaluation resolution (101×201) on this machine, the numerical solver executes in 7.3–18.6 ms (p50: 7.3 ms, p95: 18.0–18.6 ms), while the FNO surrogate executes in 134–166 ms (p50: 134–144 ms, p95: 145–166 ms; and in 2D Poisson, sparse LU solves in 0.50 ms vs FNO 20.5 ms). FNO is NOT faster than the solver for field generation here; its primary performance value is precomputing continuous surrogate grids for sub-millisecond inverse estimation (Mode 3 ~0.7 ms/fit).*
 
 #### 5. `POST /v1/poisson`
 **Request (`docs/api_examples/poisson_request.json`):**

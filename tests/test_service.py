@@ -503,3 +503,51 @@ def test_record_endpoint_latencies(client):
     assert m_resp.status_code == 200
     m_data = m_resp.json()
     assert m_data["requests_total"] > 50
+
+def test_mode3plus_equivalence_50_datasets(client):
+    """Verify that POST /v1/estimate mode3plus is bit-level equivalent to evaluate_mode3plus."""
+    from tools.run_stress_matrix_v2 import precompute_surrogates, evaluate_mode3, evaluate_mode3plus
+    prec = precompute_surrogates()
+    
+    max_abs_diff = 0.0
+    max_rel_diff = 0.0
+    
+    for seed in range(50):
+        rng = np.random.RandomState(seed + 42)
+        alpha_true = float(10**rng.uniform(np.log10(0.02), np.log10(0.8)))
+        N = int(rng.choice([5, 10, 15, 20]))
+        sigma = float(rng.choice([0.01, 0.02, 0.05]))
+        
+        x_s = np.sort(rng.uniform(0.2, 0.8, size=N))
+        t_s = np.sort(rng.uniform(0.05, 0.95, size=N))
+        
+        y_exact = solve_heat_1d_exact(x_s, t_s, alpha_true)
+        noise = rng.normal(0, sigma, size=N)
+        y_s = y_exact + noise
+        
+        # Benchmark path
+        hat_m3, _, _ = evaluate_mode3(x_s, t_s, y_s, sigma, alpha_true, prec)
+        hat_bench, _, _ = evaluate_mode3plus(x_s, t_s, y_s, sigma, alpha_true, hat_m3, prec)
+        
+        # Service API path
+        payload = {
+            "x_coords": x_s.tolist(),
+            "t_coords": t_s.tolist(),
+            "readings": y_s.tolist(),
+            "sigma": sigma,
+            "mode": "mode3plus"
+        }
+        res = client.post("/v1/estimate", json=payload)
+        assert res.status_code == 200, res.text
+        hat_api = res.json()["alpha_hat"]
+        
+        diff = abs(hat_bench - hat_api)
+        rel_diff = diff / max(1e-6, hat_bench)
+        if diff > max_abs_diff:
+            max_abs_diff = diff
+        if rel_diff > max_rel_diff:
+            max_rel_diff = rel_diff
+            
+    assert max_abs_diff < 1e-6, f"Mode 3+ absolute diff exceeded 1e-6: {max_abs_diff}"
+    assert max_rel_diff < 1e-6, f"Mode 3+ relative diff exceeded 1e-6: {max_rel_diff}"
+

@@ -550,8 +550,8 @@ def post_estimate(req: EstimateRequest):
     timing_ms = round((time.perf_counter() - t0) * 1000.0, 2)
     
     return EstimateResponse(
-        alpha_hat=round(float(hat_alpha), 6),
-        ci95=[round(ci_lo, 6), round(ci_hi, 6)],
+        alpha_hat=float(hat_alpha),
+        ci95=[float(ci_lo), float(ci_hi)],
         method=method_str,
         flags=EstimateFlags(
             model_invalid=model_invalid,

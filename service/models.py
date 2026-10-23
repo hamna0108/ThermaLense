@@ -127,6 +127,8 @@ class EstimateResponse(BaseModel):
     flags: EstimateFlags
     effective_sigma: float
     timing_ms: float
+    chi2_dof: Optional[float] = None
+    dw_stat: Optional[float] = None
 
 class SensorReadings(BaseModel):
     x_coords: Optional[List[float]] = Field(None, description="Sensor spatial coordinates x in [0, 1]")

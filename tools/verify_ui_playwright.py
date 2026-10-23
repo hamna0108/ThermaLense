@@ -52,18 +52,21 @@ def run_verification():
     
     port = find_free_port()
     print(f"Starting uvicorn server on port {port}...")
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
     server_proc = subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "service.app:app", "--port", str(port), "--host", "127.0.0.1"],
+        [sys.executable, "-u", "-m", "uvicorn", "service.app:app", "--port", str(port), "--host", "127.0.0.1"],
         cwd=REPO_ROOT,
         stdout=server_log,
-        stderr=subprocess.STDOUT
+        stderr=subprocess.STDOUT,
+        env=env
     )
     
     screenshots_taken = []
     console_errors = []
     
     try:
-        if not wait_for_port(port, timeout=60):
+        if not wait_for_port(port, timeout=75):
             server_log.close()
             with open(os.path.join(scratch_dir, "uvicorn_verify.log"), "r", encoding="utf-8") as f:
                 log_content = f.read()
@@ -146,15 +149,20 @@ def run_verification():
                     page.click("#est-submit-btn")
                     page.wait_for_selector("#est-result-panel", state="visible")
                     page.wait_for_timeout(250)
+                    page.evaluate("window.scrollTo(0, 0)")
+                    page.wait_for_timeout(100)
                     shot_path = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02_estimate_mode3plus.png")
                     page.screenshot(path=shot_path, full_page=False)
                     screenshots_taken.append(shot_path)
                     
-                    # Switch to Mode 2
+                    # Switch to Mode 2 (under collapsed Advanced options)
+                    page.locator("#est-advanced-disclosure").evaluate("el => el.open = true")
                     page.select_option("#est-method-select", "mode2")
                     page.click("#est-submit-btn")
                     page.wait_for_selector("#est-result-panel", state="visible")
                     page.wait_for_timeout(200)
+                    page.evaluate("window.scrollTo(0, 0)")
+                    page.wait_for_timeout(100)
                     shot_path = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02b_estimate_mode2.png")
                     page.screenshot(path=shot_path, full_page=False)
                     screenshots_taken.append(shot_path)
@@ -295,6 +303,7 @@ def run_verification():
                     # 9b. Malformed pasted rows on estimate
                     page.goto(f"http://127.0.0.1:{port}/#estimate")
                     page.wait_for_selector("#view-estimate.active")
+                    page.locator("#estimate-demo-details").evaluate("el => el.open = true")
                     page.click("#estimate-mode-paste-btn")
                     page.fill("#est-paste-text", "bad data, not numbers\nonly_one_col")
                     page.click("#est-submit-btn")
@@ -308,6 +317,7 @@ def run_verification():
                     page.fill("#est-true-alpha", "20.0")
                     page.click("#est-submit-btn")
                     page.wait_for_selector("#est-result-panel", state="visible")
+                    page.locator("#est-technical-details").evaluate("el => el.open = true")
                     page.wait_for_selector("#est-badges-container .badge-warning", state="visible")
                     shot_path = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_09c_failure_out_of_range.png")
                     page.screenshot(path=shot_path, full_page=False)

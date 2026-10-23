@@ -560,7 +560,9 @@ def post_estimate(req: EstimateRequest):
             warnings=warnings_list
         ),
         effective_sigma=round(effective_sigma, 6),
-        timing_ms=timing_ms
+        timing_ms=timing_ms,
+        chi2_dof=round(float(gof_res.get("chi2_dof", 0.0)), 4),
+        dw_stat=round(float(gof_res.get("dw_stat", 2.0)), 4) if gof_res.get("dw_stat") is not None else None,
     )
 
 @app.post("/v1/diagnose", response_model=DiagnoseResponse)

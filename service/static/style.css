@@ -1036,6 +1036,153 @@ details.technical-details-card summary.technical-details-summary:hover {
   flex-wrap: wrap;
 }
 
+/* ==========================================================================
+   Estimate Tab — 3 Steps & Traffic-Light Result Card
+   ========================================================================== */
+
+.step-card {
+  margin-bottom: 1.35rem;
+  padding-bottom: 1.15rem;
+  border-bottom: 1px solid var(--rule-subtle);
+}
+
+.step-card:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.4rem;
+}
+
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--primary-navy);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+.step-title {
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin: 0;
+}
+
+/* Traffic Light Banner */
+.traffic-light-banner {
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1.1rem;
+  margin-bottom: 1.15rem;
+  border-left: 4px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: all var(--transition-fast);
+}
+
+.traffic-light-banner.green {
+  background-color: var(--accent-green-bg);
+  border-left-color: var(--accent-green);
+}
+
+.traffic-light-banner.amber {
+  background-color: var(--accent-amber-bg);
+  border-left-color: var(--accent-amber);
+}
+
+.traffic-light-banner.red {
+  background-color: var(--accent-burgundy-bg);
+  border-left-color: var(--accent-burgundy);
+}
+
+.traffic-light-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.traffic-light-icon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.traffic-light-banner.green .traffic-light-icon {
+  color: var(--accent-green);
+}
+
+.traffic-light-banner.amber .traffic-light-icon {
+  color: var(--accent-amber);
+}
+
+.traffic-light-banner.red .traffic-light-icon {
+  color: var(--accent-burgundy);
+}
+
+.traffic-light-reasons {
+  margin: 0.15rem 0 0 1.6rem;
+  padding: 0;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  line-height: 1.45;
+}
+
+.traffic-light-reasons li {
+  margin-bottom: 0.25rem;
+}
+
+/* Plain Result Text */
+.estimate-plain-result {
+  margin-bottom: 1.15rem;
+}
+
+.result-headline {
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: var(--primary-navy);
+  line-height: 1.35;
+  margin-bottom: 0.35rem;
+}
+
+.result-subline {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* Demo Mode Callout */
+.demo-mode-callout {
+  padding: 0.65rem 0.95rem;
+  background-color: var(--bg-surface-raised);
+  border: 1px dashed var(--rule-hairline);
+  border-radius: var(--radius-sm);
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  margin-bottom: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
 /* Responsive adjustments */
 @media (max-width: 600px) {
   .header-inner {

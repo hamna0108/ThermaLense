@@ -219,18 +219,15 @@ function handleTryExample(action) {
   if (action === 'try-estimate') {
     window.location.hash = '#estimate';
     setTimeout(() => {
-      const synthBtn = document.getElementById('estimate-mode-synth-btn');
-      if (synthBtn) synthBtn.click();
-      const alphaInput = document.getElementById('est-true-alpha');
-      if (alphaInput) alphaInput.value = '0.10';
-      const numInput = document.getElementById('est-num-sensors');
-      if (numInput) numInput.value = '10';
-      const seedInput = document.getElementById('est-seed');
-      if (seedInput) seedInput.value = '42';
+      const useExampleBtn = document.getElementById('est-use-example-btn');
+      if (useExampleBtn) useExampleBtn.click();
       const sigmaInput = document.getElementById('est-sigma-val');
       if (sigmaInput) sigmaInput.value = '0.01';
       const methodSelect = document.getElementById('est-method-select');
-      if (methodSelect) methodSelect.value = 'mode3plus';
+      if (methodSelect) {
+        methodSelect.value = 'mode3plus';
+        methodSelect.dispatchEvent(new Event('change'));
+      }
       const submitBtn = document.getElementById('est-submit-btn');
       if (submitBtn) submitBtn.click();
     }, 60);
@@ -289,42 +286,149 @@ function handleTryExample(action) {
 // 3. Page 2: Estimate Workbench
 // -------------------------------------------------------------------------------------------------
 
+const DEFAULT_ESTIMATE_EXAMPLE = [
+  "0.5000, 0.0100, 0.97980",
+  "0.5000, 0.0167, 0.99967",
+  "0.5000, 0.0278, 0.95759",
+  "0.5000, 0.0464, 0.97235",
+  "0.5000, 0.0774, 0.93489",
+  "0.5000, 0.1292, 0.88456",
+  "0.5000, 0.2154, 0.81665",
+  "0.5000, 0.3594, 0.70014",
+  "0.5000, 0.5995, 0.55152",
+  "0.5000, 1.0000, 0.38029"
+].join('\n');
+
 function initEstimateWorkbench() {
-  const synthBtn = document.getElementById('estimate-mode-synth-btn');
-  const pasteBtn = document.getElementById('estimate-mode-paste-btn');
-  const synthControls = document.getElementById('estimate-synth-controls');
-  const pasteControls = document.getElementById('estimate-paste-controls');
+  const pasteText = document.getElementById('est-paste-text');
+  const useExampleBtn = document.getElementById('est-use-example-btn');
+  const csvBtn = document.getElementById('est-csv-btn');
+  const csvUpload = document.getElementById('est-csv-upload');
+  const baselineToggle = document.getElementById('est-baseline-toggle');
+  const sigmaVal = document.getElementById('est-sigma-val');
   const noiseSelect = document.getElementById('est-noise-select');
-  const sigmaGroup = document.getElementById('est-declared-sigma-group');
+  const methodSelect = document.getElementById('est-method-select');
+  const methodGuidance = document.getElementById('est-method-guidance');
+  const physGroup = document.getElementById('est-physics-config-group');
   const submitBtn = document.getElementById('est-submit-btn');
   const sampleBtn = document.getElementById('est-sample-synth-btn');
+  const rerunDemoBtn = document.getElementById('est-rerun-demo-btn');
   const downloadBtn = document.getElementById('est-download-btn');
+  const synthBtn = document.getElementById('estimate-mode-synth-btn');
+  const pasteBtn = document.getElementById('estimate-mode-paste-btn');
 
-  synthBtn.addEventListener('click', () => {
-    synthBtn.classList.add('active');
-    pasteBtn.classList.remove('active');
-    synthControls.style.display = 'block';
-    pasteControls.style.display = 'none';
-  });
+  // Pre-populate working example data
+  if (pasteText && !pasteText.value.trim()) {
+    pasteText.value = DEFAULT_ESTIMATE_EXAMPLE;
+  }
 
-  pasteBtn.addEventListener('click', () => {
-    pasteBtn.classList.add('active');
-    synthBtn.classList.remove('active');
-    synthControls.style.display = 'none';
-    pasteControls.style.display = 'block';
-  });
+  // Use example data button
+  if (useExampleBtn) {
+    useExampleBtn.addEventListener('click', () => {
+      if (pasteText) pasteText.value = DEFAULT_ESTIMATE_EXAMPLE;
+      STATE.isEstimateDemo = false;
+      if (pasteBtn) pasteBtn.classList.add('active');
+      if (synthBtn) synthBtn.classList.remove('active');
+    });
+  }
 
-  noiseSelect.addEventListener('change', () => {
-    sigmaGroup.style.display = noiseSelect.value === 'declared' ? 'block' : 'none';
-  });
+  // CSV upload button & input
+  if (csvBtn && csvUpload) {
+    csvBtn.addEventListener('click', () => csvUpload.click());
+    csvUpload.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        if (pasteText) pasteText.value = evt.target.result;
+        STATE.isEstimateDemo = false;
+        if (pasteBtn) pasteBtn.classList.add('active');
+        if (synthBtn) synthBtn.classList.remove('active');
+      };
+      reader.readAsText(file);
+    });
+  }
 
-  sampleBtn.addEventListener('click', generateEstimateSample);
-  submitBtn.addEventListener('click', executeParameterEstimate);
+  // Step 2: Sensor accuracy baseline toggle
+  if (baselineToggle) {
+    baselineToggle.addEventListener('change', () => {
+      if (baselineToggle.checked) {
+        if (noiseSelect) noiseSelect.value = 'baseline';
+        if (sigmaVal) sigmaVal.disabled = true;
+      } else {
+        if (noiseSelect) noiseSelect.value = 'declared';
+        if (sigmaVal) sigmaVal.disabled = false;
+      }
+    });
+  }
 
-  downloadBtn.addEventListener('click', () => {
-    if (!STATE.lastEstimateResult) return;
-    downloadJson(STATE.lastEstimateResult, 'estimate_result.json');
-  });
+  // Advanced options method guidance
+  const METHOD_GUIDANCE_TEXT = {
+    mode3plus: "Recommended for all standard tests. High accuracy with verified 94% confidence intervals.",
+    mode3: "Ultra-fast calculation (~1 ms). Best for continuous live monitoring where speed matters more than confidence bounds.",
+    mode2: "Classical finite-difference solver. Thorough and robust; useful when double-checking an unusual result.",
+    declared_physics: "Custom setup. Use when your bar has a custom starting heat profile."
+  };
+
+  if (methodSelect) {
+    methodSelect.addEventListener('change', () => {
+      const val = methodSelect.value;
+      if (methodGuidance) {
+        methodGuidance.textContent = METHOD_GUIDANCE_TEXT[val] || '';
+      }
+      if (physGroup) {
+        physGroup.style.display = (val === 'declared_physics') ? 'block' : 'none';
+      }
+    });
+  }
+
+  // Demo tools buttons
+  if (synthBtn) {
+    synthBtn.addEventListener('click', () => {
+      synthBtn.classList.add('active');
+      if (pasteBtn) pasteBtn.classList.remove('active');
+      STATE.isEstimateDemo = true;
+    });
+  }
+
+  if (pasteBtn) {
+    pasteBtn.addEventListener('click', () => {
+      pasteBtn.classList.add('active');
+      if (synthBtn) synthBtn.classList.remove('active');
+      STATE.isEstimateDemo = false;
+    });
+  }
+
+  if (sampleBtn) {
+    sampleBtn.addEventListener('click', () => {
+      STATE.isEstimateDemo = true;
+      generateEstimateSample();
+    });
+  }
+
+  if (rerunDemoBtn) {
+    rerunDemoBtn.addEventListener('click', runRandomDemo);
+  }
+
+  if (submitBtn) {
+    submitBtn.addEventListener('click', executeParameterEstimate);
+  }
+
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      if (!STATE.lastEstimateResult) return;
+      downloadJson(STATE.lastEstimateResult, 'estimate_result.json');
+    });
+  }
+}
+
+function runRandomDemo() {
+  const seedInput = document.getElementById('est-seed');
+  const curSeed = parseInt(seedInput ? seedInput.value : '42') || 42;
+  if (seedInput) seedInput.value = curSeed + 1;
+  STATE.isEstimateDemo = true;
+  generateEstimateSample();
+  executeParameterEstimate();
 }
 
 function generateEstimateSample() {
@@ -345,24 +449,25 @@ function generateEstimateSample() {
     rows.push(`${x.toFixed(4)}, ${t.toFixed(4)}, ${y.toFixed(5)}`);
   }
 
-  document.getElementById('est-paste-text').value = rows.join('\n');
+  const pasteEl = document.getElementById('est-paste-text');
+  if (pasteEl) pasteEl.value = rows.join('\n');
 }
 
 async function executeParameterEstimate() {
   const stateContainer = document.getElementById('est-state-container');
   const resultPanel = document.getElementById('est-result-panel');
-  const isPaste = document.getElementById('estimate-mode-paste-btn').classList.contains('active');
-  const noiseMode = document.getElementById('est-noise-select').value;
-  const methodMode = document.getElementById('est-method-select').value;
+  const synthBtn = document.getElementById('estimate-mode-synth-btn');
+  const isSynthetic = Boolean(STATE.isEstimateDemo || (synthBtn && synthBtn.classList.contains('active')));
+  const noiseMode = document.getElementById('est-noise-select') ? document.getElementById('est-noise-select').value : 'declared';
+  const methodMode = document.getElementById('est-method-select') ? document.getElementById('est-method-select').value : 'mode3plus';
 
-  stateContainer.innerHTML = '<div class="state-box loading"><span class="spinner"></span> Executing inverse estimation on service...</div>';
+  stateContainer.innerHTML = '<div class="state-box loading"><span class="spinner"></span> Calculating heat spread...</div>';
   resultPanel.style.display = 'none';
 
   let xList = [], tList = [], yList = [];
-  let isSynthetic = !isPaste;
   let trueAlpha = parseFloat(document.getElementById('est-true-alpha').value) || 0.10;
 
-  if (isPaste) {
+  if (!isSynthetic) {
     const rawText = document.getElementById('est-paste-text').value.trim();
     if (!rawText) {
       stateContainer.innerHTML = '<div class="state-box error"><strong>Input Error:</strong> No coordinates provided. Paste x,t,y rows or use the synthetic generator.</div>';
@@ -370,11 +475,18 @@ async function executeParameterEstimate() {
     }
     const lines = rawText.split('\n');
     for (let l of lines) {
-      const parts = l.split(/[,\s]+/).filter(Boolean);
+      const cleanLine = l.trim();
+      if (!cleanLine || cleanLine.startsWith('#')) continue;
+      const parts = cleanLine.split(/[,\t\s]+/).filter(Boolean);
       if (parts.length >= 3) {
-        xList.push(parseFloat(parts[0]));
-        tList.push(parseFloat(parts[1]));
-        yList.push(parseFloat(parts[2]));
+        const x = parseFloat(parts[0]);
+        const t = parseFloat(parts[1]);
+        const y = parseFloat(parts[2]);
+        if (!isNaN(x) && !isNaN(t) && !isNaN(y)) {
+          xList.push(x);
+          tList.push(t);
+          yList.push(y);
+        }
       }
     }
     if (xList.length < 2) {
@@ -399,10 +511,26 @@ async function executeParameterEstimate() {
     }
   }
 
+  // Step 3 (Optional setup conversion):
+  const barLengthInput = document.getElementById('est-bar-length');
+  const expDurationInput = document.getElementById('est-experiment-time');
+  const barLength = barLengthInput ? parseFloat(barLengthInput.value) : NaN;
+  const expDuration = expDurationInput ? parseFloat(expDurationInput.value) : NaN;
+  const hasPhysicalSetup = (!isNaN(barLength) && barLength > 0 && !isNaN(expDuration) && expDuration > 0);
+
+  let xPayload = [...xList];
+  let tPayload = [...tList];
+
+  if (hasPhysicalSetup) {
+    // Convert readings to normalised coordinates internally
+    xPayload = xList.map(x => x / barLength);
+    tPayload = tList.map(t => t / expDuration);
+  }
+
   // Construct payload
   const payload = {
-    x: xList,
-    t: tList,
+    x: xPayload,
+    t: tPayload,
     y: yList,
     mode: methodMode
   };
@@ -410,7 +538,6 @@ async function executeParameterEstimate() {
   if (noiseMode === 'declared') {
     payload.sigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.01;
   } else if (noiseMode === 'baseline') {
-    // Generate valid 20-reading baseline
     const rngBase = mulberry32(101);
     const xb = [], tb = [], yb = [];
     for (let i = 0; i < 20; i++) {
@@ -423,7 +550,6 @@ async function executeParameterEstimate() {
     }
     payload.baseline = { x_coords: xb, t_coords: tb, readings: yb };
   } else if (noiseMode === 'baseline_short') {
-    // Intentionally invalid k=10 baseline to test refusal path
     const xb = Array(10).fill(0.5);
     const tb = Array.from({length: 10}, (_, i) => 0.1 + i * 0.08);
     const yb = tb.map(t => Math.sin(Math.PI * 0.5) * Math.exp(-0.10 * Math.PI * Math.PI * t));
@@ -431,7 +557,8 @@ async function executeParameterEstimate() {
   }
 
   // Declared physics check
-  const u0Val = document.getElementById('est-phys-u0').value.trim();
+  const u0Input = document.getElementById('est-phys-u0');
+  const u0Val = u0Input ? u0Input.value.trim() : '';
   if (u0Val && u0Val !== 'sin(pi*x)') {
     payload.physics_config = { u0_expr: u0Val };
   }
@@ -444,7 +571,15 @@ async function executeParameterEstimate() {
     });
 
     const data = await res.json();
-    STATE.lastEstimateResult = { request: payload, response: data, isSynthetic, trueAlpha };
+    STATE.lastEstimateResult = { 
+      request: payload, 
+      response: data, 
+      isDemoMode: isSynthetic, 
+      trueAlpha,
+      hasPhysicalSetup,
+      barLength,
+      expDuration
+    };
 
     if (!res.ok) {
       const errCode = data.error_code || 'ERROR';
@@ -461,50 +596,156 @@ async function executeParameterEstimate() {
     stateContainer.innerHTML = '';
     resultPanel.style.display = 'block';
 
-    // Populate Results
-    document.getElementById('est-out-alpha').textContent = data.alpha_hat.toFixed(6);
+    const alphaHat = data.alpha_hat;
+    const ci95 = data.ci95;
+    const flags = data.flags || {};
+    const warnings = flags.warnings || [];
+
+    // 1. Result card in plain words: "Heat spread (α): 0.105 — most likely between 0.102 and 0.109"
+    const headlineEl = document.getElementById('est-plain-headline');
+    const sublineEl = document.getElementById('est-plain-subline');
+    const outAlphaHidden = document.getElementById('est-out-alpha');
+    if (outAlphaHidden) outAlphaHidden.textContent = alphaHat.toFixed(6);
+
+    function formatAlphaVal(v) {
+      if (v === null || v === undefined || isNaN(v)) return '-';
+      if (Math.abs(v) < 0.001 || Math.abs(v) >= 1000) {
+        return v.toExponential(3).replace('e', ' × 10^').replace('+', '');
+      }
+      return v.toFixed(3);
+    }
+
+    if (hasPhysicalSetup) {
+      const scale = (barLength * barLength) / expDuration;
+      const alphaReal = alphaHat * scale;
+      const ciLoReal = ci95[0] * scale;
+      const ciHiReal = ci95[1] * scale;
+
+      headlineEl.innerHTML = `Heat spread (&alpha;): <strong>${alphaHat.toFixed(3)}</strong> &mdash; most likely between <strong>${ci95[0].toFixed(3)}</strong> and <strong>${ci95[1].toFixed(3)}</strong>`;
+      sublineEl.innerHTML = `In real units: <strong>${formatAlphaVal(alphaReal)} m&sup2;/s</strong> (range: ${formatAlphaVal(ciLoReal)} to ${formatAlphaVal(ciHiReal)} m&sup2;/s) using bar length ${barLength.toFixed(2)} m and duration ${expDuration.toFixed(1)} s.`;
+    } else {
+      headlineEl.innerHTML = `Heat spread (&alpha;): <strong>${alphaHat.toFixed(3)}</strong> &mdash; most likely between <strong>${ci95[0].toFixed(3)}</strong> and <strong>${ci95[1].toFixed(3)}</strong>`;
+      sublineEl.textContent = 'Diffusivity is shown in normalised units because bar length and duration were left blank.';
+    }
+
+    // 2. Traffic-light banner mapping
+    const banner = document.getElementById('est-traffic-banner');
+    const bannerTitle = document.getElementById('est-traffic-title');
+    const bannerReasons = document.getElementById('est-traffic-reasons');
+    let bannerLevel = 'green';
+    let bannerTitleText = 'Result looks trustworthy';
+    let plainReasons = [];
+
+    if (flags.model_invalid) {
+      bannerLevel = 'red';
+      bannerTitleText = 'We cannot give a reliable number';
+      plainReasons.push('your readings do not fit the heat model');
+    }
+
+    if (flags.out_of_range || flags.at_bound) {
+      if (bannerLevel !== 'red') {
+        bannerLevel = 'amber';
+        bannerTitleText = 'Check this result';
+      }
+      plainReasons.push('value is near the edge of the tested range');
+    }
+
+    let hasCorrelatedErrors = false;
+    warnings.forEach(w => {
+      const wl = w.toLowerCase();
+      if (wl.includes('autocorrelation') || wl.includes('durbin-watson') || wl.includes('correlated')) {
+        hasCorrelatedErrors = true;
+      }
+    });
+
+    if (hasCorrelatedErrors) {
+      if (bannerLevel !== 'red') {
+        bannerLevel = 'amber';
+        bannerTitleText = 'Check this result';
+      }
+      plainReasons.push('errors look correlated');
+    }
+
+    warnings.forEach(w => {
+      const wl = w.toLowerCase();
+      if (!wl.includes('model invalid') && !wl.includes('autocorrelation') && !wl.includes('durbin-watson') && !wl.includes('chi2')) {
+        if (bannerLevel === 'green') {
+          bannerLevel = 'amber';
+          bannerTitleText = 'Check this result';
+        }
+        plainReasons.push(w);
+      }
+    });
+
+    banner.className = `traffic-light-banner ${bannerLevel}`;
+    bannerTitle.textContent = bannerTitleText;
+    if (plainReasons.length > 0) {
+      bannerReasons.style.display = 'block';
+      bannerReasons.innerHTML = plainReasons.map(r => `<li>${r}</li>`).join('');
+    } else {
+      bannerReasons.style.display = 'none';
+      bannerReasons.innerHTML = '';
+    }
+
+    // 3. Demo mode callout (never show "True alpha OUTSIDE CI" unless demo mode is on)
+    const demoCallout = document.getElementById('est-demo-callout');
+    const chartTruthLegend = document.getElementById('est-chart-truth-legend');
+    if (isSynthetic) {
+      const inInterval = (trueAlpha >= ci95[0] && trueAlpha <= ci95[1]);
+      demoCallout.style.display = 'flex';
+      demoCallout.innerHTML = `
+        <div>
+          <strong>Demo mode:</strong> 
+          ${inInterval 
+            ? 'Truth was inside the range.' 
+            : 'Truth was outside the range (about 1 in 20 runs misses by design).'}
+          <span class="mono" style="margin-left: 0.5rem; opacity: 0.85;">(Simulated true &alpha; = ${trueAlpha.toFixed(4)})</span>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="est-rerun-demo-btn-inline">Run again with new random readings</button>
+      `;
+      const rerunInline = document.getElementById('est-rerun-demo-btn-inline');
+      if (rerunInline) rerunInline.addEventListener('click', runRandomDemo);
+      if (chartTruthLegend) chartTruthLegend.style.display = 'flex';
+    } else {
+      demoCallout.style.display = 'none';
+      if (chartTruthLegend) chartTruthLegend.style.display = 'none';
+    }
+
+    // 4. Collapsed Technical Details
+    document.getElementById('est-out-ci').textContent = `[${ci95[0].toFixed(5)}, ${ci95[1].toFixed(5)}]`;
     document.getElementById('est-out-method').textContent = data.method;
     document.getElementById('est-out-timing').textContent = data.timing_ms.toFixed(2);
-    document.getElementById('est-out-ci').textContent = `[${data.ci95[0].toFixed(5)}, ${data.ci95[1].toFixed(5)}]`;
 
-    // Synthetic Ground Truth Comparison
-    const verdictEl = document.getElementById('est-coverage-verdict');
-    if (isSynthetic) {
-      const inInterval = trueAlpha >= data.ci95[0] && trueAlpha <= data.ci95[1];
-      verdictEl.innerHTML = `
-        <span class="badge badge-synthetic">Synthetic Ground Truth: &alpha; = ${trueAlpha.toFixed(4)}</span>
-        <span class="badge ${inInterval ? 'badge-success' : 'badge-danger'}">
-          ${inInterval ? 'True &alpha; INSIDE 95% CI' : 'True &alpha; OUTSIDE 95% CI'}
-        </span>
-      `;
-    } else {
-      verdictEl.innerHTML = '<span class="text-muted">Observation coordinates provided via manual raw paste.</span>';
+    const chi2El = document.getElementById('est-out-chi2');
+    if (chi2El) {
+      chi2El.textContent = (data.chi2_dof !== undefined ? data.chi2_dof.toFixed(3) : (flags.model_invalid ? '> 1.88 (rejected)' : '< 1.88 (accepted)'));
     }
 
-    // Flags Badges
+    const dwEl = document.getElementById('est-out-dw');
+    if (dwEl) {
+      dwEl.textContent = (data.dw_stat !== undefined ? data.dw_stat.toFixed(3) : (hasCorrelatedErrors ? 'Flagged (< 1.2 or > 2.8)' : '2.00 (uncorrelated)'));
+    }
+
+    // Diagnostic Badges
     const badgesContainer = document.getElementById('est-badges-container');
     badgesContainer.innerHTML = '';
-    if (data.flags) {
-      if (data.flags.model_invalid) {
-        badgesContainer.innerHTML += '<span class="badge badge-danger">FLAG: model_invalid (D2 GOF gate rejected fit)</span>';
-      }
-      if (data.flags.out_of_range) {
-        badgesContainer.innerHTML += '<span class="badge badge-warning">FLAG: out_of_range</span>';
-      }
-      if (data.flags.at_bound) {
-        badgesContainer.innerHTML += '<span class="badge badge-warning">FLAG: at_bound (pinned at boundary)</span>';
-      }
-      if (data.flags.warnings && data.flags.warnings.length) {
-        data.flags.warnings.forEach(w => {
-          badgesContainer.innerHTML += `<span class="badge badge-warning">${w}</span>`;
-        });
-      }
-      if (!data.flags.model_invalid && !data.flags.out_of_range && !data.flags.at_bound) {
-        badgesContainer.innerHTML += '<span class="badge badge-success">Model Valid (Chi2/dof within threshold)</span>';
-      }
+    if (flags.model_invalid) {
+      badgesContainer.innerHTML += '<span class="badge badge-danger">FLAG: model_invalid</span>';
+    }
+    if (flags.out_of_range) {
+      badgesContainer.innerHTML += '<span class="badge badge-warning">FLAG: out_of_range</span>';
+    }
+    if (flags.at_bound) {
+      badgesContainer.innerHTML += '<span class="badge badge-warning">FLAG: at_bound</span>';
+    }
+    warnings.forEach(w => {
+      badgesContainer.innerHTML += `<span class="badge badge-warning">${w}</span>`;
+    });
+    if (!flags.model_invalid && !flags.out_of_range && !flags.at_bound && warnings.length === 0) {
+      badgesContainer.innerHTML += '<span class="badge badge-success">Model Valid</span>';
     }
 
-    // JSON dump
+    // JSON Dump
     document.getElementById('est-json-dump').textContent = JSON.stringify({ request: payload, response: data }, null, 2);
 
     renderEstimateChart();
@@ -523,7 +764,7 @@ function renderEstimateChart() {
   const res = result.response;
   const width = 540;
   const height = 260;
-  const pad = { top: 20, right: 25, bottom: 40, left: 55 };
+  const pad = { top: 20, right: 25, bottom: 42, left: 55 };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
 
@@ -574,7 +815,6 @@ function renderEstimateChart() {
   const numCurvePts = 100;
   for (let i = 0; i <= numCurvePts; i++) {
     const t = tMin + (i / numCurvePts) * (tMax - tMin);
-    // Lower alpha decays slower -> higher curve; Higher alpha decays faster -> lower curve
     const yTop = Math.exp(-alphaLo * Math.PI * Math.PI * t);
     const yBot = Math.exp(-alphaHi * Math.PI * Math.PI * t);
     bandPointsTop.push(`${scaleX(t)},${scaleY(yTop)}`);
@@ -591,9 +831,9 @@ function renderEstimateChart() {
   }
   const fittedPath = `<path d="${fittedD.join(' ')}" fill="none" stroke="var(--primary-navy)" stroke-width="2.5"/>`;
 
-  // True Alpha Curve Path (if synthetic)
+  // True Alpha Curve Path (only if demo mode)
   let truePath = '';
-  if (result.isSynthetic && result.trueAlpha) {
+  if (result.isDemoMode && result.trueAlpha) {
     let trueD = [];
     for (let i = 0; i <= numCurvePts; i++) {
       const t = tMin + (i / numCurvePts) * (tMax - tMin);
@@ -606,7 +846,7 @@ function renderEstimateChart() {
   // Normalized Observation Circles
   const circles = normPoints.map(p => `
     <circle cx="${scaleX(p.t)}" cy="${scaleY(p.yNorm)}" r="4.5" fill="#e74c3c" stroke="#fff" stroke-width="1.2">
-      <title>t=${p.t.toFixed(4)}, yNorm=${p.yNorm.toFixed(4)}</title>
+      <title>Time: ${p.t.toFixed(4)}, Reading: ${p.yNorm.toFixed(4)}</title>
     </circle>
   `).join('');
 
@@ -616,11 +856,11 @@ function renderEstimateChart() {
     ${fittedPath}
     ${truePath}
     <g class="chart-points">${circles}</g>
-    <!-- Axis lines & labels -->
+    <!-- Axis lines & plain labels -->
     <line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
     <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
-    <text x="${pad.left + plotW / 2}" y="${height - 6}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Time t (s)</text>
-    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="16" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Normalized Value y / sin(&pi; x)</text>
+    <text x="${pad.left + plotW / 2}" y="${height - 6}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Time</text>
+    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="16" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Cooling (reading &divide; starting shape)</text>
   `;
 }
 

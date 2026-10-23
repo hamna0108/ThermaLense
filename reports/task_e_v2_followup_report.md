@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-21  
 **Seed Range:** `1400000+` (Fresh disjoint validation split)  
-**Scope:** V2 Follow-up items 1�5 on Week 6 wrappers without altering frozen modules  
+**Scope:** V2 Follow-up items 1–5 on Week 6 wrappers without altering frozen modules  
 
 ## Executive Summary
 
@@ -48,6 +48,8 @@ Under an AR(1) observation noise vector $w \sim \mathcal{N}(0, \Sigma)$ with $\S
 
 ## 3. D5 Diagnostic Warnings Measurement
 
+*Operational Clarification:* Drift and kurtosis are warnings, not detectors. Baseline parameter drift has no power (3.3%–5.6% detection vs 3.8% false warnings); excess kurtosis achieves 10%–34% detection (9.8% to 33.6% vs 4.5% false warnings). They serve as advisory health warnings rather than reliable automated binary detectors.
+
 ### Healthy False-Warning Rates (1,000 runs, $N=10$, $\sigma=0.01$)
 | Warning Indicator | Target Scenario | False-Warning Rate | 95% Wilson CI | Ceiling Target | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -64,6 +66,7 @@ Under an AR(1) observation noise vector $w \sim \mathcal{N}(0, \Sigma)$ with $\S
 | Sev 3 | Student-t (df=3) + 10% 5-sigma outliers | 33.6% | [30.74%, 36.59%] |
 
 #### S3: Correlated Noise (Durbin-Watson Warning)
+*Target Assessment (D2):* AR(1) correlated noise detection (>= 80.0% target) is **met at rho=0.95 only** (80.5% at $\\rho=0.95$; missed at $\\rho=0.5$ [23.9%] and $\\rho=0.8$ [60.4%]).
 | Severity | Autocorrelation $\rho$ | Detection Rate | 95% Wilson CI |
 | :--- | :--- | :--- | :--- |
 | Sev 1 | $\rho=0.5$ | 23.9% | [21.36%, 26.64%] |
@@ -81,11 +84,11 @@ Under an AR(1) observation noise vector $w \sim \mathcal{N}(0, \Sigma)$ with $\S
 
 | Scenario Severity | True $\alpha$ | Original 1% Rule Rate | New Rule (0.1-dec / CI Touch) Rate | Routed to Mode 3+ | Median $\hat{\alpha}$ | New Rule Target Status |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Sev 1 (Sub-grid low diffusivity (alpha=5e-4)) | 0.0005 | 65.0% [55.25%, 73.64%] | **90.0% [82.56%, 94.48%]** | 100.0% | 0.00100 | MET |
+| Sev 1 (Sub-grid low diffusivity (alpha=5e-4)) | 0.0005 | 65.0% [55.25%, 73.64%] | **90.0% [82.56%, 94.48%]** | 100.0% | 0.00100 | improved, target 95% missed (90.0%) |
 | Sev 2 (Inside-grid high diffusivity (alpha=5.0)) | 5.0 | 0.0% [0.0%, 3.7%] | **0.0% [0.0%, 3.7%]** | 100.0% | 4.43682 | MET |
 | Sev 3 (Super-grid extreme diffusivity (alpha=20.0)) | 20.0 | 100.0% [96.3%, 100.0%] | **100.0% [96.3%, 100.0%]** | 100.0% | 9.99883 | MET |
 
-*Observation: In Sev 1 (alpha=0.0005), the original 1% rule missed with 61.0% flag rate because estimates pinned near 0.0012. The new rule (0.1 decade margin or CI touch) increases flag rate to 88.0%�90.0% while maintaining 0.0% false flags on inside-grid parameters (Sev 2).*
+*Observation: In Sev 1 (alpha=0.0005), the original 1% rule missed with 61.0% flag rate because estimates pinned near 0.0012. The new rule (0.1 decade margin or CI touch) increases flag rate to 88.0%–90.0% while maintaining 0.0% false flags on inside-grid parameters (Sev 2).*
 
 ## 5. Declared Physics Latency Benchmark
 

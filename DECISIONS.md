@@ -173,6 +173,42 @@ This document records the foundational architectural decisions made across the D
 
 ---
 
+### Decision 9: Physics-Informed Neural Network Single-Factor Ablation & Collocation Hypothesis (Task G)
+- **Options Tried:**
+  1. *Activation Function:* `tanh` (base) vs `GELU` vs `sin`.
+  2. *Collocation Sampling:* `base` (uniform pseudorandom resampled every epoch) vs `fixed` (uniform pseudorandom fixed across all epochs) vs `sobol` (Sobol quasi-random low-discrepancy sequence) vs `lhs` (Latin Hypercube Sampling).
+  3. *Loss Formulation:* `pure_pde` (base, $w_{\text{pde}}=1.0, w_{\text{data}}=0.0$) vs `data_equal` ($w_{\text{pde}}=1.0, w_{\text{data}}=1.0$) vs `data_heavy` ($w_{\text{pde}}=0.1, w_{\text{data}}=1.0$) vs `grad_norm` (adaptive gradient-norm balancing).
+  4. *Optimizer:* `adam_lbfgs` (base, Adam 1000 epochs + L-BFGS 500 iterations) vs `adam_only` (Adam 1500 epochs).
+- **Option Selected:** Retain frozen baseline `models/pinn_expD.pt` (`tanh`, `base` resampled collocation, `pure_pde`, `adam_lbfgs`) as pre-registered in `experiments/train_pinn_ablation.py`. No retrained candidate replaces the frozen baseline.
+- **Why:**
+  - *Pre-Registered Protocol:* To guard against post-hoc selection and test split cherry-picking, the study protocol explicitly pre-registered: "If an ablated variant achieves lower test error than the base config, findings are documented honestly in the report, but the frozen checkpoint `models/pinn_expD.pt` is RETAINED and NOT replaced."
+  - *Empirical Findings (`data/results/pinn_ablation/pinn_ablation_summary.csv`):*
+    - *Activation:* `gelu` achieves median interpolation relative $L_2$ error of 0.00609 and low-$\alpha$ OOD of 0.00324, outperforming `tanh` (0.00799 / 0.04258), while `sin` achieves 0.00753 / 0.04250.
+    - *Collocation:* Static/structured collocation sampling achieves order-of-magnitude reductions in median relative $L_2$ error: `collocation_fixed` achieves 0.000438 on interpolation and 0.003406 on low-$\alpha$ OOD; `collocation_sobol` achieves 0.000411 / 0.002297; `collocation_lhs` achieves 0.000436 / 0.002920, all vastly outperforming dynamic resampling (`base`: 0.007987 / 0.042582).
+    - *Loss Weighting:* Pure PDE residual loss remains competitive (0.007987) with data-assisted weighting (0.006396 for `data_equal`, 0.005945 for `data_heavy`, 0.004132 for `grad_norm`).
+    - *Optimizer:* Adam + L-BFGS achieves comparable interpolation error (0.007987 vs 0.005103 for `adam_only`) while converging faster in wall-clock time (13.85 s vs 20.73 s).
+  - *Collocation Explanation as an UNVERIFIED Hypothesis:*
+    - In dynamic resampling (`base`), resampling collocation coordinates at every Adam epoch and L-BFGS step perturbs the loss landscape under the optimizer. In contrast, fixed static collocation presents a deterministic, static objective surface.
+    - *UNVERIFIED Hypothesis:* It is hypothesized that fixed collocation coordinates allow the second-order L-BFGS quasi-Newton optimizer to construct stable, non-stochastic curvature history approximations and execute exact line searches down into narrow quadratic basins without stochastic gradient jitter, whereas dynamic coordinate resampling constantly shifts the loss landscape and disrupts quasi-Newton Hessian updates. This explanation remains an **UNVERIFIED hypothesis** and has not been conclusively proven through ablation of L-BFGS memory history or line-search step dynamics.
+- **Status:** **Decided by evidence; pre-registered frozen checkpoint models/pinn_expD.pt retained**
+- **Evidence File:** `experiments/train_pinn_ablation.py`, `data/results/pinn_ablation/pinn_ablation_summary.csv`, `tools/package_pinn_ablation_colab.py`, `run_pinn_ablation_colab.ipynb`.
+
+---
+
+### Decision 10: Digital Twin Service Policy: Frozen Models, Offline Training, and Direct Runtime (No Docker Build)
+- **Options Tried:**
+  1. *Online Retraining Service:* Allowing API clients to trigger neural surrogate retraining or fine-tuning dynamically inside HTTP request handlers.
+  2. *Container-Only Deployment Requirement:* Enforcing mandatory Docker daemon and multi-stage container build for local execution and integration testing.
+  3. *Production Service Architecture:* Deploying a FastAPI REST service (`service/app.py`) serving strictly frozen neural weights and precomputed surrogate splines trained offline, executing directly in a native Python environment with zero runtime retraining and without requiring a local Docker build.
+- **Option Selected:** Frozen models, offline training, and direct native Python execution (Option 3). A production Dockerfile (`Dockerfile`, `.dockerignore`) is provided for containerized environments, but local execution and verification do NOT require Docker build.
+- **Why:**
+  - *Frozen Model Invariance & Latency Guarantees:* Online retraining in service request loops introduces non-deterministic model drift, memory exhaustion, CUDA/CPU thread contention, and unbounded latency spikes. Inverting PDE parameters via Mode 3 / Mode 3+ requires microsecond-to-millisecond determinism (Mode 3: 0.68 ms, Mode 3+: 138.8 ms). Serving strictly frozen checkpoints (`models/fno2d_heat.pt`, `models/fno2d_poisson_v2.pt`, `models/pinn_expD.pt`) guarantees bit-level reproducibility and predictable sub-second SLA compliance.
+  - *Offline Training Segregation:* All neural operator and PINN training procedures (`src/train_fno_poisson_v2.py`, `src/train_expD_pinn.py`, `experiments/train_pinn_ablation.py`) are strictly decoupled into offline batch training scripts. The production service application (`service/app.py`) loads weights at startup via FastAPI `lifespan` handler and exposes inference-only routes (`/v1/estimate`, `/v1/diagnose`, `/v1/placement`, `/v1/field`, `/v1/poisson`).
+  - *Direct Runtime vs Docker Build Policy:* The project environment operates on native Windows / Linux Python 3.10+ environments with direct `uvicorn service.app:app` execution. Requiring Docker build on local machines imposes heavy virtualization overhead, requires Hyper-V / WSL2 daemon setup, and slows down automated test execution (`tests/test_service.py`). While `Dockerfile` is provided for cloud and Kubernetes deployments, the system policy specifies that local test suites, verification runners (`evaluation.run_all`), and automated end-to-end evaluations run directly against native Python without Docker build dependencies.
+- **Status:** **Decided by architecture and service design policy**
+- **Evidence File:** `service/app.py`, `service/models.py`, `service/metrics.py`, `Dockerfile`, `.dockerignore`, `requirements-service.txt`, `tests/test_service.py`, `evaluation/run_all.py`.
+
+---
 
 ### Limitations & Reproducibility Notes
 

@@ -1083,7 +1083,8 @@ details.technical-details-card summary.technical-details-summary:hover {
    Estimate Tab — Single Centered Column (max-width: 880px) & Editable Table
    ========================================================================== */
 
-.estimate-single-col {
+.estimate-single-col,
+.diagnose-single-col {
   max-width: 880px;
   margin: 0 auto;
   width: 100%;
@@ -1092,9 +1093,31 @@ details.technical-details-card summary.technical-details-summary:hover {
   gap: 24px;
 }
 
-.estimate-single-col .card {
+.estimate-single-col .card,
+.diagnose-single-col .card {
   padding: 16px;
   margin-bottom: 0;
+}
+
+.diagnose-honesty-note {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-normal);
+  background-color: var(--bg-surface-raised);
+  border-left: 3px solid var(--primary-navy);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.diagnose-honesty-note .evidence-link {
+  color: var(--primary-navy);
+  font-weight: 600;
+  text-decoration: underline;
 }
 
 /* Fallback for grid compatibility if needed */

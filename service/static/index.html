@@ -631,129 +631,272 @@
     <!-- ====================================================================
          PAGE 3: DIAGNOSE (SENSOR FAULT & CHANGE-POINT CASCADE)
          ==================================================================== -->
+    <!-- ====================================================================
+         PAGE 3: DIAGNOSE (SENSOR FAULT & PHYSICAL CHANGE DIAGNOSTICS)
+         ==================================================================== -->
     <section id="view-diagnose" class="page-view" aria-labelledby="heading-diagnose">
       <div class="page-intro">
-        <h1 id="heading-diagnose">Sensor Fault &amp; Physical Change Diagnostics</h1>
-        <p class="page-desc">4-Hypothesis sequential cascade integrating baseline-informed Generalized Likelihood Ratio (GLR) testing and Leave-One-Out Bayesian Information Criterion (BIC).</p>
+        <h1 id="heading-diagnose">Is my test behaving normally?</h1>
+        <p class="page-desc">Compare your sensor readings against a normal reference run to check if the test is behaving as expected, or if a sensor is faulty.</p>
       </div>
 
-      <div class="grid-2">
-        <!-- Controls Card -->
-        <div class="card">
-          <h2 class="card-title" style="margin-top: 0;">Diagnostic Scenario Generator</h2>
+      <div class="diagnose-single-col">
+        <!-- 1. Normal reference run table -->
+        <div class="card" id="diag-baseline-card">
+          <div class="readings-toolbar">
+            <h2 class="card-title" style="margin-bottom: 0;">Normal reference run (at least 20 readings)</h2>
+            <span class="readings-count-badge" id="diag-baseline-count">0 of 20 needed</span>
+          </div>
+
+          <div style="display: flex; gap: 0.4rem; margin-bottom: 0.6rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" id="diag-base-add-row-btn">+ Add row</button>
+            <input type="file" id="diag-base-csv-upload" accept=".csv,.txt" style="display: none;">
+            <button type="button" class="btn btn-secondary btn-sm" id="diag-base-csv-btn">Upload CSV</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="diag-use-example-btn">Use example</button>
+          </div>
+
+          <div class="readings-table-wrap">
+            <table class="readings-table" id="diag-baseline-table">
+              <thead>
+                <tr>
+                  <th style="width: 38px; text-align: center;">#</th>
+                  <th>
+                    <div class="col-title">Position (m)</div>
+                    <div class="col-helper">Where on the bar: 0 = one end, up to bar length</div>
+                  </th>
+                  <th>
+                    <div class="col-title">Time (s)</div>
+                    <div class="col-helper">When it was measured</div>
+                  </th>
+                  <th>
+                    <div class="col-title">Temperature (&deg;C)</div>
+                    <div class="col-helper">What the sensor read</div>
+                  </th>
+                  <th style="width: 44px; text-align: center;"></th>
+                </tr>
+              </thead>
+              <tbody id="diag-base-table-tbody">
+                <!-- 3 initial rows inserted dynamically by app.js -->
+              </tbody>
+            </table>
+          </div>
+          <div class="table-validation-msg" id="diag-base-table-validation-msg"></div>
+        </div>
+
+        <!-- 2. The test to check table -->
+        <div class="card" id="diag-test-card">
+          <div class="readings-toolbar">
+            <h2 class="card-title" style="margin-bottom: 0;">The test to check</h2>
+            <span class="readings-count-badge" id="diag-test-count">0 of 3 needed</span>
+          </div>
+
+          <div style="display: flex; gap: 0.4rem; margin-bottom: 0.6rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" id="diag-test-add-row-btn">+ Add row</button>
+            <input type="file" id="diag-test-csv-upload" accept=".csv,.txt" style="display: none;">
+            <button type="button" class="btn btn-secondary btn-sm" id="diag-test-csv-btn">Upload CSV</button>
+          </div>
+
+          <div class="readings-table-wrap">
+            <table class="readings-table" id="diag-test-table">
+              <thead>
+                <tr>
+                  <th style="width: 38px; text-align: center;">#</th>
+                  <th>
+                    <div class="col-title">Position (m)</div>
+                    <div class="col-helper">Where on the bar: 0 = one end, up to bar length</div>
+                  </th>
+                  <th>
+                    <div class="col-title">Time (s)</div>
+                    <div class="col-helper">When it was measured</div>
+                  </th>
+                  <th>
+                    <div class="col-title">Temperature (&deg;C)</div>
+                    <div class="col-helper">What the sensor read</div>
+                  </th>
+                  <th style="width: 44px; text-align: center;"></th>
+                </tr>
+              </thead>
+              <tbody id="diag-test-table-tbody">
+                <!-- 3 initial rows inserted dynamically by app.js -->
+              </tbody>
+            </table>
+          </div>
+          <div class="table-validation-msg" id="diag-test-table-validation-msg"></div>
+        </div>
+
+        <!-- 3. About your test (Shared with Estimate) -->
+        <div class="card" id="diag-about-test-card">
+          <h2 class="card-title">About your test</h2>
           
-          <div class="form-group">
-            <label for="diag-scenario-select" class="form-label">Operational Scenario</label>
-            <select id="diag-scenario-select" class="form-select">
-              <option value="H" selected>Healthy Diffusion (Class H)</option>
-              <option value="A">Anomalous Diffusivity Jump / Out-of-Range (Class A: alpha=2.50)</option>
-              <option value="F_stuck">Sensor Fault: Stuck Output (Class F: sensor pinned at constant)</option>
-              <option value="F_bias">Sensor Fault: Persistent Calibration Bias (Class F: +10 sigma offset)</option>
-              <option value="F_gain">Sensor Fault: Sensor Gain Error (Class F: 1.5x amplification)</option>
-              <option value="C">Physical Change-Point (Class C: step jump alpha 0.05 -> 0.50 at tc=0.35)</option>
-              <option value="refusal_baseline">Refusal Test: Baseline k=10 &lt; 20 (Triggers Machine-Readable Refusal)</option>
-            </select>
-          </div>
-
-          <div class="grid-2">
-            <div class="form-group">
-              <label for="diag-sensors" class="form-label">Sensor Observations N</label>
-              <input type="number" id="diag-sensors" class="form-control mono" value="10" min="5" max="100" step="1">
-            </div>
-            <div class="grid-2">
-              <div class="form-group">
-                <label for="diag-sigma" class="form-label">Noise σ</label>
-                <input type="number" id="diag-sigma" class="form-control mono" value="0.01" step="0.005">
-              </div>
-              <div class="form-group">
-                <label for="diag-seed" class="form-label">RNG Seed</label>
-                <input type="number" id="diag-seed" class="form-control mono" value="702" step="1">
+          <div class="real-units-grid">
+            <div class="config-col">
+              <label for="diag-bar-length" class="form-label">Bar length (m)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="diag-bar-length" name="bar_length_m" class="form-control mono" placeholder="e.g. 0.1" min="0.0001" step="0.01">
+                <span class="input-suffix">m</span>
               </div>
             </div>
+            <div class="config-col">
+              <label for="diag-experiment-time" class="form-label">Test duration (s)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="diag-experiment-time" name="test_duration_s" class="form-control mono" placeholder="e.g. 100" min="0.0001" step="0.1">
+                <span class="input-suffix">s</span>
+              </div>
+            </div>
+            <div class="config-col">
+              <label for="diag-temp-edge" class="form-label">Ends of the bar are held at (&deg;C)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="diag-temp-edge" name="boundary_temperature" class="form-control mono" placeholder="e.g. 20" step="0.5">
+                <span class="input-suffix">&deg;C</span>
+              </div>
+            </div>
+            <div class="config-col">
+              <label for="diag-temp-peak" class="form-label">Hottest point at the start (&deg;C)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="diag-temp-peak" name="initial_peak_temperature" class="form-control mono" placeholder="e.g. 80" step="0.5">
+                <span class="input-suffix">&deg;C</span>
+              </div>
+            </div>
           </div>
 
-          <div class="callout" style="margin: 0.75rem 0;">
-            <div class="callout-title">Baseline Calibration Requirement</div>
-            <p class="form-help" style="margin-bottom: 0;">
-              The diagnosis cascade requires a calibrated baseline of at least k ≥ 20 readings to establish σ̂ and baseline diffusivity α̂_base. Requests with fewer baseline readings are refused by design.
-            </p>
-          </div>
-
-          <div style="margin-top: 1rem;">
-            <button type="button" class="btn btn-primary" id="diag-submit-btn">Run Diagnostic Cascade</button>
+          <!-- Sensor accuracy & auto-estimate option -->
+          <div class="test-config-row" style="margin-top: 0.75rem;">
+            <div class="config-col" style="max-width: 320px;">
+              <label for="diag-sigma-val" class="form-label">
+                Sensor accuracy (&plusmn; &deg;C)
+                <span class="info-tooltip" title="Typical measurement error of your temperature sensor. Not sure? Leave 0.5 &deg;C.">&#9432;</span>
+              </label>
+              <input type="number" id="diag-sigma-val" name="sigma" class="form-control mono" value="0.5" min="0.0001" max="100.0" step="0.1">
+            </div>
+            <div style="margin-top: 0.5rem;">
+              <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.45rem; font-size: 0.88rem; cursor: pointer; color: var(--text-normal);">
+                <input type="checkbox" id="diag-sigma-auto">
+                <span>Estimate sensor accuracy from the reference run</span>
+              </label>
+            </div>
           </div>
         </div>
 
-        <!-- Output Card -->
-        <div class="card" id="diagnose-results-card">
-          <h2 class="card-title" style="margin-top: 0;">Diagnostic Evidence &amp; Classification</h2>
-
-          <div id="diag-state-container">
-            <div class="state-box">
-              Select a scenario and click <strong>Run Diagnostic Cascade</strong> to evaluate the operational readings.
-            </div>
+        <!-- 4. Action bar: Check my test -->
+        <div class="calculate-bar">
+          <button type="button" class="btn btn-primary btn-calculate" id="diag-submit-btn">
+            Check my test
+          </button>
+          <div class="more-options-wrap">
+            <button type="button" class="more-options-link" id="diag-more-options-btn">More options</button>
           </div>
+        </div>
+
+        <!-- State container (for loading / inline errors) -->
+        <div id="diag-state-container"></div>
+
+        <!-- 5. Diagnostic Result Card (Appears BELOW button on run) -->
+        <div class="card" id="diagnose-results-card" style="display: none;">
+          <h2 class="card-title">Your result</h2>
 
           <div id="diag-result-panel" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-              <div>
-                <span style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">Assigned Classification</span>
-                <div style="display: flex; align-items: baseline; gap: 0.6rem; margin-top: 0.2rem;">
-                  <span id="diag-out-class-badge" class="badge badge-healthy" style="font-size: 1.4rem; padding: 0.25rem 0.75rem;">CLASS H</span>
-                  <span id="diag-out-class-name" style="font-weight: 600; font-size: 1.05rem;">Healthy Baseline</span>
+            <!-- Traffic-light verdict line -->
+            <div id="diag-traffic-banner" class="traffic-light-line green">
+              <span class="traffic-light-dot" id="diag-traffic-icon">●</span>
+              <span class="traffic-light-text" id="diag-traffic-title">Everything looks normal.</span>
+            </div>
+
+            <!-- Specific Fault/Change/Readings details in plain language -->
+            <div id="diag-specific-info" style="margin: 0.6rem 0; font-size: 0.92rem; line-height: 1.5; color: var(--text-normal);"></div>
+
+            <!-- Demo Mode Callout (shown when running a demo scenario) -->
+            <div id="diag-demo-callout" class="demo-mode-callout" style="display: none;"></div>
+
+            <!-- Chart: Measured vs Baseline -->
+            <div class="chart-title">Measured vs baseline</div>
+            <div class="chart-wrapper">
+              <svg id="diag-chart-svg" class="chart-svg" viewBox="0 0 540 260" preserveAspectRatio="xMidYMid meet"></svg>
+              <div class="chart-legend" id="diag-chart-legend">
+                <div class="legend-item"><span class="legend-line" style="background-color: var(--primary-navy);"></span> Baseline expected cooling</div>
+                <div class="legend-item"><span class="legend-swatch" style="background-color: #2980b9; border-radius: 50%;"></span> Operational readings</div>
+                <div class="legend-item" id="diag-fault-legend-item" style="display: none;"><span class="legend-swatch" style="background-color: #e74c3c; border-radius: 50%;"></span> Flagged faulty sensor</div>
+              </div>
+            </div>
+
+            <!-- Always visible Honesty Note -->
+            <div class="diagnose-honesty-note" id="diag-honesty-note">
+              Typical accuracy: normal tests flagged wrongly about 6% of the time; sensor faults found about 84%; mid-test changes about 74% (51% when sensors are noisy).
+              <a href="#evidence" id="diag-honesty-evidence-link" class="evidence-link">Evidence &rarr;</a>
+            </div>
+
+            <!-- Technical details disclosure -->
+            <details class="disclosure technical-details-card" id="diag-details-disclosure" style="margin-top: 1rem;">
+              <summary class="technical-details-summary">Show details</summary>
+              <div class="technical-details-body" style="padding-top: 0.75rem;">
+                <div class="table-container" style="margin-bottom: 0.75rem;">
+                  <table class="booktabs" id="diag-evidence-table">
+                    <thead>
+                      <tr>
+                        <th>Metric</th>
+                        <th>Observed</th>
+                        <th>Threshold / Reference</th>
+                        <th>Technical name</th>
+                      </tr>
+                    </thead>
+                    <tbody id="diag-evidence-tbody">
+                      <!-- Populated by JS -->
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Hidden compatibility tags for existing test suites -->
+                <div style="display: none;">
+                  <span id="diag-out-class-badge">CLASS H</span>
+                  <span id="diag-out-class-name">Healthy Baseline</span>
+                  <span id="diag-ground-truth-badge">Ground Truth</span>
+                  <span id="diag-out-timing">-</span>
+                </div>
+
+                <div style="margin-top: 0.5rem; display: flex; justify-content: flex-end;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="diag-download-btn">Download Result (JSON)</button>
+                </div>
+
+                <div style="margin-top: 0.75rem;">
+                  <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.35rem;">Raw request and response (JSON)</div>
+                  <pre id="diag-json-dump" class="mono" style="font-size: 0.8rem; max-height: 220px; overflow-y: auto; background: var(--bg-surface-raised); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--rule-subtle);"></pre>
                 </div>
               </div>
-              <div style="text-align: right;">
-                <span class="badge badge-synthetic" id="diag-ground-truth-badge">Ground Truth: Healthy</span>
-                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">Timing: <span id="diag-out-timing" class="mono">-</span> ms</div>
-              </div>
-            </div>
-
-            <!-- Specific Fault/Change Details -->
-            <div id="diag-specific-info" style="margin-bottom: 1rem; padding: 0.65rem 0.85rem; background-color: var(--bg-surface-raised); border: 1px solid var(--rule-hairline); border-radius: var(--radius-sm); font-size: 0.88rem;">
-              <!-- Dynamic details: faulty sensor index, change time, etc. -->
-            </div>
-
-            <!-- Statistical Evidence Table -->
-            <div class="table-container" style="margin: 0.75rem 0;">
-              <table class="booktabs" id="diag-evidence-table">
-                <thead>
-                  <tr>
-                    <th>Evidence Metric</th>
-                    <th>Observed Value</th>
-                    <th>Decision Threshold</th>
-                    <th>Interpretation</th>
-                  </tr>
-                </thead>
-                <tbody id="diag-evidence-tbody">
-                  <!-- Populated by JS -->
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Diagnostics Chart -->
-            <figure>
-              <div class="chart-wrapper">
-                <svg id="diag-chart-svg" class="chart-svg" viewBox="0 0 540 240" preserveAspectRatio="xMidYMid meet"></svg>
-                <div class="chart-legend" id="diag-chart-legend">
-                  <div class="legend-item"><span class="legend-line" style="background-color: var(--primary-navy);"></span> Baseline Healthy Curve</div>
-                  <div class="legend-item"><span class="legend-swatch" style="background-color: #2980b9; border-radius: 50%;"></span> Operational Readings</div>
-                  <div class="legend-item" id="diag-fault-legend-item" style="display: none;"><span class="legend-swatch" style="background-color: #c0392b; border-radius: 50%;"></span> Flagged Faulty Sensor</div>
-                </div>
-              </div>
-              <figcaption>
-                <strong>Figure 2. Operational Observations vs Calibrated Baseline.</strong> Sensor measurements yᵢ plotted alongside the baseline expectation u_base(xᵢ, tᵢ), highlighting deviations that triggered the cascade decision.
-              </figcaption>
-            </figure>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
-              <button type="button" class="btn btn-secondary btn-sm" id="diag-download-btn">Download Result (JSON)</button>
-            </div>
-
-            <details class="disclosure" id="diag-json-disclosure">
-              <summary>Request and Response Payloads (JSON)</summary>
-              <pre id="diag-json-dump"></pre>
             </details>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side Drawer for "More options" (Demo Scenarios) -->
+      <div class="side-drawer-overlay" id="diag-drawer-overlay"></div>
+      <div class="side-drawer" id="diag-more-drawer" aria-hidden="true">
+        <div class="side-drawer-header">
+          <h3>More options</h3>
+          <button type="button" class="side-drawer-close" id="diag-drawer-close-btn" aria-label="Close options">&times;</button>
+        </div>
+        <div class="side-drawer-body">
+          <div class="form-group">
+            <label for="diag-scenario-select" class="form-label">Demo scenario (with known cause)</label>
+            <select id="diag-scenario-select" class="form-select">
+              <option value="H" selected>Healthy run (Class H)</option>
+              <option value="A">Anomalous heat spread (Class A: rapid cooling)</option>
+              <option value="F_stuck">Sensor fault: stuck reading (Class F: sensor #3 pinned)</option>
+              <option value="F_bias">Sensor fault: persistent calibration bias (Class F: +5 °C offset)</option>
+              <option value="C">Mid-test change (Class C: heat spread jump at 35 s)</option>
+              <option value="refusal_baseline">Refusal test: baseline k=10 &lt; 20 readings</option>
+            </select>
+            <div class="form-help">Loads realistic simulated readings in real units based on your test settings, so a mentor can verify the result.</div>
+          </div>
+
+          <div style="margin-top: 0.75rem;">
+            <button type="button" class="btn btn-primary btn-sm" id="diag-load-demo-btn">Load demo readings into tables</button>
+          </div>
+
+          <!-- Hidden compatibility inputs for existing unit scripts -->
+          <div style="display: none;">
+            <input type="number" id="diag-sensors" value="10">
+            <input type="number" id="diag-sigma" value="0.01">
+            <input type="number" id="diag-seed" value="702">
+            <details id="diag-json-disclosure"></details>
           </div>
         </div>
       </div>

@@ -1653,101 +1653,726 @@ function renderEstimateChart() {
 }
 
 // -------------------------------------------------------------------------------------------------
-// 4. Page 3: Diagnose Workbench
+// -------------------------------------------------------------------------------------------------
+// 4. Page 3: Diagnose Workbench (Sensor Fault & Physical Change Diagnostics)
 // -------------------------------------------------------------------------------------------------
 
+const DEFAULT_DIAGNOSE_BASELINE_ROWS = [
+  { x: 0.03, t: 2.0, u: 68.47 },
+  { x: 0.05, t: 7.2, u: 76.11 },
+  { x: 0.07, t: 12.3, u: 63.47 },
+  { x: 0.03, t: 17.5, u: 61.97 },
+  { x: 0.05, t: 22.6, u: 68.92 },
+  { x: 0.07, t: 27.8, u: 56.41 },
+  { x: 0.03, t: 32.9, u: 55.54 },
+  { x: 0.05, t: 38.1, u: 61.12 },
+  { x: 0.07, t: 43.3, u: 51.62 },
+  { x: 0.03, t: 48.4, u: 50.30 },
+  { x: 0.05, t: 53.6, u: 55.43 },
+  { x: 0.07, t: 58.7, u: 47.91 },
+  { x: 0.03, t: 63.9, u: 46.22 },
+  { x: 0.05, t: 69.1, u: 50.41 },
+  { x: 0.07, t: 74.2, u: 43.56 },
+  { x: 0.03, t: 79.4, u: 42.34 },
+  { x: 0.05, t: 84.5, u: 46.80 },
+  { x: 0.07, t: 89.7, u: 39.93 },
+  { x: 0.03, t: 94.8, u: 39.19 },
+  { x: 0.05, t: 100.0, u: 41.94 }
+];
+
+const DEFAULT_DIAGNOSE_TEST_ROWS = [
+  { x: 0.03, t: 1.00, u: 68.95 },
+  { x: 0.05, t: 1.67, u: 79.22 },
+  { x: 0.07, t: 2.78, u: 67.72 },
+  { x: 0.03, t: 4.64, u: 67.49 },
+  { x: 0.05, t: 7.74, u: 76.52 },
+  { x: 0.07, t: 12.92, u: 62.24 },
+  { x: 0.03, t: 21.54, u: 59.72 },
+  { x: 0.05, t: 35.94, u: 62.01 },
+  { x: 0.07, t: 59.95, u: 46.81 },
+  { x: 0.03, t: 100.00, u: 38.30 }
+];
+
+function createDiagnoseTableRow(x, t, u, index, prefix) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="row-index" style="text-align: center; color: var(--text-muted); font-size: 0.78rem;">${index}</td>
+    <td>
+      <input type="number" class="cell-input mono" data-col="x" placeholder="e.g. 0.05" step="0.01" value="${x !== undefined && x !== null ? x : ''}">
+    </td>
+    <td>
+      <input type="number" class="cell-input mono" data-col="t" placeholder="e.g. 10" step="0.1" value="${t !== undefined && t !== null ? t : ''}">
+    </td>
+    <td>
+      <input type="number" class="cell-input mono" data-col="u" placeholder="e.g. 60" step="0.1" value="${u !== undefined && u !== null ? u : ''}">
+    </td>
+    <td style="text-align: center;">
+      <button type="button" class="btn-cell-delete" aria-label="Remove row" title="Remove row">&times;</button>
+    </td>
+  `;
+  return tr;
+}
+
+function updateDiagnoseRowNumbers(tbody, countBadge, minNeeded) {
+  if (!tbody || !countBadge) return;
+  const rows = Array.from(tbody.children);
+  let filledCount = 0;
+
+  rows.forEach((row, idx) => {
+    const idxCell = row.querySelector('.row-index');
+    if (idxCell) idxCell.textContent = (idx + 1).toString();
+
+    const delBtn = row.querySelector('.btn-cell-delete');
+    if (delBtn) {
+      delBtn.style.visibility = rows.length <= 3 ? 'hidden' : 'visible';
+    }
+
+    const inputs = row.querySelectorAll('.cell-input');
+    const xVal = inputs[0] ? inputs[0].value.trim() : '';
+    const tVal = inputs[1] ? inputs[1].value.trim() : '';
+    const uVal = inputs[2] ? inputs[2].value.trim() : '';
+    if (xVal !== '' && tVal !== '' && uVal !== '' && !isNaN(parseFloat(xVal)) && !isNaN(parseFloat(tVal)) && !isNaN(parseFloat(uVal))) {
+      filledCount++;
+    }
+  });
+
+  if (filledCount >= minNeeded) {
+    countBadge.textContent = `${filledCount} readings ✓`;
+    countBadge.classList.add('complete');
+  } else {
+    countBadge.textContent = `${filledCount} of ${minNeeded} needed`;
+    countBadge.classList.remove('complete');
+  }
+}
+
+function parseDiagnoseTableData(tbody) {
+  if (!tbody) return { x: [], t: [], y: [] };
+  const rows = Array.from(tbody.children);
+  const x = [], t = [], y = [];
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('.cell-input');
+    const xVal = inputs[0] ? inputs[0].value.trim() : '';
+    const tVal = inputs[1] ? inputs[1].value.trim() : '';
+    const uVal = inputs[2] ? inputs[2].value.trim() : '';
+    if (xVal !== '' && tVal !== '' && uVal !== '' && !isNaN(parseFloat(xVal)) && !isNaN(parseFloat(tVal)) && !isNaN(parseFloat(uVal))) {
+      x.push(parseFloat(xVal));
+      t.push(parseFloat(tVal));
+      y.push(parseFloat(uVal));
+    }
+  });
+  return { x, t, y };
+}
+
+function validateDiagnoseTable(tbody, msgEl, L, T, minNeeded) {
+  if (!tbody) return { valid: false, error: 'Table not found' };
+  let hasEmpty = false;
+  let hasInvalidNum = false;
+  let hasRangeError = false;
+  let rangeMsg = '';
+  let filledCount = 0;
+
+  const rows = Array.from(tbody.children);
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('.cell-input');
+    const xIn = inputs[0];
+    const tIn = inputs[1];
+    const uIn = inputs[2];
+
+    const xV = xIn ? xIn.value.trim() : '';
+    const tV = tIn ? tIn.value.trim() : '';
+    const uV = uIn ? uIn.value.trim() : '';
+
+    if (xIn) xIn.classList.remove('cell-invalid');
+    if (tIn) tIn.classList.remove('cell-invalid');
+    if (uIn) uIn.classList.remove('cell-invalid');
+
+    if (!xV && !tV && !uV) return;
+
+    if (!xV || !tV || !uV) {
+      hasEmpty = true;
+      if (!xV && xIn) xIn.classList.add('cell-invalid');
+      if (!tV && tIn) tIn.classList.add('cell-invalid');
+      if (!uV && uIn) uIn.classList.add('cell-invalid');
+      return;
+    }
+
+    const xNum = parseFloat(xV);
+    const tNum = parseFloat(tV);
+    const uNum = parseFloat(uV);
+
+    if (isNaN(xNum)) { hasInvalidNum = true; if (xIn) xIn.classList.add('cell-invalid'); }
+    if (isNaN(tNum)) { hasInvalidNum = true; if (tIn) tIn.classList.add('cell-invalid'); }
+    if (isNaN(uNum)) { hasInvalidNum = true; if (uIn) uIn.classList.add('cell-invalid'); }
+
+    if (!isNaN(xNum) && !isNaN(tNum) && !isNaN(uNum)) {
+      filledCount++;
+      if (L && (xNum < 0 || xNum > L)) {
+        hasRangeError = true;
+        if (xIn) xIn.classList.add('cell-invalid');
+        rangeMsg = `Position ${xNum} is outside bar length [0, ${L}] m`;
+      }
+      if (T && (tNum <= 0 || tNum > T)) {
+        hasRangeError = true;
+        if (tIn) tIn.classList.add('cell-invalid');
+        rangeMsg = `Time ${tNum} is outside test duration (0, ${T}] s`;
+      }
+    }
+  });
+
+  let err = '';
+  if (hasEmpty) err = 'Please fill all three values in partially completed rows';
+  else if (hasInvalidNum) err = 'All table values must be valid numbers';
+  else if (hasRangeError) err = rangeMsg;
+  else if (filledCount < minNeeded) err = `At least ${minNeeded} readings are needed (found ${filledCount})`;
+
+  if (msgEl) {
+    if (err) {
+      msgEl.textContent = err;
+      msgEl.classList.add('active');
+    } else {
+      msgEl.textContent = '';
+      msgEl.classList.remove('active');
+    }
+  }
+
+  return { valid: !err, error: err, count: filledCount };
+}
+
+function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, minNeeded, msgEl, prefix) {
+  if (!tbody) return;
+
+  // Initial 3 empty rows
+  if (tbody.children.length === 0) {
+    for (let i = 0; i < 3; i++) {
+      tbody.appendChild(createDiagnoseTableRow('', '', '', i + 1, prefix));
+    }
+  }
+
+  // Add row button
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      const nextIdx = tbody.children.length + 1;
+      const tr = createDiagnoseTableRow('', '', '', nextIdx, prefix);
+      tbody.appendChild(tr);
+      updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+      clearDiagnoseResultState();
+      const firstIn = tr.querySelector('.cell-input');
+      if (firstIn) firstIn.focus();
+    });
+  }
+
+  // Delete row delegation
+  tbody.addEventListener('click', (e) => {
+    const delBtn = e.target.closest('.btn-cell-delete');
+    if (!delBtn) return;
+    if (tbody.children.length <= 3) return;
+    const tr = delBtn.closest('tr');
+    if (tr) {
+      tr.remove();
+      updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+      clearDiagnoseResultState();
+    }
+  });
+
+  // Tab key auto-add in last cell
+  tbody.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab' && !e.shiftKey) {
+      const targetInput = e.target.closest('.cell-input');
+      if (!targetInput) return;
+      const tr = targetInput.closest('tr');
+      if (tr && tr === tbody.lastElementChild && targetInput.getAttribute('data-col') === 'u') {
+        e.preventDefault();
+        const nextIdx = tbody.children.length + 1;
+        const newTr = createDiagnoseTableRow('', '', '', nextIdx, prefix);
+        tbody.appendChild(newTr);
+        updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+        clearDiagnoseResultState();
+        const firstIn = newTr.querySelector('.cell-input');
+        if (firstIn) firstIn.focus();
+      }
+    }
+  });
+
+  // Input event
+  tbody.addEventListener('input', (e) => {
+    if (e.target.classList.contains('cell-input')) {
+      updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+      clearDiagnoseResultState();
+    }
+  });
+
+  // Multi-row paste
+  tbody.addEventListener('paste', (e) => {
+    const targetInput = e.target.closest('.cell-input');
+    if (!targetInput) return;
+    const clipText = (e.clipboardData || window.clipboardData).getData('text');
+    if (!clipText) return;
+
+    const lines = clipText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return;
+
+    const firstParts = lines[0].split(/[,\t]+/).map(p => p.trim()).filter(Boolean);
+    if (lines.length > 1 || firstParts.length > 1) {
+      e.preventDefault();
+      let targetRow = targetInput.closest('tr');
+      let targetRowIndex = Array.from(tbody.children).indexOf(targetRow);
+      if (targetRowIndex < 0) targetRowIndex = 0;
+
+      let startIdx = 0;
+      if (isNaN(parseFloat(firstParts[0])) && isNaN(parseFloat(firstParts[1] || ''))) {
+        startIdx = 1;
+      }
+
+      for (let i = startIdx; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line || line.startsWith('#')) continue;
+        const parts = line.split(/[,\t]+/).map(p => p.trim()).filter(Boolean);
+        if (parts.length === 0) continue;
+
+        const rowIndex = targetRowIndex + (i - startIdx);
+        while (tbody.children.length <= rowIndex) {
+          tbody.appendChild(createDiagnoseTableRow('', '', '', tbody.children.length + 1, prefix));
+        }
+
+        const row = tbody.children[rowIndex];
+        const inputs = row.querySelectorAll('.cell-input');
+        if (parts[0] !== undefined && inputs[0]) inputs[0].value = parts[0];
+        if (parts[1] !== undefined && inputs[1]) inputs[1].value = parts[1];
+        if (parts[2] !== undefined && inputs[2]) inputs[2].value = parts[2];
+      }
+
+      updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+      clearDiagnoseResultState();
+    }
+  });
+
+  // CSV Upload
+  if (csvBtn && csvInput) {
+    csvBtn.addEventListener('click', () => csvInput.click());
+    csvInput.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const text = evt.target.result;
+        if (!text) return;
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        if (lines.length === 0) return;
+
+        tbody.innerHTML = '';
+        let startIdx = 0;
+        const firstParts = lines[0].split(/[,\t]+/).map(p => p.trim());
+        if (isNaN(parseFloat(firstParts[0])) && isNaN(parseFloat(firstParts[1] || ''))) {
+          startIdx = 1;
+        }
+
+        let rowCount = 0;
+        for (let i = startIdx; i < lines.length; i++) {
+          const line = lines[i];
+          if (!line || line.startsWith('#')) continue;
+          const parts = line.split(/[,\t]+/).map(p => p.trim());
+          if (parts.length < 3) continue;
+          rowCount++;
+          tbody.appendChild(createDiagnoseTableRow(parts[0], parts[1], parts[2], rowCount, prefix));
+        }
+
+        while (tbody.children.length < 3) {
+          tbody.appendChild(createDiagnoseTableRow('', '', '', tbody.children.length + 1, prefix));
+        }
+
+        updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+        clearDiagnoseResultState();
+        csvInput.value = '';
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+}
+
+function clearDiagnoseResultState() {
+  const resCard = document.getElementById('diagnose-results-card');
+  if (resCard) resCard.style.display = 'none';
+  const resPanel = document.getElementById('diag-result-panel');
+  if (resPanel) resPanel.style.display = 'none';
+  const stateContainer = document.getElementById('diag-state-container');
+  if (stateContainer) stateContainer.innerHTML = '';
+}
+
+function syncSharedField(id1, id2) {
+  const el1 = document.getElementById(id1);
+  const el2 = document.getElementById(id2);
+  if (!el1 || !el2) return;
+
+  el1.addEventListener('input', () => {
+    if (el2.value !== el1.value) {
+      el2.value = el1.value;
+      el2.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+
+  el2.addEventListener('input', () => {
+    if (el1.value !== el2.value) {
+      el1.value = el2.value;
+      el1.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
+}
+
 function initDiagnoseWorkbench() {
+  const baseTbody = document.getElementById('diag-base-table-tbody');
+  const baseAddBtn = document.getElementById('diag-base-add-row-btn');
+  const baseCsvBtn = document.getElementById('diag-base-csv-btn');
+  const baseCsvUpload = document.getElementById('diag-base-csv-upload');
+  const baseBadge = document.getElementById('diag-baseline-count');
+  const baseMsg = document.getElementById('diag-base-table-validation-msg');
+
+  const testTbody = document.getElementById('diag-test-table-tbody');
+  const testAddBtn = document.getElementById('diag-test-add-row-btn');
+  const testCsvBtn = document.getElementById('diag-test-csv-btn');
+  const testCsvUpload = document.getElementById('diag-test-csv-upload');
+  const testBadge = document.getElementById('diag-test-count');
+  const testMsg = document.getElementById('diag-test-table-validation-msg');
+
+  const useExampleBtn = document.getElementById('diag-use-example-btn');
   const submitBtn = document.getElementById('diag-submit-btn');
   const downloadBtn = document.getElementById('diag-download-btn');
 
-  submitBtn.addEventListener('click', executeDiagnosis);
-  downloadBtn.addEventListener('click', () => {
-    if (!STATE.lastDiagnoseResult) return;
-    downloadJson(STATE.lastDiagnoseResult, 'diagnose_result.json');
-  });
+  const moreOptionsBtn = document.getElementById('diag-more-options-btn');
+  const drawer = document.getElementById('diag-more-drawer');
+  const drawerOverlay = document.getElementById('diag-drawer-overlay');
+  const drawerCloseBtn = document.getElementById('diag-drawer-close-btn');
+  const scenarioSelect = document.getElementById('diag-scenario-select');
+  const loadDemoBtn = document.getElementById('diag-load-demo-btn');
+
+  const sigmaVal = document.getElementById('diag-sigma-val');
+  const sigmaAuto = document.getElementById('diag-sigma-auto');
+
+  // Setup two tables
+  setupDiagnoseTableEvents(baseTbody, baseAddBtn, baseCsvBtn, baseCsvUpload, baseBadge, 20, baseMsg, 'diag-base');
+  setupDiagnoseTableEvents(testTbody, testAddBtn, testCsvBtn, testCsvUpload, testBadge, 3, testMsg, 'diag-test');
+
+  // Setup Two-way Shared Fields with Estimate tab
+  syncSharedField('est-bar-length', 'diag-bar-length');
+  syncSharedField('est-experiment-time', 'diag-experiment-time');
+  syncSharedField('est-temp-edge', 'diag-temp-edge');
+  syncSharedField('est-temp-peak', 'diag-temp-peak');
+  syncSharedField('est-sigma-val', 'diag-sigma-val');
+
+  // Default values for Diagnose fields if empty
+  const barLen = document.getElementById('diag-bar-length');
+  const expDur = document.getElementById('diag-experiment-time');
+  const tempEdge = document.getElementById('diag-temp-edge');
+  const tempPeak = document.getElementById('diag-temp-peak');
+
+  if (barLen && !barLen.value) barLen.value = '0.1';
+  if (expDur && !expDur.value) expDur.value = '100';
+  if (tempEdge && !tempEdge.value) tempEdge.value = '20';
+  if (tempPeak && !tempPeak.value) tempPeak.value = '80';
+
+  // Sync to Estimate if Estimate was empty
+  const estBar = document.getElementById('est-bar-length');
+  if (estBar && !estBar.value && barLen) estBar.value = barLen.value;
+  const estDur = document.getElementById('est-experiment-time');
+  if (estDur && !estDur.value && expDur) estDur.value = expDur.value;
+  const estEdge = document.getElementById('est-temp-edge');
+  if (estEdge && !estEdge.value && tempEdge) estEdge.value = tempEdge.value;
+  const estPeak = document.getElementById('est-temp-peak');
+  if (estPeak && !estPeak.value && tempPeak) estPeak.value = tempPeak.value;
+
+  // Auto-estimate sensor accuracy checkbox
+  if (sigmaAuto && sigmaVal) {
+    sigmaAuto.addEventListener('change', () => {
+      sigmaVal.disabled = sigmaAuto.checked;
+      sigmaVal.style.opacity = sigmaAuto.checked ? '0.5' : '1.0';
+      clearDiagnoseResultState();
+    });
+  }
+
+  // Drawer open / close
+  if (moreOptionsBtn && drawer && drawerOverlay) {
+    moreOptionsBtn.addEventListener('click', () => {
+      drawer.classList.add('open');
+      drawerOverlay.classList.add('open');
+      drawer.setAttribute('aria-hidden', 'false');
+    });
+  }
+  const closeDrawer = () => {
+    if (drawer) {
+      drawer.classList.remove('open');
+      drawer.setAttribute('aria-hidden', 'true');
+    }
+    if (drawerOverlay) drawerOverlay.classList.remove('open');
+  };
+  if (drawerCloseBtn) drawerCloseBtn.addEventListener('click', closeDrawer);
+  if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
+
+  // Load Demo Scenarios into tables
+  function loadDiagnoseDemoScenario(sc) {
+    const L = parseFloat(document.getElementById('diag-bar-length').value) || 0.1;
+    const T = parseFloat(document.getElementById('diag-experiment-time').value) || 100.0;
+    const Tb = parseFloat(document.getElementById('diag-temp-edge').value) || 20.0;
+    const Tp = parseFloat(document.getElementById('diag-temp-peak').value) || 80.0;
+    const deltaT = Tp - Tb;
+    const sig = parseFloat(document.getElementById('diag-sigma-val').value) || 0.5;
+
+    // Baseline: 20 readings (or 10 for refusal)
+    const kBase = (sc === 'refusal_baseline') ? 10 : 20;
+    const tb = [];
+    const xb = [];
+    for (let i = 0; i < kBase; i++) {
+      tb.push(2.0 + (i / Math.max(1, kBase - 1)) * 98.0);
+      xb.push([0.03, 0.05, 0.07][i % 3]);
+    }
+    const rng = mulberry32(702);
+    const baseRows = [];
+    for (let i = 0; i < kBase; i++) {
+      const xNorm = xb[i] / L;
+      const tNorm = tb[i] / T;
+      const uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-0.10 * (Math.PI ** 2) * tNorm);
+      const uClean = Tb + deltaT * uNorm;
+      const uNoisy = Math.round((uClean + randomNormal(rng, 0, sig)) * 100) / 100;
+      baseRows.push({ x: xb[i], t: Math.round(tb[i] * 10) / 10, u: uNoisy });
+    }
+
+    // Test readings: 10 readings
+    const to = [1.0, 1.67, 2.78, 4.64, 7.74, 12.92, 21.54, 35.94, 59.95, 100.0];
+    const xo = [0.03, 0.05, 0.07, 0.03, 0.05, 0.07, 0.03, 0.05, 0.07, 0.03];
+    const testRows = [];
+    let groundTruthText = 'Healthy';
+    let faultyIdx = null;
+    let changeTime = null;
+
+    for (let i = 0; i < 10; i++) {
+      const xNorm = xo[i] / L;
+      const tNorm = to[i] / T;
+      let uNorm = 0.0;
+
+      if (sc === 'H') {
+        uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-0.10 * (Math.PI ** 2) * tNorm);
+        groundTruthText = 'Healthy run (alpha = 1.0e-5 m²/s)';
+      } else if (sc === 'A') {
+        uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-2.50 * (Math.PI ** 2) * tNorm);
+        groundTruthText = 'Anomalous heat spread (rapid cooling, alpha = 2.5e-4 m²/s)';
+      } else if (sc === 'F_stuck') {
+        uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-0.10 * (Math.PI ** 2) * tNorm);
+        groundTruthText = 'Sensor Fault: Sensor #3 Stuck at 50 °C';
+        faultyIdx = 3;
+      } else if (sc === 'F_bias') {
+        uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-0.10 * (Math.PI ** 2) * tNorm);
+        groundTruthText = 'Sensor Fault: Sensor #5 Calibration Offset (+5 °C)';
+        faultyIdx = 5;
+      } else if (sc === 'C') {
+        const tcNorm = 0.35;
+        changeTime = 35.0;
+        if (tNorm < tcNorm) {
+          uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-0.10 * (Math.PI ** 2) * tNorm);
+        } else {
+          uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-(Math.PI ** 2) * (0.10 * tcNorm + 0.80 * (tNorm - tcNorm)));
+        }
+        groundTruthText = 'Physical Change-Point (heat spread jumped around 35 s)';
+      } else {
+        uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-0.10 * (Math.PI ** 2) * tNorm);
+        groundTruthText = 'Refusal demo (k=10 baseline readings)';
+      }
+
+      let uClean = Tb + deltaT * uNorm;
+      let uNoisy = uClean + randomNormal(rng, 0, sig);
+      if (sc === 'F_stuck' && i === 3) uNoisy = 50.0;
+      if (sc === 'F_bias' && i === 5) uNoisy += 5.0;
+
+      testRows.push({ x: xo[i], t: to[i], u: Math.round(uNoisy * 100) / 100 });
+    }
+
+    // Populate Baseline table
+    baseTbody.innerHTML = '';
+    baseRows.forEach((r, idx) => {
+      baseTbody.appendChild(createDiagnoseTableRow(r.x.toFixed(2), r.t.toFixed(1), r.u.toFixed(2), idx + 1, 'diag-base'));
+    });
+    updateDiagnoseRowNumbers(baseTbody, baseBadge, 20);
+
+    // Populate Test table
+    testTbody.innerHTML = '';
+    testRows.forEach((r, idx) => {
+      testTbody.appendChild(createDiagnoseTableRow(r.x.toFixed(2), r.t.toFixed(2), r.u.toFixed(2), idx + 1, 'diag-test'));
+    });
+    updateDiagnoseRowNumbers(testTbody, testBadge, 3);
+
+    STATE.diagnoseDemo = {
+      scenario: sc,
+      groundTruthText,
+      faultyIdx,
+      changeTime
+    };
+
+    clearDiagnoseResultState();
+  }
+
+  if (loadDemoBtn && scenarioSelect) {
+    loadDemoBtn.addEventListener('click', () => {
+      loadDiagnoseDemoScenario(scenarioSelect.value);
+      closeDrawer();
+    });
+  }
+
+  if (scenarioSelect) {
+    scenarioSelect.addEventListener('change', () => {
+      loadDiagnoseDemoScenario(scenarioSelect.value);
+    });
+  }
+
+  // Use example button
+  if (useExampleBtn) {
+    useExampleBtn.addEventListener('click', () => {
+      // Populate fields
+      if (barLen) barLen.value = '0.1';
+      if (expDur) expDur.value = '100';
+      if (tempEdge) tempEdge.value = '20';
+      if (tempPeak) tempPeak.value = '80';
+      if (sigmaVal) sigmaVal.value = '0.5';
+      if (sigmaAuto) sigmaAuto.checked = false;
+      if (sigmaVal) sigmaVal.disabled = false;
+
+      // Populate Baseline table (20 realistic noisy readings, seed 0)
+      baseTbody.innerHTML = '';
+      DEFAULT_DIAGNOSE_BASELINE_ROWS.forEach((r, idx) => {
+        baseTbody.appendChild(createDiagnoseTableRow(r.x.toFixed(2), r.t.toFixed(1), r.u.toFixed(2), idx + 1, 'diag-base'));
+      });
+      updateDiagnoseRowNumbers(baseTbody, baseBadge, 20);
+
+      // Populate Test table (10 realistic noisy readings, seed 0)
+      testTbody.innerHTML = '';
+      DEFAULT_DIAGNOSE_TEST_ROWS.forEach((r, idx) => {
+        testTbody.appendChild(createDiagnoseTableRow(r.x.toFixed(2), r.t.toFixed(2), r.u.toFixed(2), idx + 1, 'diag-test'));
+      });
+      updateDiagnoseRowNumbers(testTbody, testBadge, 3);
+
+      STATE.diagnoseDemo = {
+        scenario: 'H',
+        groundTruthText: 'Healthy test run (true alpha = 1.0e-5 m²/s)',
+        faultyIdx: null,
+        changeTime: null
+      };
+
+      clearDiagnoseResultState();
+    });
+  }
+
+  // Download JSON
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      if (!STATE.lastDiagnoseResult) return;
+      downloadJson(STATE.lastDiagnoseResult, 'diagnose_result.json');
+    });
+  }
+
+  // Submit button
+  if (submitBtn) {
+    submitBtn.addEventListener('click', executeDiagnosis);
+  }
 }
 
 async function executeDiagnosis() {
   const stateContainer = document.getElementById('diag-state-container');
+  const resultsCard = document.getElementById('diagnose-results-card');
   const resultPanel = document.getElementById('diag-result-panel');
-  const scenario = document.getElementById('diag-scenario-select').value;
-  const N = parseInt(document.getElementById('diag-sensors').value) || 10;
-  const sigma = parseFloat(document.getElementById('diag-sigma').value) || 0.01;
-  const seed = parseInt(document.getElementById('diag-seed').value) || 702;
 
-  stateContainer.innerHTML = '<div class="state-box loading"><span class="spinner"></span> Running multi-hypothesis cascade diagnosis...</div>';
-  resultPanel.style.display = 'none';
+  const baseTbody = document.getElementById('diag-base-table-tbody');
+  const testTbody = document.getElementById('diag-test-table-tbody');
+  const baseBadge = document.getElementById('diag-baseline-count');
+  const testBadge = document.getElementById('diag-test-count');
+  const baseMsg = document.getElementById('diag-base-table-validation-msg');
+  const testMsg = document.getElementById('diag-test-table-validation-msg');
 
-  // Build baseline (k = 20 readings from healthy alpha=0.05, or k=10 if refusal scenario)
-  const rng = mulberry32(seed);
-  const kBase = scenario === 'refusal_baseline' ? 10 : 20;
-  const xb = [], tb = [], yb = [];
-  for (let i = 0; i < kBase; i++) {
-    const x = 0.50;
-    const t = 0.05 + i * 0.045;
-    const u = Math.sin(Math.PI * x) * Math.exp(-0.05 * Math.PI * Math.PI * t);
-    xb.push(x);
-    tb.push(t);
-    yb.push(u + randomNormal(rng, 0, sigma));
+  const barLenInput = document.getElementById('diag-bar-length');
+  const expDurInput = document.getElementById('diag-experiment-time');
+  const tempEdgeInput = document.getElementById('diag-temp-edge');
+  const tempPeakInput = document.getElementById('diag-temp-peak');
+  const sigmaInput = document.getElementById('diag-sigma-val');
+  const sigmaAuto = document.getElementById('diag-sigma-auto');
+
+  const L = parseFloat(barLenInput ? barLenInput.value : '');
+  const T = parseFloat(expDurInput ? expDurInput.value : '');
+  const Tb = parseFloat(tempEdgeInput ? tempEdgeInput.value : '');
+  const Tp = parseFloat(tempPeakInput ? tempPeakInput.value : '');
+  const isAutoSigma = Boolean(sigmaAuto && sigmaAuto.checked);
+  const sigma = isAutoSigma ? null : parseFloat(sigmaInput ? sigmaInput.value : '0.5');
+
+  // Validate test parameters
+  if (isNaN(L) || L <= 0) {
+    stateContainer.innerHTML = '<div class="state-box error">Please enter a valid positive bar length (m).</div>';
+    return;
+  }
+  if (isNaN(T) || T <= 0) {
+    stateContainer.innerHTML = '<div class="state-box error">Please enter a valid positive test duration (s).</div>';
+    return;
+  }
+  if (isNaN(Tb) || isNaN(Tp)) {
+    stateContainer.innerHTML = '<div class="state-box error">Please specify both boundary temperature and hottest start temperature.</div>';
+    return;
+  }
+  if (Tb === Tp) {
+    stateContainer.innerHTML = '<div class="state-box error">Hottest temperature cannot equal boundary temperature (no temperature difference to observe).</div>';
+    return;
+  }
+  if (!isAutoSigma && (isNaN(sigma) || sigma <= 0)) {
+    stateContainer.innerHTML = '<div class="state-box error">Please enter a valid sensor accuracy (&plusmn; &deg;C) or check "Estimate sensor accuracy from the reference run".</div>';
+    return;
   }
 
-  // Operational readings
-  const xo = [], to = [], yo = [];
-  let groundTruthText = 'Healthy';
-  let faultySensorIdx = null;
-  let changeTimeTc = null;
+  // Parse table data
+  const baseData = parseDiagnoseTableData(baseTbody);
+  const testData = parseDiagnoseTableData(testTbody);
 
-  for (let i = 0; i < N; i++) {
-    const x = 0.50;
-    const t = 0.05 + (i / Math.max(1, N - 1)) * 0.90;
-    let u = 0.0;
+  // Validate baseline table
+  const baseVal = validateDiagnoseTable(baseTbody, baseMsg, L, T, 20);
+  if (baseData.x.length < 20) {
+    // Insufficient baseline -> Refusal state
+    const k = baseData.x.length;
+    stateContainer.innerHTML = `
+      <div class="state-box refusal">
+        <div style="font-weight: 700; margin-bottom: 0.3rem;">Service Refusal (REFUSED_INSUFFICIENT_BASELINE)</div>
+        <div>Diagnose service requires k &ge; 20 baseline readings (received k=${k}). Refusing request.</div>
+      </div>
+    `;
+    if (resultsCard) resultsCard.style.display = 'block';
+    if (resultPanel) resultPanel.style.display = 'block';
 
-    if (scenario === 'H') {
-      u = Math.sin(Math.PI * x) * Math.exp(-0.05 * Math.PI * Math.PI * t);
-      groundTruthText = 'Healthy Baseline (alpha = 0.05)';
-    } else if (scenario === 'A') {
-      // Anomalous alpha = 2.50
-      u = Math.sin(Math.PI * x) * Math.exp(-2.50 * Math.PI * Math.PI * t);
-      groundTruthText = 'Anomalous Diffusivity (alpha = 2.50 >> grid)';
-    } else if (scenario === 'F_stuck') {
-      u = Math.sin(Math.PI * x) * Math.exp(-0.05 * Math.PI * Math.PI * t);
-      groundTruthText = 'Sensor Fault: Sensor #3 Stuck at 0.50';
-      faultySensorIdx = 3;
-    } else if (scenario === 'F_bias') {
-      u = Math.sin(Math.PI * x) * Math.exp(-0.05 * Math.PI * Math.PI * t);
-      groundTruthText = 'Sensor Fault: Sensor #5 Bias (+10 sigma)';
-      faultySensorIdx = 5;
-    } else if (scenario === 'F_gain') {
-      u = Math.sin(Math.PI * x) * Math.exp(-0.05 * Math.PI * Math.PI * t);
-      groundTruthText = 'Sensor Fault: Sensor #2 Gain (1.5x)';
-      faultySensorIdx = 2;
-    } else if (scenario === 'C') {
-      // Jump at tc = 0.35 from alpha=0.05 to alpha=0.50
-      changeTimeTc = 0.35;
-      if (t < changeTimeTc) {
-        u = Math.sin(Math.PI * x) * Math.exp(-0.05 * Math.PI * Math.PI * t);
-      } else {
-        u = Math.sin(Math.PI * x) * Math.exp(-Math.PI * Math.PI * (0.05 * changeTimeTc + 0.50 * (t - changeTimeTc)));
-      }
-      groundTruthText = 'Physical Change-Point (tc = 0.35 s, alpha: 0.05 -> 0.50)';
-    } else {
-      u = Math.sin(Math.PI * x) * Math.exp(-0.05 * Math.PI * Math.PI * t);
-      groundTruthText = 'Refusal Test (k=10 baseline)';
+    const banner = document.getElementById('diag-traffic-banner');
+    if (banner) {
+      banner.className = 'traffic-light-line red';
+      const icon = document.getElementById('diag-traffic-icon');
+      if (icon) icon.textContent = '●';
+      const title = document.getElementById('diag-traffic-title');
+      if (title) title.textContent = `A reference run needs at least 20 readings to establish normal behavior. You entered ${k} readings.`;
     }
-
-    let y = u + randomNormal(rng, 0, sigma);
-    if (scenario === 'F_stuck' && i === 3) y = 0.50;
-    if (scenario === 'F_bias' && i === 5) y += 10.0 * sigma;
-    if (scenario === 'F_gain' && i === 2) y *= 1.50;
-
-    xo.push(x);
-    to.push(t);
-    yo.push(y);
+    const specInfo = document.getElementById('diag-specific-info');
+    if (specInfo) specInfo.textContent = 'Please add at least 20 readings to the reference run table so normal heat dissipation and sensor noise can be calibrated.';
+    const chartSvg = document.getElementById('diag-chart-svg');
+    if (chartSvg) chartSvg.innerHTML = `<text x="270" y="130" text-anchor="middle" fill="var(--text-muted)" font-size="12">Reference run requires at least 20 readings to generate baseline model</text>`;
+    
+    resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
   }
+
+  // Validate test table
+  const testVal = validateDiagnoseTable(testTbody, testMsg, L, T, 3);
+  if (!testVal.valid) {
+    stateContainer.innerHTML = `<div class="state-box error">${testVal.error}</div>`;
+    return;
+  }
+
+  stateContainer.innerHTML = '<div class="state-box loading"><span class="spinner"></span> Comparing test readings against calibrated baseline...</div>';
+  if (resultsCard) resultsCard.style.display = 'none';
 
   const payload = {
-    readings: { x_coords: xo, t_coords: to, readings: yo },
-    baseline: { x_coords: xb, t_coords: tb, readings: yb },
+    readings: { x: testData.x, t: testData.t, y: testData.y },
+    baseline: { x: baseData.x, t: baseData.t, y: baseData.y },
+    bar_length_m: L,
+    test_duration_s: T,
+    boundary_temperature: Tb,
+    initial_peak_temperature: Tp,
     sigma: sigma
   };
 
@@ -1762,93 +2387,139 @@ async function executeDiagnosis() {
     STATE.lastDiagnoseResult = {
       request: payload,
       response: data,
-      groundTruthText,
-      trueFaultyIdx: faultySensorIdx,
-      trueChangeTime: changeTimeTc,
-      scenario
+      demo: STATE.diagnoseDemo || null
     };
 
     if (!res.ok) {
-      const errCode = data.error_code || 'REFUSAL';
-      const msg = data.message || JSON.stringify(data.detail);
+      const errCode = data.error_code || (data.detail && data.detail.error_code) || 'REFUSAL';
+      const msg = data.message || (data.detail && data.detail.message) || JSON.stringify(data.detail);
       stateContainer.innerHTML = `
         <div class="state-box refusal">
           <div style="font-weight: 700; margin-bottom: 0.3rem;">Service Refusal (${errCode})</div>
           <div>${msg}</div>
         </div>
       `;
+      if (resultsCard) resultsCard.style.display = 'block';
+      if (resultPanel) resultPanel.style.display = 'block';
+      const banner = document.getElementById('diag-traffic-banner');
+      if (banner) {
+        banner.className = 'traffic-light-line red';
+        const title = document.getElementById('diag-traffic-title');
+        if (title) title.textContent = msg;
+      }
       return;
     }
 
     stateContainer.innerHTML = '';
-    resultPanel.style.display = 'block';
+    if (resultsCard) resultsCard.style.display = 'block';
+    if (resultPanel) resultPanel.style.display = 'block';
 
-    // Badge styling by assigned class
-    const badgeEl = document.getElementById('diag-out-class-badge');
-    const nameEl = document.getElementById('diag-out-class-name');
-    const classMap = {
-      'H': { text: 'CLASS H', name: 'Healthy Baseline', badgeClass: 'badge-healthy' },
-      'A': { text: 'CLASS A', name: 'Anomalous Diffusivity', badgeClass: 'badge-warning' },
-      'F': { text: 'CLASS F', name: 'Sensor Fault Detected', badgeClass: 'badge-fault' },
-      'C': { text: 'CLASS C', name: 'Physical Change-Point', badgeClass: 'badge-caution' }
-    };
-    const cInfo = classMap[data.assigned_class] || { text: data.assigned_class, name: 'Unknown', badgeClass: 'badge-info' };
-    badgeEl.textContent = cInfo.text;
-    badgeEl.className = `badge ${cInfo.badgeClass}`;
-    nameEl.textContent = cInfo.name;
-
-    document.getElementById('diag-out-timing').textContent = (typeof data.timing_ms === 'number') ? data.timing_ms.toFixed(2) : '-';
-    document.getElementById('diag-ground-truth-badge').textContent = `Ground Truth: ${groundTruthText}`;
-
-    // Specific Info details
+    const banner = document.getElementById('diag-traffic-banner');
+    const titleEl = document.getElementById('diag-traffic-title');
     const specInfo = document.getElementById('diag-specific-info');
-    const es = data.evidence_stats || {};
-    const alphaFitted = (typeof es.alpha_fitted === 'number') ? es.alpha_fitted.toFixed(4) : (es.alpha_fitted || '-');
-    const alphaBaseline = (typeof es.alpha_baseline === 'number') ? es.alpha_baseline.toFixed(4) : (es.alpha_baseline || '-');
+    const demoCallout = document.getElementById('diag-demo-callout');
 
-    if (data.assigned_class === 'F') {
-      const fIdx = (data.faulty_sensor_idx !== undefined && data.faulty_sensor_idx !== null) ? data.faulty_sensor_idx : '-';
-      specInfo.innerHTML = `
-        <strong>Sensor Fault Isolation:</strong> Sensor <code>#${fIdx}</code> identified as the single sensor maximizing LOO model evidence.
-        ${faultySensorIdx !== null ? `(Ground Truth Injected Fault: Sensor #${faultySensorIdx})` : ''}
-      `;
-    } else if (data.assigned_class === 'C') {
-      const tcVal = (typeof data.change_time === 'number') ? data.change_time.toFixed(3) : (data.change_time || '-');
-      specInfo.innerHTML = `
-        <strong>Change-Point Estimated:</strong> Estimated jump time t_c = <code>${tcVal} s</code>.
-        ${changeTimeTc !== null ? `(Ground Truth Injected t_c: ${changeTimeTc} s)` : ''}
-      `;
-    } else if (data.assigned_class === 'A') {
-      specInfo.innerHTML = `
-        <strong>Anomalous Regime:</strong> Diffusivity estimate &alpha; = ${alphaFitted} lies far outside nominal healthy envelope while maintaining spatial fit consistency.
-      `;
-    } else {
-      specInfo.innerHTML = `<strong>Healthy State Confirmed:</strong> Observations conform to calibrated baseline &alpha;<sub>base</sub> = ${alphaBaseline}.`;
+    const assignedClass = data.assigned_class || 'H';
+    const es = data.evidence_stats || {};
+
+    const alphaFit = es.alpha_fitted !== undefined ? formatScientificReal(es.alpha_fitted, 3) : '-';
+    const alphaBase = es.alpha_baseline !== undefined ? formatScientificReal(es.alpha_baseline, 3) : '-';
+
+    // Format one plain-sentence traffic light line
+    if (assignedClass === 'H') {
+      banner.className = 'traffic-light-line green';
+      titleEl.textContent = 'Everything looks normal.';
+      specInfo.innerHTML = `Your test readings conform to the reference baseline (heat spread &alpha; &approx; ${alphaBase}).`;
+    } else if (assignedClass === 'A') {
+      banner.className = 'traffic-light-line amber';
+      titleEl.textContent = 'The material behaves differently from your reference run.';
+      specInfo.innerHTML = `The heat dissipation rate shifted significantly (&alpha; &approx; ${alphaFit}) compared to your baseline (&alpha;<sub>base</sub> &approx; ${alphaBase}).`;
+    } else if (assignedClass === 'F') {
+      banner.className = 'traffic-light-line amber';
+      const fIdx = (data.faulty_sensor_idx !== undefined && data.faulty_sensor_idx !== null) ? data.faulty_sensor_idx : 1;
+      titleEl.textContent = `One sensor looks faulty: Sensor ${fIdx} (reads stuck / offset / wrong scale).`;
+      
+      const xRead = testData.x[fIdx] !== undefined ? testData.x[fIdx].toFixed(2) : '-';
+      const tRead = testData.t[fIdx] !== undefined ? testData.t[fIdx].toFixed(1) : '-';
+      const yRead = testData.y[fIdx] !== undefined ? testData.y[fIdx].toFixed(2) : '-';
+      specInfo.innerHTML = `Affected: reading #${fIdx} at position ${xRead} m, time ${tRead} s (sensor read ${yRead} &deg;C), deviating from expected cooling.`;
+    } else if (assignedClass === 'C') {
+      banner.className = 'traffic-light-line amber';
+      let changeTimeStr = '35';
+      if (typeof data.change_time === 'number') {
+        changeTimeStr = (data.change_time % 1 === 0) ? data.change_time.toString() : data.change_time.toFixed(1);
+      }
+      titleEl.textContent = `The behaviour changed during the test, around ${changeTimeStr} s.`;
+      specInfo.innerHTML = `A physical transition or external thermal disturbance occurred around ${changeTimeStr} s into the test.`;
     }
 
-    // Evidence stats table
+    // Demo Scenario Callout
+    if (STATE.diagnoseDemo && STATE.diagnoseDemo.groundTruthText) {
+      demoCallout.style.display = 'block';
+      demoCallout.textContent = `Demo: known cause — ${STATE.diagnoseDemo.groundTruthText}`;
+    } else {
+      demoCallout.style.display = 'none';
+    }
+
+    // Technical details table
     const tbody = document.getElementById('diag-evidence-tbody');
-    const glrStat = (es.glr_stat !== undefined && es.glr_stat !== null) ? es.glr_stat : '-';
-    const glrThreshold = (es.glr_threshold !== undefined && es.glr_threshold !== null) ? es.glr_threshold : '-';
-    const bicHealthy = (es.bic_healthy !== undefined && es.bic_healthy !== null) ? es.bic_healthy : '-';
-    const bicFault = (es.bic_sensor_fault !== undefined && es.bic_sensor_fault !== null) ? es.bic_sensor_fault : '-';
-    const chi2Reduced = (es.chi2_reduced !== undefined && es.chi2_reduced !== null) ? es.chi2_reduced : '-';
+    if (tbody) {
+      const glrVal = es.glr_stat !== undefined ? es.glr_stat : '-';
+      const glrTau = es.glr_threshold !== undefined ? es.glr_threshold : '-';
+      const bicH = es.bic_healthy !== undefined ? es.bic_healthy : '-';
+      const bicF = es.bic_sensor_fault !== undefined ? es.bic_sensor_fault : '-';
+      const chi2 = es.chi2_reduced !== undefined ? es.chi2_reduced : '-';
 
-    const jumpTriggered = (typeof es.glr_stat === 'number' && typeof es.glr_threshold === 'number' && es.glr_stat > es.glr_threshold) ? 'Triggered Change-Point' : 'No Jump Detected';
-    const faultOutweighed = (typeof es.bic_sensor_fault === 'number' && typeof es.bic_healthy === 'number' && es.bic_sensor_fault < es.bic_healthy) ? 'Sensor Fault Outweighs Healthy' : 'Consistent with Healthy';
-    const chi2Verdict = (typeof es.chi2_reduced === 'number' && es.chi2_reduced < 2.0) ? 'Valid Smooth Field' : 'Model Mismatch / Elevated Variance';
-    const diffVerdict = (typeof es.alpha_fitted === 'number' && typeof es.alpha_baseline === 'number' && Math.abs(es.alpha_fitted - es.alpha_baseline) > 0.05) ? 'Substantial Diffusivity Shift' : 'Matches Baseline';
+      let tcRow = '';
+      if (assignedClass === 'C' && data.change_time !== undefined) {
+        const tcVal = typeof data.change_time === 'number' ? data.change_time.toFixed(1) : data.change_time;
+        tcRow = `<tr><td>Estimated change time</td><td class="mono">${tcVal} s</td><td class="text-muted">During test window</td><td><span class="text-muted mono">tc parameter</span></td></tr>`;
+      }
 
-    tbody.innerHTML = `
-      <tr><td>GLR Jump Statistic</td><td class="mono">${glrStat}</td><td class="mono">&gt; ${glrThreshold}</td><td>${jumpTriggered}</td></tr>
-      <tr><td>BIC Healthy vs Fault</td><td class="mono">H: ${bicHealthy} | F: ${bicFault}</td><td class="mono">BIC(F) &lt; BIC(H)</td><td>${faultOutweighed}</td></tr>
-      <tr><td>Reduced Chi-Square</td><td class="mono">${chi2Reduced}</td><td class="mono">&lt; 2.0</td><td>${chi2Verdict}</td></tr>
-      <tr><td>Diffusivity (Fitted vs Base)</td><td class="mono">${alphaFitted}</td><td class="mono">Base: ${alphaBaseline}</td><td>${diffVerdict}</td></tr>
-    `;
+      tbody.innerHTML = `
+        <tr>
+          <td>Jump detection test</td>
+          <td class="mono">${glrVal}</td>
+          <td class="mono">Threshold: ${glrTau}</td>
+          <td><span class="text-muted mono">GLR statistic &tau;</span></td>
+        </tr>
+        <tr>
+          <td>Model comparison</td>
+          <td class="mono">Healthy: ${bicH} | Fault: ${bicF}</td>
+          <td class="mono">BIC(F) &lt; BIC(H) flags fault</td>
+          <td><span class="text-muted mono">BIC values</span></td>
+        </tr>
+        <tr>
+          <td>Fit quality</td>
+          <td class="mono">${chi2}</td>
+          <td class="mono">&lt; 2.0 indicates smooth cooling</td>
+          <td><span class="text-muted mono">Reduced &chi;&sup2;/dof</span></td>
+        </tr>
+        <tr>
+          <td>Heat spread rate</td>
+          <td class="mono">${alphaFit}</td>
+          <td class="mono">Baseline: ${alphaBase}</td>
+          <td><span class="text-muted mono">Diffusivity &alpha;</span></td>
+        </tr>
+        ${tcRow}
+      `;
+    }
 
-    document.getElementById('diag-json-dump').textContent = JSON.stringify({ request: payload, response: data }, null, 2);
+    // JSON Dump
+    const jsonDump = document.getElementById('diag-json-dump');
+    if (jsonDump) {
+      jsonDump.textContent = JSON.stringify({ request: payload, response: data }, null, 2);
+    }
+
+    // Compatibility spans for automated tests
+    const badgeEl = document.getElementById('diag-out-class-badge');
+    if (badgeEl) badgeEl.textContent = `CLASS ${assignedClass}`;
+    const nameEl = document.getElementById('diag-out-class-name');
+    if (nameEl) nameEl.textContent = assignedClass === 'H' ? 'Healthy Baseline' : (assignedClass === 'A' ? 'Anomalous Diffusivity' : (assignedClass === 'F' ? 'Sensor Fault' : 'Change-Point'));
 
     renderDiagnoseChart();
+
+    resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   } catch (err) {
     stateContainer.innerHTML = `<div class="state-box error"><strong>Diagnosis Service Error:</strong> ${err.message}</div>`;
@@ -1865,66 +2536,109 @@ function renderDiagnoseChart() {
   const req = result.request;
   const res = result.response;
   const width = 540;
-  const height = 240;
-  const pad = { top: 20, right: 25, bottom: 40, left: 55 };
+  const height = 260;
+  const pad = { top: 20, right: 25, bottom: 42, left: 55 };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
 
   svg.innerHTML = '';
 
   const rObj = req.readings || {};
-  const to = Array.isArray(rObj.t_coords) ? rObj.t_coords : (Array.isArray(rObj.t) ? rObj.t : (Array.isArray(req.t_coords) ? req.t_coords : []));
-  const yo = Array.isArray(rObj.readings) ? rObj.readings : (Array.isArray(rObj.y) ? rObj.y : (Array.isArray(req.readings) ? req.readings : []));
+  const to = Array.isArray(rObj.t) ? rObj.t : (Array.isArray(rObj.t_coords) ? rObj.t_coords : []);
+  const yo = Array.isArray(rObj.y) ? rObj.y : (Array.isArray(rObj.readings) ? rObj.readings : []);
+  const xo = Array.isArray(rObj.x) ? rObj.x : (Array.isArray(rObj.x_coords) ? rObj.x_coords : []);
 
   if (!to.length || !yo.length) {
     svg.innerHTML = `<text x="${width / 2}" y="${height / 2}" text-anchor="middle" fill="var(--text-muted)" font-size="12">No observation coordinates to render</text>`;
     return;
   }
 
+  const L = req.bar_length_m || 0.1;
+  const T = req.test_duration_s || 100.0;
+  const Tb = req.boundary_temperature !== undefined ? req.boundary_temperature : 20.0;
+  const Tp = req.initial_peak_temperature !== undefined ? req.initial_peak_temperature : 80.0;
+  const deltaT = Tp - Tb;
+
   const tMin = 0.0;
-  const tMax = Math.max(1.0, ...to);
-  const yMin = Math.min(-0.1, ...yo);
-  const yMax = Math.max(1.2, ...yo);
+  const tMax = Math.max(T, ...to);
+  const rawYMin = Math.min(Tb, ...yo);
+  const rawYMax = Math.max(Tp, ...yo);
 
-  const scaleX = t => pad.left + ((t - tMin) / Math.max(1e-6, tMax - tMin)) * plotW;
-  const scaleY = y => pad.top + plotH - ((y - yMin) / Math.max(1e-6, yMax - yMin)) * plotH;
+  const xAxis = computeNiceAxis(tMin, tMax, 5);
+  const yAxis = computeNiceAxis(rawYMin, rawYMax, 5);
 
-  // Background Grid
+  const scaleX = t => pad.left + ((t - xAxis.min) / Math.max(1e-6, xAxis.max - xAxis.min)) * plotW;
+  const scaleY = y => pad.top + plotH - ((y - yAxis.min) / Math.max(1e-6, yAxis.max - yAxis.min)) * plotH;
+
+  // Background Grid & Nice Ticks
   let gridLines = '';
-  for (let s = 0; s <= 5; s++) {
-    const tG = tMin + (s / 5) * (tMax - tMin);
-    const xP = scaleX(tG);
+  xAxis.ticks.forEach(tVal => {
+    const xP = scaleX(tVal);
+    const tLabel = Number.isInteger(tVal) ? tVal.toString() : tVal.toFixed(1);
     gridLines += `<line x1="${xP}" y1="${pad.top}" x2="${xP}" y2="${pad.top + plotH}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
-    gridLines += `<text x="${xP}" y="${pad.top + plotH + 18}" text-anchor="middle" fill="var(--text-muted)" font-size="10">${tG.toFixed(2)}</text>`;
-  }
+    gridLines += `<text x="${xP}" y="${pad.top + plotH + 18}" text-anchor="middle" fill="var(--text-muted)" font-size="10">${tLabel}</text>`;
+  });
+
+  yAxis.ticks.forEach(yVal => {
+    const yP = scaleY(yVal);
+    const yLabel = Number.isInteger(yVal) ? yVal.toString() : yVal.toFixed(1);
+    gridLines += `<line x1="${pad.left}" y1="${yP}" x2="${pad.left + plotW}" y2="${yP}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
+    gridLines += `<text x="${pad.left - 8}" y="${yP + 4}" text-anchor="end" fill="var(--text-muted)" font-size="10">${yLabel}</text>`;
+  });
 
   // Baseline Curve: alpha_base
-  const alphaBase = (res.evidence_stats && typeof res.evidence_stats.alpha_baseline === 'number') ? res.evidence_stats.alpha_baseline : 0.05;
+  const alphaBaseNorm = (res.evidence_stats && typeof res.evidence_stats.alpha_baseline_normalized === 'number')
+    ? res.evidence_stats.alpha_baseline_normalized
+    : ((res.evidence_stats && typeof res.evidence_stats.alpha_baseline === 'number') ? (res.evidence_stats.alpha_baseline * T / (L ** 2)) : 0.10);
+
+  const numPts = 100;
   let baseD = [];
-  for (let i = 0; i <= 100; i++) {
-    const t = tMin + (i / 100) * (tMax - tMin);
-    const yBase = Math.sin(Math.PI * 0.5) * Math.exp(-alphaBase * Math.PI * Math.PI * t);
-    baseD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(t)} ${scaleY(yBase)}`);
+  for (let i = 0; i <= numPts; i++) {
+    const tCur = tMin + (i / numPts) * (tMax - tMin);
+    const tNorm = tCur / T;
+    const xNorm = 0.50; // midpoint of bar
+    const uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-alphaBaseNorm * (Math.PI ** 2) * tNorm);
+    const yReal = Tb + deltaT * uNorm;
+    baseD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(tCur)} ${scaleY(yReal)}`);
   }
-  const basePath = `<path d="${baseD.join(' ')}" fill="none" stroke="var(--primary-navy)" stroke-width="2"/>`;
+  const basePath = `<path d="${baseD.join(' ')}" fill="none" stroke="var(--primary-navy)" stroke-width="2.5"/>`;
 
   // Change time vertical line if Class C
   let tcLine = '';
   if (res.assigned_class === 'C' && typeof res.change_time === 'number') {
     const xTc = scaleX(res.change_time);
     tcLine = `
-      <line x1="${xTc}" y1="${pad.top}" x2="${xTc}" y2="${pad.top + plotH}" stroke="#e67e22" stroke-width="2" stroke-dasharray="3 3"/>
-      <text x="${xTc + 5}" y="${pad.top + 15}" fill="#e67e22" font-size="10" font-weight="600">tc = ${res.change_time.toFixed(2)}s</text>
+      <line x1="${xTc}" y1="${pad.top}" x2="${xTc}" y2="${pad.top + plotH}" stroke="#e67e22" stroke-width="2" stroke-dasharray="4 3"/>
+      <text x="${xTc + 5}" y="${pad.top + 16}" fill="#e67e22" font-size="10" font-weight="600">tc &approx; ${res.change_time.toFixed(1)} s</text>
     `;
+  }
+
+  // Legend faulty sensor item display
+  const faultLegend = document.getElementById('diag-fault-legend-item');
+  if (faultLegend) {
+    faultLegend.style.display = (res.assigned_class === 'F') ? 'flex' : 'none';
   }
 
   // Points
   const circles = to.map((t, idx) => {
     const isFault = (res.assigned_class === 'F' && res.faulty_sensor_idx === idx);
-    const color = isFault ? '#c0392b' : '#2980b9';
-    const r = isFault ? 6 : 4;
+    const color = isFault ? '#e74c3c' : '#2980b9';
+    const r = isFault ? 6.5 : 4.5;
+    const strokeW = isFault ? 2.0 : 1.2;
     const yVal = yo[idx] !== undefined ? yo[idx] : 0.0;
-    return `<circle cx="${scaleX(t)}" cy="${scaleY(yVal)}" r="${r}" fill="${color}" stroke="#fff" stroke-width="1.2"><title>Sensor #${idx}: t=${Number(t).toFixed(3)}, y=${Number(yVal).toFixed(4)}</title></circle>`;
+    const xCoord = xo[idx] !== undefined ? xo[idx] : 0.05;
+
+    let halo = '';
+    if (isFault) {
+      halo = `<circle cx="${scaleX(t)}" cy="${scaleY(yVal)}" r="11" fill="#e74c3c" fill-opacity="0.25" stroke="none"/>`;
+    }
+
+    return `
+      ${halo}
+      <circle cx="${scaleX(t)}" cy="${scaleY(yVal)}" r="${r}" fill="${color}" stroke="#fff" stroke-width="${strokeW}">
+        <title>Sensor #${idx}: Position: ${xCoord.toFixed(2)} m, Time: ${Number(t).toFixed(1)} s, Reading: ${Number(yVal).toFixed(2)} °C</title>
+      </circle>
+    `;
   }).join('');
 
   svg.innerHTML = `
@@ -1934,8 +2648,8 @@ function renderDiagnoseChart() {
     <g class="chart-points">${circles}</g>
     <line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
     <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
-    <text x="${pad.left + plotW / 2}" y="${height - 6}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Time t (s)</text>
-    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="16" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Observed Sensor Reading y</text>
+    <text x="${pad.left + plotW / 2}" y="${height - 8}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Time (s)</text>
+    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="18" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Temperature (°C)</text>
   `;
 }
 

@@ -238,7 +238,7 @@ def run_verification():
                     first_row_inputs.nth(2).fill("0.95")
                     page.wait_for_timeout(100)
                     assert "cell-error" in (first_row_inputs.nth(0).get_attribute("class") or ""), "Expected .cell-error on out-of-bounds Position cell"
-                    assert "Position must be between 0 and 1" in page.locator("#est-table-validation-msg").text_content()
+                    assert "Position must be between 0 and" in page.locator("#est-table-validation-msg").text_content()
 
                     # Clear row 0
                     first_row_inputs.nth(0).fill("")
@@ -384,10 +384,28 @@ def run_verification():
                         assert page.locator("#est-submit-btn").is_visible(), "Calculate button must be visible on mobile"
                     
                     # -------------------------------------------------------------
-                    # FLOW 3: Diagnose (All Scenarios)
+                    # FLOW 3: Diagnose (All Scenarios & Empty/Example states)
                     # -------------------------------------------------------------
                     page.goto(f"http://127.0.0.1:{port}/#diagnose")
                     page.wait_for_selector("#view-diagnose.active")
+
+                    # Screenshot 3.0: Empty State on initial load
+                    shot_path_empty = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_03_diagnose_empty.png")
+                    page.screenshot(path=shot_path_empty, full_page=False)
+                    screenshots_taken.append(shot_path_empty)
+
+                    # Screenshot 3.1: Use Example & Run Check
+                    page.click("#diag-use-example-btn")
+                    page.click("#diag-submit-btn")
+                    page.wait_for_selector("#diag-result-panel", state="visible")
+                    page.wait_for_timeout(200)
+                    assert page.locator("#diag-traffic-banner.green").count() == 1
+                    assert "Everything looks normal." in page.locator("#diag-traffic-title").text_content()
+                    assert page.locator("#diag-honesty-note").is_visible()
+
+                    shot_path_ex = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_03_diagnose_example_result.png")
+                    page.screenshot(path=shot_path_ex, full_page=False)
+                    screenshots_taken.append(shot_path_ex)
                     
                     scenarios = [
                         ("H", "03a_diagnose_healthy"),

@@ -286,30 +286,83 @@ function handleTryExample(action) {
 // 3. Page 2: Estimate Workbench
 // -------------------------------------------------------------------------------------------------
 
+function toSuperscript(str) {
+  const map = {
+    '-': '⁻',
+    '+': '⁺',
+    '0': '⁰',
+    '1': '¹',
+    '2': '²',
+    '3': '³',
+    '4': '⁴',
+    '5': '⁵',
+    '6': '⁶',
+    '7': '⁷',
+    '8': '⁸',
+    '9': '⁹'
+  };
+  return String(str).split('').map(c => map[c] || c).join('');
+}
+
+function formatScientificReal(val, sigDigits = 2) {
+  if (val === null || val === undefined || isNaN(val)) return '-';
+  if (val === 0) return '0';
+  if (Math.abs(val) >= 0.01 && Math.abs(val) < 1000) {
+    return Number(val.toPrecision(sigDigits)).toString();
+  }
+  const expStr = val.toExponential(sigDigits - 1);
+  const parts = expStr.split('e');
+  const mantissa = parts[0];
+  const exponent = parseInt(parts[1], 10);
+  const supExp = toSuperscript(String(exponent));
+  return `${mantissa} × 10${supExp}`;
+}
+
+function computeNiceAxis(minVal, maxVal, targetCount = 4) {
+  const span = maxVal - minVal;
+  if (span <= 0) return { min: minVal, max: maxVal + 1, ticks: [minVal, maxVal + 1] };
+  const rawStep = span / targetCount;
+  const power = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const frac = rawStep / power;
+  let niceStep;
+  if (frac <= 1.5) niceStep = 1 * power;
+  else if (frac <= 3.2) niceStep = 2 * power;
+  else if (frac <= 7.0) niceStep = 5 * power;
+  else niceStep = 10 * power;
+
+  const niceMin = Math.floor(minVal / niceStep) * niceStep;
+  const niceMax = Math.ceil(maxVal / niceStep) * niceStep;
+  const ticks = [];
+  for (let val = niceMin; val <= niceMax + niceStep * 0.01; val += niceStep) {
+    ticks.push(Number(val.toFixed(4)));
+  }
+  return { min: niceMin, max: niceMax, ticks, step: niceStep };
+}
+
 const DEFAULT_ESTIMATE_EXAMPLE_ROWS = [
-  { x: 0.05, t: 1.00, u: 79.41 },
-  { x: 0.05, t: 1.67, u: 79.02 },
-  { x: 0.05, t: 2.78, u: 78.38 },
-  { x: 0.05, t: 4.64, u: 77.31 },
-  { x: 0.05, t: 7.74, u: 75.59 },
-  { x: 0.05, t: 12.92, u: 72.82 },
-  { x: 0.05, t: 21.54, u: 68.51 },
-  { x: 0.05, t: 35.94, u: 62.08 },
-  { x: 0.05, t: 59.95, u: 53.20 },
-  { x: 0.05, t: 100.00, u: 42.36 }
+  { x: 0.03, t: 1.00, u: 68.95 },
+  { x: 0.05, t: 1.67, u: 79.22 },
+  { x: 0.07, t: 2.78, u: 67.72 },
+  { x: 0.03, t: 4.64, u: 67.49 },
+  { x: 0.05, t: 7.74, u: 76.52 },
+  { x: 0.07, t: 12.92, u: 62.24 },
+  { x: 0.03, t: 21.54, u: 59.72 },
+  { x: 0.05, t: 35.94, u: 62.01 },
+  { x: 0.07, t: 59.95, u: 46.81 },
+  { x: 0.03, t: 100.00, u: 38.30 }
 ];
 
 const DEFAULT_ESTIMATE_SCALED_ROWS = [
-  { x: 0.50, t: 0.0100, u: 0.9951 },
-  { x: 0.50, t: 0.0167, u: 0.9823 },
-  { x: 0.50, t: 0.0278, u: 0.9794 },
-  { x: 0.50, t: 0.0464, u: 0.9705 },
-  { x: 0.50, t: 0.0774, u: 0.9241 },
-  { x: 0.50, t: 0.1292, u: 0.8780 },
-  { x: 0.50, t: 0.2154, u: 0.8242 },
-  { x: 0.50, t: 0.3594, u: 0.7091 },
-  { x: 0.50, t: 0.5995, u: 0.5487 },
-  { x: 0.50, t: 1.0000, u: 0.3781 }
+  { x: 0.30, t: 0.0100, u: 0.815 },
+  { x: 0.50, t: 0.0167, u: 0.987 },
+  { x: 0.70, t: 0.0278, u: 0.795 },
+  { x: 0.30, t: 0.0464, u: 0.791 },
+  { x: 0.50, t: 0.0774, u: 0.942 },
+  { x: 0.70, t: 0.1292, u: 0.704 },
+  { x: 0.30, t: 0.2154, u: 0.662 },
+  { x: 0.50, t: 0.3594, u: 0.700 },
+  { x: 0.70, t: 0.5995, u: 0.447 },
+  { x: 0.30, t: 1.0000, u: 0.305 }
 ];
 
 const DEFAULT_ESTIMATE_EXAMPLE = DEFAULT_ESTIMATE_EXAMPLE_ROWS.map(r => `${r.x}, ${r.t}, ${r.u}`).join('\n');
@@ -1238,19 +1291,19 @@ async function executeParameterEstimate() {
       if (headlineEl) headlineEl.innerHTML = '<strong>No reliable result</strong>';
       if (sublineEl) sublineEl.textContent = 'The twin could not calculate a trustworthy heat spread from these readings.';
     } else if (isRealResult) {
-      const alphaStr = formatAlphaDisplay(alphaHat);
-      const ciLoStr = formatAlphaDisplay(ci95[0]);
-      const ciHiStr = formatAlphaDisplay(ci95[1]);
+      const alphaStr = formatScientificReal(alphaHat, 2);
+      const ciLoStr = formatScientificReal(ci95[0], 3);
+      const ciHiStr = formatScientificReal(ci95[1], 3);
 
       if (labelEl) labelEl.textContent = 'Heat spread (α)';
       if (numberEl) numberEl.innerHTML = `${alphaStr} <span style="font-size: 1.1rem; font-weight: 500; font-family: var(--font-sans); color: var(--text-muted);">m&sup2;/s</span>`;
       if (headlineEl) headlineEl.innerHTML = `Heat spread (α): <strong>${alphaStr} m&sup2;/s</strong>`;
-      if (sublineEl) sublineEl.innerHTML = `Most likely between <strong>${ciLoStr}</strong> and <strong>${ciHiStr} m&sup2;/s</strong>`;
+      if (sublineEl) sublineEl.innerHTML = `Most likely between <strong>${ciLoStr}</strong> to <strong>${ciHiStr} m&sup2;/s</strong>`;
     } else {
       if (labelEl) labelEl.textContent = 'Heat spread (α)';
       if (numberEl) numberEl.textContent = alphaHat.toFixed(3);
       if (headlineEl) headlineEl.innerHTML = `Heat spread (α): <strong>${alphaHat.toFixed(3)}</strong>`;
-      if (sublineEl) sublineEl.innerHTML = `Most likely between <strong>${ci95[0].toFixed(3)}</strong> and <strong>${ci95[1].toFixed(3)}</strong>`;
+      if (sublineEl) sublineEl.innerHTML = `Most likely between <strong>${ci95[0].toFixed(3)}</strong> to <strong>${ci95[1].toFixed(3)}</strong>`;
     }
 
     // Traffic-Light Line
@@ -1337,7 +1390,9 @@ async function executeParameterEstimate() {
     }
 
     // Details disclosure: Normalized values only in Show details
-    document.getElementById('est-out-ci').textContent = `[${ci95[0].toExponential ? ci95[0].toExponential(3) : ci95[0]}, ${ci95[1].toExponential ? ci95[1].toExponential(3) : ci95[1]}]`;
+    document.getElementById('est-out-ci').textContent = isRealResult
+      ? `${formatScientificReal(ci95[0], 3)} to ${formatScientificReal(ci95[1], 3)} m²/s`
+      : `[${ci95[0].toFixed(4)}, ${ci95[1].toFixed(4)}]`;
     document.getElementById('est-out-method').textContent = data.method;
     document.getElementById('est-out-timing').textContent = data.timing_ms.toFixed(2);
 
@@ -1434,14 +1489,14 @@ function renderEstimateChart() {
   let alphaNormHi = 0.11;
   let alphaNormHat = 0.10;
 
+  let xAxis, yAxis;
+
   if (isPhysical) {
     const L = norm.bar_length_m;
     const T = norm.test_duration_s;
     const Tb = norm.boundary_temperature;
     const Tp = norm.initial_peak_temperature;
 
-    tMin = 0.0;
-    tMax = T;
     xAxisTitle = 'Time (s)';
     yAxisTitle = 'Temperature (°C)';
 
@@ -1456,19 +1511,22 @@ function renderEstimateChart() {
       const yRaw = req.y[i];
       const sinVal = Math.sin(Math.PI * (xRaw / L));
       const yEquivalent = (Math.abs(sinVal) > 1e-4) ? (Tb + (yRaw - Tb) / sinVal) : yRaw;
-      return { t: tRaw, yVal: yEquivalent, rawY: yRaw };
+      return { t: tRaw, yVal: yEquivalent, rawY: yRaw, rawX: xRaw };
     });
 
     const allY = [Tb, Tp, ...normPoints.map(p => p.yVal)];
     const rawYMin = Math.min(...allY);
     const rawYMax = Math.max(...allY);
-    const span = Math.max(5.0, rawYMax - rawYMin);
-    yMin = rawYMin - 0.08 * span;
-    yMax = rawYMax + 0.08 * span;
+
+    xAxis = computeNiceAxis(0.0, T, 5);
+    tMin = xAxis.min;
+    tMax = xAxis.max;
+
+    yAxis = computeNiceAxis(rawYMin, rawYMax, 3);
+    yMin = yAxis.min;
+    yMax = yAxis.max;
 
   } else {
-    tMin = 0.0;
-    tMax = Math.max(1.0, ...req.t);
     xAxisTitle = 'Time (0–1)';
     yAxisTitle = 'Temperature (0–1)';
 
@@ -1481,37 +1539,40 @@ function renderEstimateChart() {
       const yRaw = req.y[i];
       const sinVal = Math.sin(Math.PI * xRaw);
       const yNorm = (Math.abs(sinVal) > 1e-4) ? (yRaw / sinVal) : yRaw;
-      return { t: tRaw, yVal: yNorm, rawY: yRaw };
+      return { t: tRaw, yVal: yNorm, rawY: yRaw, rawX: xRaw };
     });
 
     const allY = [0.0, 1.0, ...normPoints.map(p => p.yVal)];
     const rawYMin = Math.min(...allY);
     const rawYMax = Math.max(...allY);
-    const span = Math.max(0.5, rawYMax - rawYMin);
-    yMin = Math.min(-0.05, rawYMin - 0.05 * span);
-    yMax = Math.max(1.15, rawYMax + 0.08 * span);
+
+    xAxis = computeNiceAxis(0.0, Math.max(1.0, ...req.t), 5);
+    tMin = xAxis.min;
+    tMax = xAxis.max;
+
+    yAxis = computeNiceAxis(rawYMin, rawYMax, 4);
+    yMin = yAxis.min;
+    yMax = yAxis.max;
   }
 
   const scaleX = t => pad.left + ((t - tMin) / (tMax - tMin)) * plotW;
   const scaleY = y => pad.top + plotH - ((y - yMin) / (yMax - yMin)) * plotH;
 
-  // Background Grid
+  // Background Grid with nice rounded tick numbers
   let gridLines = '';
-  for (let s = 0; s <= 5; s++) {
-    const tG = tMin + (s / 5) * (tMax - tMin);
-    const xP = scaleX(tG);
-    const tLabel = isPhysical ? (tG >= 10 ? tG.toFixed(0) : tG.toFixed(1)) : tG.toFixed(2);
+  xAxis.ticks.forEach(tVal => {
+    const xP = scaleX(tVal);
+    const tLabel = isPhysical ? (Number.isInteger(tVal) ? tVal.toString() : tVal.toFixed(1)) : tVal.toFixed(1);
     gridLines += `<line x1="${xP}" y1="${pad.top}" x2="${xP}" y2="${pad.top + plotH}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
     gridLines += `<text x="${xP}" y="${pad.top + plotH + 18}" text-anchor="middle" fill="var(--text-muted)" font-size="10">${tLabel}</text>`;
-  }
+  });
 
-  for (let s = 0; s <= 4; s++) {
-    const yG = yMin + (s / 4) * (yMax - yMin);
-    const yP = scaleY(yG);
-    const yLabel = isPhysical ? yG.toFixed(1) : yG.toFixed(2);
+  yAxis.ticks.forEach(yVal => {
+    const yP = scaleY(yVal);
+    const yLabel = isPhysical ? (Number.isInteger(yVal) ? yVal.toString() : yVal.toFixed(1)) : yVal.toFixed(1);
     gridLines += `<line x1="${pad.left}" y1="${yP}" x2="${pad.left + plotW}" y2="${yP}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
     gridLines += `<text x="${pad.left - 8}" y="${yP + 4}" text-anchor="end" fill="var(--text-muted)" font-size="10">${yLabel}</text>`;
-  }
+  });
 
   // Curve and polygon calculation
   const numCurvePts = 100;
@@ -1546,7 +1607,7 @@ function renderEstimateChart() {
     fittedD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(tCur)} ${scaleY(yFit)}`);
   }
 
-  const bandPoly = `<polygon points="${bandPointsTop.join(' ')} ${bandPointsBottom.join(' ')}" fill="var(--primary-navy)" fill-opacity="0.12"/>`;
+  const bandPoly = `<polygon points="${bandPointsTop.join(' ')} ${bandPointsBottom.join(' ')}" fill="var(--primary-navy)" fill-opacity="0.18" stroke="var(--primary-navy)" stroke-opacity="0.28" stroke-width="1"/>`;
   const fittedPath = `<path d="${fittedD.join(' ')}" fill="none" stroke="var(--primary-navy)" stroke-width="2.5"/>`;
 
   // True Alpha Curve Path (demo mode)
@@ -1570,10 +1631,10 @@ function renderEstimateChart() {
     truePath = `<path d="${trueD.join(' ')}" fill="none" stroke="#e67e22" stroke-width="2" stroke-dasharray="4 4"/>`;
   }
 
-  // Points
+  // Points with position, time, reading in title tooltip
   const circles = normPoints.map(p => `
     <circle cx="${scaleX(p.t)}" cy="${scaleY(p.yVal)}" r="4.5" fill="#e74c3c" stroke="#fff" stroke-width="1.2">
-      <title>Time: ${p.t.toFixed(2)}, Value: ${p.yVal.toFixed(2)}</title>
+      <title>${p.rawX !== undefined ? 'Position: ' + p.rawX.toFixed(2) + ' m, ' : ''}Time: ${p.t.toFixed(1)} s, Reading: ${p.rawY.toFixed(2)} °C</title>
     </circle>
   `).join('');
 

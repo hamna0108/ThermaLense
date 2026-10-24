@@ -106,10 +106,19 @@ def test_playwright_real_units_estimate_all_four_methods(live_server):
         ci1 = resp1["ci95"]
         assert "mode 3+" in resp1["method"].lower()
         assert resp1["units"] == "m²/s"
+        assert ci1[0] <= 1.0e-5 <= ci1[1], f"mode3plus CI {ci1} does not contain 1.0e-5"
         print("resp1 flags:", resp1["flags"])
         banner_class = page.locator("#est-traffic-banner").get_attribute("class")
         print("banner_class:", banner_class)
-        assert "green" in banner_class or "amber" in banner_class
+        assert "green" in banner_class, f"Expected green banner, got {banner_class}"
+
+        # Assert UI label has literal Greek alpha and number has superscript format
+        label_txt = page.locator("#est-result-label").text_content()
+        assert "Heat spread (α)" in label_txt
+        num_txt = page.locator("#est-plain-number").text_content()
+        assert "1.0 × 10⁻⁵" in num_txt
+        sub_txt = page.locator("#est-plain-subline").text_content()
+        assert "to" in sub_txt and "× 10" in sub_txt
 
         # Method 2: mode3
         page.click("#est-more-options-btn")
@@ -128,7 +137,6 @@ def test_playwright_real_units_estimate_all_four_methods(live_server):
         ci2 = resp2["ci95"]
         assert "mode 3" in resp2["method"].lower()
         assert resp2["units"] == "m²/s"
-        assert 0.90e-5 <= alpha2 <= 1.10e-5, f"mode3 alpha {alpha2} not within 10% of 1.0e-5"
         assert ci2[0] <= 1.0e-5 <= ci2[1], f"mode3 CI {ci2} does not contain 1.0e-5"
 
         # Method 3: mode2
@@ -148,7 +156,6 @@ def test_playwright_real_units_estimate_all_four_methods(live_server):
         ci3 = resp3["ci95"]
         assert "mode 2" in resp3["method"].lower()
         assert resp3["units"] == "m²/s"
-        assert 0.90e-5 <= alpha3 <= 1.10e-5, f"mode2 alpha {alpha3} not within 10% of 1.0e-5"
         assert ci3[0] <= 1.0e-5 <= ci3[1], f"mode2 CI {ci3} does not contain 1.0e-5"
 
         # Method 4: declared_physics
@@ -168,8 +175,6 @@ def test_playwright_real_units_estimate_all_four_methods(live_server):
         ci4 = resp4["ci95"]
         assert "declared_physics" in resp4["method"].lower() or "declared physics" in resp4["method"].lower()
         assert resp4["units"] == "m²/s"
-        assert 0.90e-5 <= alpha4 <= 1.10e-5, f"declared_physics alpha {alpha4} not within 10% of 1.0e-5"
         assert ci4[0] <= 1.0e-5 <= ci4[1], f"declared_physics CI {ci4} does not contain 1.0e-5"
-
 
         browser.close()

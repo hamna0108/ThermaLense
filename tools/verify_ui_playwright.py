@@ -264,10 +264,10 @@ def run_verification():
 
                     # Assert Result Card contents & Typography hierarchy
                     assert "Heat spread (α)" in page.locator("#est-result-label").text_content()
-                    assert page.locator("#est-plain-number").text_content().strip() != "", "Expected result number"
+                    assert "1.0 × 10⁻⁵" in page.locator("#est-plain-number").text_content()
                     assert "Most likely between" in page.locator("#est-plain-subline").text_content()
-                    banner_cls = page.locator("#est-traffic-banner").get_attribute("class")
-                    assert "green" in banner_cls or "amber" in banner_cls, f"Expected green or amber banner, got {banner_cls}"
+                    assert page.locator("#est-traffic-banner.green").count() == 1, "Expected green traffic banner"
+                    assert "Result looks trustworthy" in page.locator("#est-traffic-title").text_content()
                     assert page.locator("#est-chart-svg").is_visible(), "Measured vs fitted chart must be visible"
 
                     # Screenshot 3: After Calculate

@@ -1479,9 +1479,16 @@ details.technical-details-card summary.technical-details-summary:hover {
   font-size: var(--fs-small);
   color: var(--text-muted);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  text-transform: none;
+  letter-spacing: 0.02em;
   margin-bottom: 0.2rem;
+}
+
+#est-result-label,
+.no-uppercase,
+[id*="alpha"],
+tr[id*="alpha"] td {
+  text-transform: none !important;
 }
 
 .result-number {

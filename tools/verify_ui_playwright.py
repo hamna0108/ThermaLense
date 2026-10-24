@@ -182,15 +182,20 @@ def run_verification():
                     page.wait_for_selector("#view-estimate.active")
 
                     # 2a. Verify Empty State & Table Initialization
-                    page.wait_for_selector("#est-empty-state", state="visible")
+                    assert page.locator("#estimate-results-card").is_hidden(), "Result card should NOT be visible before calculation"
                     assert page.locator("#est-result-panel").is_hidden(), "Result panel should NOT be visible on fresh load"
                     assert page.locator("#est-readings-table tbody tr").count() == 8, "Expected 8 initial table rows"
-                    assert "0 reading" in page.locator("#est-readings-count").text_content(), "Expected 0 readings on fresh load"
+                    assert "0 of 3 needed" in page.locator("#est-readings-count").text_content(), "Expected '0 of 3 needed' on fresh load"
+
+                    # Screenshot 1: Empty state
+                    shot_empty = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02a_estimate_empty.png")
+                    page.screenshot(path=shot_empty, full_page=False)
+                    screenshots_taken.append(shot_empty)
 
                     # 2b. Verify Validation on Empty Table (< 3 readings)
                     page.click("#est-submit-btn")
                     page.wait_for_timeout(100)
-                    assert page.locator("#est-result-panel").is_hidden(), "Result panel should NOT appear with fewer than 3 readings"
+                    assert page.locator("#estimate-results-card").is_hidden(), "Result card should NOT appear with fewer than 3 readings"
                     val_msg = page.locator("#est-table-validation-msg").text_content()
                     assert "3 readings" in val_msg or "3 readings" in page.locator("#est-state-container").text_content()
 
@@ -200,6 +205,11 @@ def run_verification():
                     page.wait_for_timeout(100)
                     assert "cell-error" in (first_row_inputs.nth(1).get_attribute("class") or ""), "Expected .cell-error on invalid Time cell"
                     assert "Time must be a number" in page.locator("#est-table-validation-msg").text_content()
+
+                    # Screenshot 4: One error cell
+                    shot_err = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02d_estimate_error_cell.png")
+                    page.screenshot(path=shot_err, full_page=False)
+                    screenshots_taken.append(shot_err)
 
                     first_row_inputs.nth(0).fill("2.5")  # Position out of bounds [0, 1]
                     first_row_inputs.nth(1).fill("0.05")
@@ -218,9 +228,15 @@ def run_verification():
                     page.click("#est-use-example-btn")
                     page.wait_for_timeout(100)
                     assert page.locator("#est-readings-table tbody tr").count() == 10, "Expected 10 rows after 'Use example'"
-                    assert "10 reading" in page.locator("#est-readings-count").text_content()
+                    assert "10 readings ✓" in page.locator("#est-readings-count").text_content()
+
+                    # Screenshot 2: After "Use example"
+                    shot_example = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02b_estimate_after_example.png")
+                    page.screenshot(path=shot_example, full_page=False)
+                    screenshots_taken.append(shot_example)
 
                     page.click("#est-submit-btn")
+                    page.wait_for_selector("#estimate-results-card", state="visible")
                     page.wait_for_selector("#est-result-panel", state="visible")
                     page.wait_for_timeout(250)
 
@@ -231,6 +247,12 @@ def run_verification():
                     assert "Result looks trustworthy" in page.locator("#est-traffic-title").text_content()
                     assert page.locator("#est-chart-svg").is_visible(), "Measured vs fitted chart must be visible"
 
+                    # Screenshot 3: After Calculate
+                    shot_calc = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02c_estimate_after_calculate.png")
+                    page.screenshot(path=shot_calc, full_page=False)
+                    screenshots_taken.append(shot_calc)
+
+                    # Also save legacy path for compatibility
                     page.evaluate("window.scrollTo(0, 0)")
                     shot_path = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02_estimate_mode3plus.png")
                     page.screenshot(path=shot_path, full_page=False)
@@ -239,6 +261,13 @@ def run_verification():
                     # 2e. "More options" Side Drawer & Mode 2 Test
                     page.click("#est-more-options-btn")
                     page.wait_for_selector("#est-more-drawer.open", state="visible")
+                    page.wait_for_timeout(150)
+
+                    # Screenshot 5: Drawer open
+                    shot_drawer = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02e_estimate_drawer_open.png")
+                    page.screenshot(path=shot_drawer, full_page=False)
+                    screenshots_taken.append(shot_drawer)
+
                     page.select_option("#est-method-select", "mode2")
                     page.click("#est-drawer-close-btn")
                     page.wait_for_timeout(150)

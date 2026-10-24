@@ -301,23 +301,35 @@ const DEFAULT_ESTIMATE_EXAMPLE_ROWS = [
 
 const DEFAULT_ESTIMATE_EXAMPLE = DEFAULT_ESTIMATE_EXAMPLE_ROWS.map(r => `${r.x.toFixed(4)}, ${r.t.toFixed(4)}, ${r.u.toFixed(4)}`).join('\n');
 
-function createEstimateTableRow(x = '', t = '', u = '') {
+function createEstimateTableRow(x = '', t = '', u = '', rowNum = 1) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td><input type="text" class="cell-input" data-col="x" value="${x}" placeholder="0.50" autocomplete="off" spellcheck="false"></td>
-    <td><input type="text" class="cell-input" data-col="t" value="${t}" placeholder="0.01" autocomplete="off" spellcheck="false"></td>
-    <td><input type="text" class="cell-input" data-col="u" value="${u}" placeholder="0.98" autocomplete="off" spellcheck="false"></td>
+    <td class="row-num">${rowNum}</td>
+    <td><input type="text" class="cell-input" data-col="x" value="${x}" placeholder="e.g. 0.5" autocomplete="off" spellcheck="false"></td>
+    <td><input type="text" class="cell-input" data-col="t" value="${t}" placeholder="e.g. 0.1" autocomplete="off" spellcheck="false"></td>
+    <td><input type="text" class="cell-input" data-col="u" value="${u}" placeholder="e.g. 0.8" autocomplete="off" spellcheck="false"></td>
     <td style="text-align: center;"><button type="button" class="btn-cell-delete" title="Delete row" aria-label="Delete row">&times;</button></td>
   `;
   return tr;
 }
 
+function updateTableRowNumbers() {
+  const tbody = document.getElementById('est-table-tbody');
+  if (!tbody) return;
+  Array.from(tbody.children).forEach((tr, idx) => {
+    const numTd = tr.querySelector('.row-num');
+    if (numTd) numTd.textContent = (idx + 1).toString();
+  });
+}
+
 function clearEstimateResultState() {
+  const resultsCard = document.getElementById('estimate-results-card');
   const resultPanel = document.getElementById('est-result-panel');
   const emptyState = document.getElementById('est-empty-state');
   const stateContainer = document.getElementById('est-state-container');
+  if (resultsCard) resultsCard.style.display = 'none';
   if (resultPanel) resultPanel.style.display = 'none';
-  if (emptyState) emptyState.style.display = 'flex';
+  if (emptyState) emptyState.style.display = 'none';
   if (stateContainer) stateContainer.innerHTML = '';
 }
 
@@ -325,12 +337,21 @@ function validateEstimateTable() {
   const tbody = document.getElementById('est-table-tbody');
   const validationMsg = document.getElementById('est-table-validation-msg');
   const countBadge = document.getElementById('est-readings-count');
-  const unitRealBtn = document.getElementById('est-unit-real-btn');
-  const isRealUnits = unitRealBtn && unitRealBtn.classList.contains('active');
+  const unitsHelper = document.getElementById('est-units-rule-helper');
 
   const barLengthInput = document.getElementById('est-bar-length');
+  const expDurationInput = document.getElementById('est-experiment-time');
   const barLength = barLengthInput ? parseFloat(barLengthInput.value) : NaN;
-  const hasBarLength = (!isNaN(barLength) && barLength > 0);
+  const expDuration = expDurationInput ? parseFloat(expDurationInput.value) : NaN;
+  const hasRealUnits = (!isNaN(barLength) && barLength > 0 && !isNaN(expDuration) && expDuration > 0);
+
+  if (unitsHelper) {
+    if (hasRealUnits) {
+      unitsHelper.textContent = `Positions are in metres (0 to ${barLength} m) and times in seconds. Result will be shown in m²/s.`;
+    } else {
+      unitsHelper.textContent = 'Positions are 0–1 and time is 0–1.';
+    }
+  }
 
   if (!tbody) return { validCount: 0, hasErrors: false, readings: [], firstErrorMessage: '' };
 
@@ -395,27 +416,19 @@ function validateEstimateTable() {
     }
 
     if (!isNaN(xNum) && isFinite(xNum)) {
-      if (!isRealUnits) {
+      if (!hasRealUnits) {
         // Scaled 0-1
         if (xNum < 0 || xNum > 1) {
           xInput.classList.add('cell-error');
           rowHasError = true;
-          if (!firstErrorMessage) firstErrorMessage = 'Position must be between 0 and 1 (or within the bar length)';
+          if (!firstErrorMessage) firstErrorMessage = 'Position must be between 0 and 1';
         }
       } else {
         // Real units
-        if (hasBarLength) {
-          if (xNum < 0 || xNum > barLength) {
-            xInput.classList.add('cell-error');
-            rowHasError = true;
-            if (!firstErrorMessage) firstErrorMessage = `Position must be between 0 and ${barLength} (or within the bar length)`;
-          }
-        } else {
-          if (xNum < 0) {
-            xInput.classList.add('cell-error');
-            rowHasError = true;
-            if (!firstErrorMessage) firstErrorMessage = 'Position must be between 0 and 1 (or within the bar length)';
-          }
+        if (xNum < 0 || xNum > barLength) {
+          xInput.classList.add('cell-error');
+          rowHasError = true;
+          if (!firstErrorMessage) firstErrorMessage = `Position must be between 0 and ${barLength} (or within the bar length)`;
         }
       }
     }
@@ -438,7 +451,11 @@ function validateEstimateTable() {
   });
 
   if (countBadge) {
-    countBadge.textContent = `${validCount} reading${validCount === 1 ? '' : 's'}`;
+    if (validCount < 3) {
+      countBadge.textContent = `${validCount} of 3 needed`;
+    } else {
+      countBadge.textContent = `${validCount} readings ✓`;
+    }
   }
 
   if (validationMsg) {
@@ -483,8 +500,24 @@ function initEstimateWorkbench() {
   // Initialize table with 8 empty rows
   if (tbody && tbody.children.length === 0) {
     for (let i = 0; i < 8; i++) {
-      tbody.appendChild(createEstimateTableRow());
+      tbody.appendChild(createEstimateTableRow('', '', '', i + 1));
     }
+  }
+
+  // Bar length and test time inputs
+  const barLengthInput = document.getElementById('est-bar-length');
+  const expDurationInput = document.getElementById('est-experiment-time');
+  if (barLengthInput) {
+    barLengthInput.addEventListener('input', () => {
+      validateEstimateTable();
+      clearEstimateResultState();
+    });
+  }
+  if (expDurationInput) {
+    expDurationInput.addEventListener('input', () => {
+      validateEstimateTable();
+      clearEstimateResultState();
+    });
   }
 
   validateEstimateTable();
@@ -494,8 +527,10 @@ function initEstimateWorkbench() {
   if (addRowBtn) {
     addRowBtn.addEventListener('click', () => {
       if (tbody) {
-        const tr = createEstimateTableRow();
+        const nextIdx = tbody.children.length + 1;
+        const tr = createEstimateTableRow('', '', '', nextIdx);
         tbody.appendChild(tr);
+        updateTableRowNumbers();
         validateEstimateTable();
         clearEstimateResultState();
         const firstInput = tr.querySelector('.cell-input');
@@ -513,8 +548,9 @@ function initEstimateWorkbench() {
       if (tr) {
         tr.remove();
         if (tbody.children.length === 0) {
-          tbody.appendChild(createEstimateTableRow());
+          tbody.appendChild(createEstimateTableRow('', '', '', 1));
         }
+        updateTableRowNumbers();
         validateEstimateTable();
         clearEstimateResultState();
       }
@@ -537,7 +573,7 @@ function initEstimateWorkbench() {
       const lines = clipText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
       if (lines.length === 0) return;
 
-      const firstLineParts = lines[0].split(/[,\t\s]+/).filter(Boolean);
+      const firstLineParts = lines[0].split(/[,\t]+/).map(p => p.trim()).filter(Boolean);
       if (lines.length > 1 || firstLineParts.length > 1) {
         e.preventDefault();
 
@@ -551,6 +587,9 @@ function initEstimateWorkbench() {
           startIdx = 1;
         }
 
+        const targetCol = targetInput.getAttribute('data-col');
+        const colOffset = targetCol === 't' ? 1 : (targetCol === 'u' ? 2 : 0);
+
         for (let i = startIdx; i < lines.length; i++) {
           const line = lines[i];
           if (!line || line.startsWith('#')) continue;
@@ -559,16 +598,23 @@ function initEstimateWorkbench() {
 
           const rowIndex = targetRowIndex + (i - startIdx);
           while (tbody.children.length <= rowIndex) {
-            tbody.appendChild(createEstimateTableRow());
+            tbody.appendChild(createEstimateTableRow('', '', '', tbody.children.length + 1));
           }
 
           const row = tbody.children[rowIndex];
           const inputs = row.querySelectorAll('.cell-input');
-          if (parts[0] !== undefined && inputs[0]) inputs[0].value = parts[0];
-          if (parts[1] !== undefined && inputs[1]) inputs[1].value = parts[1];
-          if (parts[2] !== undefined && inputs[2]) inputs[2].value = parts[2];
+          if (colOffset === 0) {
+            if (parts[0] !== undefined && inputs[0]) inputs[0].value = parts[0];
+            if (parts[1] !== undefined && inputs[1]) inputs[1].value = parts[1];
+            if (parts[2] !== undefined && inputs[2]) inputs[2].value = parts[2];
+          } else {
+            for (let c = 0; c < parts.length && (colOffset + c) < inputs.length; c++) {
+              inputs[colOffset + c].value = parts[c];
+            }
+          }
         }
 
+        updateTableRowNumbers();
         validateEstimateTable();
         clearEstimateResultState();
       }
@@ -580,10 +626,11 @@ function initEstimateWorkbench() {
     useExampleBtn.addEventListener('click', () => {
       if (tbody) {
         tbody.innerHTML = '';
-        DEFAULT_ESTIMATE_EXAMPLE_ROWS.forEach(r => {
-          tbody.appendChild(createEstimateTableRow(r.x.toFixed(2), r.t.toFixed(4), r.u.toFixed(4)));
+        DEFAULT_ESTIMATE_EXAMPLE_ROWS.forEach((r, idx) => {
+          tbody.appendChild(createEstimateTableRow(r.x.toFixed(2), r.t.toFixed(4), r.u.toFixed(4), idx + 1));
         });
         STATE.isEstimateDemo = false;
+        updateTableRowNumbers();
         validateEstimateTable();
         clearEstimateResultState();
       }
@@ -953,6 +1000,8 @@ async function executeParameterEstimate() {
     }
 
     if (stateContainer) stateContainer.innerHTML = '';
+    const resultsCard = document.getElementById('estimate-results-card');
+    if (resultsCard) resultsCard.style.display = 'block';
     if (resultPanel) resultPanel.style.display = 'block';
 
     const alphaHat = data.alpha_hat;
@@ -974,14 +1023,14 @@ async function executeParameterEstimate() {
       return v.toFixed(3);
     }
 
-    if (hasPhysicalSetup && isRealUnits) {
+    if (hasPhysicalSetup) {
       const scale = (barLength * barLength) / expDuration;
       const alphaReal = alphaHat * scale;
       const ciLoReal = ci95[0] * scale;
       const ciHiReal = ci95[1] * scale;
 
       headlineEl.innerHTML = `Heat spread: <strong>${formatAlphaVal(alphaReal)} m&sup2;/s</strong>`;
-      sublineEl.innerHTML = `Most likely between <strong>${formatAlphaVal(ciLoReal)}</strong> and <strong>${formatAlphaVal(ciHiReal)} m&sup2;/s</strong> <span class="mono" style="opacity: 0.8; font-size: 0.9em;">(normalized &alpha;&#770; = ${alphaHat.toFixed(3)})</span>`;
+      sublineEl.innerHTML = `Most likely between <strong>${formatAlphaVal(ciLoReal)}</strong> and <strong>${formatAlphaVal(ciHiReal)} m&sup2;/s</strong>`;
     } else {
       headlineEl.innerHTML = `Heat spread: <strong>${alphaHat.toFixed(3)}</strong>`;
       sublineEl.innerHTML = `Most likely between <strong>${ci95[0].toFixed(3)}</strong> and <strong>${ci95[1].toFixed(3)}</strong>`;
@@ -1035,9 +1084,9 @@ async function executeParameterEstimate() {
           <div>
             <strong>Demo mode:</strong> 
             ${inInterval 
-              ? 'Truth was inside the range.' 
-              : 'Truth was outside the range (about 1 in 20 runs misses by design).'}
-            <span class="mono" style="margin-left: 0.5rem; opacity: 0.85;">(Simulated true &alpha; = ${trueAlpha.toFixed(4)})</span>
+              ? 'Known value was inside the range.' 
+              : 'Known value was outside the range (about 1 in 20 runs misses by design).'}
+            <span class="mono" style="margin-left: 0.5rem; opacity: 0.85;">(Demo value = ${trueAlpha.toFixed(4)})</span>
           </div>
           <button type="button" class="btn btn-secondary btn-sm" id="est-rerun-demo-btn-inline">Run again with new seed</button>
         `;
@@ -1093,6 +1142,10 @@ async function executeParameterEstimate() {
     }
 
     renderEstimateChart();
+
+    if (resultsCard) {
+      resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
   } catch (err) {
     if (stateContainer) {

@@ -551,3 +551,59 @@ def test_mode3plus_equivalence_50_datasets(client):
     assert max_abs_diff < 1e-6, f"Mode 3+ absolute diff exceeded 1e-6: {max_abs_diff}"
     assert max_rel_diff < 1e-6, f"Mode 3+ relative diff exceeded 1e-6: {max_rel_diff}"
 
+def test_default_example_200_seeds_coverage_and_bias(client):
+    """Verify 200-seed coverage and bias on the default example layout (uncherry-picked seeds 0..199).
+    
+    Default example layout:
+    - 10 sensors at x = 0.50
+    - t logarithmically spaced in [0.01, 1.0]
+    - alpha_true = 0.10, sigma = 0.01 (Sensor accuracy default)
+    """
+    alpha_true = 0.10
+    sigma = 0.01
+    x_coords = [0.50] * 10
+    t_coords = [0.0100, 0.0167, 0.0278, 0.0464, 0.0774, 0.1292, 0.2154, 0.3594, 0.5995, 1.0000]
+    x_arr = np.array(x_coords)
+    t_arr = np.array(t_coords)
+    u_exact = np.sin(np.pi * x_arr) * np.exp(-alpha_true * np.pi**2 * t_arr)
+
+    covered = 0
+    rel_biases = []
+    rel_errors = []
+
+    for seed in range(200):
+        rng = np.random.RandomState(seed)
+        noise = rng.normal(0, sigma, size=10)
+        y = u_exact + noise
+        payload = {
+            "x_coords": x_coords,
+            "t_coords": t_coords,
+            "readings": y.tolist(),
+            "sigma": sigma,
+            "mode": "mode3plus"
+        }
+        res = client.post("/v1/estimate", json=payload)
+        assert res.status_code == 200, res.text
+        data = res.json()
+        ahat = data["alpha_hat"]
+        ci = data["ci95"]
+        if ci[0] <= alpha_true <= ci[1]:
+            covered += 1
+        rel_biases.append((ahat - alpha_true) / alpha_true)
+        rel_errors.append(abs(ahat - alpha_true) / alpha_true)
+
+    cov_pct = (covered / 200.0) * 100.0
+    mean_bias_pct = np.mean(rel_biases) * 100.0
+    median_err_pct = np.median(rel_errors) * 100.0
+
+    print(f"\n[200-Seed Default Example Evaluation]")
+    print(f"Coverage: {covered}/200 = {cov_pct:.1f}%")
+    print(f"Mean Relative Bias: {mean_bias_pct:+.3f}%")
+    print(f"Median Relative Error: {median_err_pct:.3f}%")
+
+    # Assert standard statistical performance: nominal 95% Wald CI with >= 90% coverage
+    assert cov_pct >= 90.0, f"Coverage {cov_pct:.1f}% was below 90.0% threshold"
+    assert abs(mean_bias_pct) < 1.0, f"Mean relative bias {mean_bias_pct:.3f}% was >= 1.0%"
+    assert median_err_pct < 3.0, f"Median relative error {median_err_pct:.3f}% was >= 3.0%"
+
+

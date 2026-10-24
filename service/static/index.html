@@ -648,6 +648,38 @@
             <span class="readings-count-badge" id="diag-baseline-count">0 of 20 needed</span>
           </div>
 
+          <!-- Use saved reference selector above reference table -->
+          <div class="saved-ref-box" id="diag-saved-ref-box" style="margin: 0.65rem 0 0.75rem; padding: 0.65rem 0.8rem; background: var(--bg-surface-raised); border-radius: var(--radius-sm); border: 1px solid var(--rule-subtle);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <label for="diag-use-saved-ref-select" style="font-weight: 600; font-size: 0.84rem; color: var(--text-heading); margin-bottom: 0;">Use saved reference</label>
+              <div class="saved-ref-actions" id="diag-saved-ref-actions" style="display: none; gap: 0.35rem;">
+                <button type="button" class="btn btn-secondary btn-sm" id="diag-rename-ref-btn" style="padding: 0.15rem 0.5rem; font-size: 0.75rem;">Rename</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="diag-delete-ref-btn" style="padding: 0.15rem 0.5rem; font-size: 0.75rem; color: var(--red-fg, #dc2626);">Delete</button>
+              </div>
+            </div>
+            <div style="margin-top: 0.4rem;">
+              <select id="diag-use-saved-ref-select" class="form-select" style="width: 100%; font-size: 0.84rem; padding: 0.35rem 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--rule-base);">
+                <option value="">— Select a saved reference —</option>
+              </select>
+            </div>
+            
+            <!-- Metadata summary for selected reference -->
+            <div id="diag-saved-ref-meta" style="display: none; margin-top: 0.45rem; padding: 0.4rem 0.6rem; background: var(--bg-surface); border-radius: var(--radius-xs); border: 1px solid var(--rule-subtle); font-size: 0.78rem; color: var(--text-muted); line-height: 1.45;">
+            </div>
+
+            <!-- Inline rename form -->
+            <div id="diag-rename-ref-form" style="display: none; margin-top: 0.45rem; padding: 0.45rem 0.6rem; background: var(--bg-surface); border-radius: var(--radius-xs); border: 1px solid var(--primary-light);">
+              <label for="diag-rename-ref-name-input" style="font-size: 0.78rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">Rename reference:</label>
+              <div style="display: flex; gap: 0.35rem;">
+                <input type="text" id="diag-rename-ref-name-input" class="form-input" style="flex: 1; font-size: 0.82rem; padding: 0.2rem 0.4rem;">
+                <button type="button" class="btn btn-primary btn-sm" id="diag-confirm-rename-ref-btn" style="padding: 0.2rem 0.5rem; font-size: 0.78rem;">Save</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="diag-cancel-rename-ref-btn" style="padding: 0.2rem 0.5rem; font-size: 0.78rem;">Cancel</button>
+              </div>
+            </div>
+
+            <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.35rem;">Make a new reference if the bar, sensors or setup change.</div>
+          </div>
+
           <div style="display: flex; gap: 0.4rem; margin-bottom: 0.6rem; flex-wrap: wrap;">
             <button type="button" class="btn btn-secondary btn-sm" id="diag-base-add-row-btn">+ Add row</button>
             <input type="file" id="diag-base-csv-upload" accept=".csv,.txt" style="display: none;">
@@ -681,6 +713,23 @@
             </table>
           </div>
           <div class="table-validation-msg" id="diag-base-table-validation-msg"></div>
+
+          <!-- Save as my reference under reference table -->
+          <div style="margin-top: 0.6rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" id="diag-save-ref-btn">Save as my reference</button>
+            <span id="diag-save-ref-status" style="font-size: 0.8rem; color: var(--text-muted);"></span>
+          </div>
+
+          <!-- Inline save reference dialog form -->
+          <div id="diag-save-ref-form" style="display: none; margin-top: 0.5rem; padding: 0.55rem 0.75rem; background: var(--bg-surface-raised); border-radius: var(--radius-sm); border: 1px solid var(--rule-base);">
+            <label for="diag-save-ref-name-input" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Reference run name:</label>
+            <div style="display: flex; gap: 0.4rem;">
+              <input type="text" id="diag-save-ref-name-input" class="form-input" placeholder="e.g. Steel rod, lab A" style="flex: 1; font-size: 0.85rem; padding: 0.25rem 0.5rem;">
+              <button type="button" class="btn btn-primary btn-sm" id="diag-confirm-save-ref-btn">Save</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="diag-cancel-save-ref-btn">Cancel</button>
+            </div>
+            <div id="diag-save-ref-error" style="color: var(--red-fg, #dc2626); font-size: 0.78rem; margin-top: 0.25rem;"></div>
+          </div>
         </div>
 
         <!-- 2. The test to check table -->
@@ -820,8 +869,9 @@
 
             <!-- Always visible Honesty Note -->
             <div class="diagnose-honesty-note" id="diag-honesty-note">
-              Typical accuracy: normal tests flagged wrongly about 6% of the time; sensor faults found about 84%; mid-test changes about 74% (51% when sensors are noisy).
+              <span>Typical accuracy: normal tests flagged wrongly about 6% of the time; sensor faults found about 84%; mid-test changes about 74% (51% when sensors are noisy). Measured for 10–20 readings and noise of 1–5% of the starting peak.</span>
               <a href="#evidence" id="diag-honesty-evidence-link" class="evidence-link">Evidence &rarr;</a>
+              <div class="diagnose-uncalibrated-warning" id="diag-uncalibrated-warning" style="display: none; color: var(--amber-dark, #b45309); font-weight: 500; margin-top: 0.35rem;">Outside the range we calibrated; false-alarm rate is unknown.</div>
             </div>
 
             <!-- Technical details disclosure -->

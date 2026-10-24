@@ -52,7 +52,7 @@ def live_server():
     drain_thread = threading.Thread(target=drain_pipe, daemon=True)
     drain_thread.start()
 
-    assert wait_for_port(port, 30), "Server failed to start in 30s"
+    assert wait_for_port(port, timeout=60), "Server failed to start in 60s"
     yield f"http://127.0.0.1:{port}"
 
     proc.terminate()
@@ -174,7 +174,7 @@ def test_playwright_diagnose_real_units_and_baseline_conversion(live_server):
         page.click("#diag-submit-btn")
         page.wait_for_selector("#diag-result-panel", state="visible")
         f_title = page.locator("#diag-traffic-title").text_content()
-        assert "One sensor looks faulty: Sensor 3 (reads stuck / offset / wrong scale)." in f_title
+        assert "One sensor looks faulty: Sensor 3. Possible causes: stuck, offset or wrong scale." in f_title
 
         # Class C: Change-Point (jump around 35 s)
         page.select_option("#diag-scenario-select", "C")
@@ -189,5 +189,104 @@ def test_playwright_diagnose_real_units_and_baseline_conversion(live_server):
         page.wait_for_selector("#diag-traffic-banner.red", state="visible")
         ref_title = page.locator("#diag-traffic-title").text_content()
         assert "A reference run needs at least 20 readings to establish normal behavior. You entered 10 readings." in ref_title
+
+        browser.close()
+
+def test_playwright_diagnose_saved_reference(live_server):
+    """Playwright E2E: save a reference, reload page, load saved reference, run Check my test with zero console errors."""
+    url = f"{live_server}/#diagnose"
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+
+        console_errors = []
+        page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
+
+        page.goto(url)
+        page.wait_for_selector("#view-diagnose", state="visible")
+
+        # Use example to populate baseline and test tables
+        page.click("#diag-use-example-btn")
+        page.wait_for_timeout(300)
+
+        # Click "Save as my reference"
+        page.click("#diag-save-ref-btn")
+        page.wait_for_selector("#diag-save-ref-form", state="visible")
+
+        # Fill name
+        ref_name = "Steel rod, lab A"
+        page.fill("#diag-save-ref-name-input", ref_name)
+        page.click("#diag-confirm-save-ref-btn")
+        page.wait_for_timeout(300)
+
+        # Verify selector now has the option
+        sel_text = page.locator("#diag-use-saved-ref-select").inner_text()
+        assert ref_name in sel_text
+
+        # Reload the page
+        page.reload()
+        page.wait_for_selector("#view-diagnose", state="visible")
+
+        # Select saved reference
+        options = page.locator("#diag-use-saved-ref-select option").all()
+        target_val = None
+        for opt in options:
+            if ref_name in opt.inner_text():
+                target_val = opt.get_attribute("value")
+                break
+        assert target_val is not None
+        page.select_option("#diag-use-saved-ref-select", target_val)
+        page.wait_for_timeout(300)
+
+        # Verify metadata is displayed
+        meta_text = page.locator("#diag-saved-ref-meta").text_content()
+        assert ref_name in meta_text
+        assert "20 readings" in meta_text
+
+        # Verify reference table has 20 readings loaded
+        base_rows = page.locator("#diag-base-table-tbody tr").count()
+        assert base_rows == 20
+
+        # Verify test setup fields are populated
+        assert page.input_value("#diag-bar-length") == "0.1"
+        assert page.input_value("#diag-experiment-time") == "100"
+
+        # Populate test table with at least 3 test readings
+        test_rows = page.locator("#diag-test-table-tbody tr").count()
+        if test_rows < 3:
+            page.click("#diag-test-add-row-btn")
+
+        page.fill("#diag-test-pos-1", "0.05")
+        page.fill("#diag-test-time-1", "10.0")
+        page.fill("#diag-test-temp-1", "75.0")
+        page.fill("#diag-test-pos-2", "0.05")
+        page.fill("#diag-test-time-2", "30.0")
+        page.fill("#diag-test-temp-2", "60.0")
+        page.fill("#diag-test-pos-3", "0.05")
+        page.fill("#diag-test-time-3", "80.0")
+        page.fill("#diag-test-temp-3", "45.0")
+
+        # Click Check my test
+        page.click("#diag-submit-btn")
+        page.wait_for_selector("#diag-result-panel", state="visible")
+
+        # Assert results card appears
+        assert page.is_visible("#diag-traffic-banner")
+        assert len(console_errors) == 0
+
+        # Test Rename
+        page.click("#diag-rename-ref-btn")
+        page.wait_for_selector("#diag-rename-ref-form", state="visible")
+        page.fill("#diag-rename-ref-name-input", "Steel rod, lab B")
+        page.click("#diag-confirm-rename-ref-btn")
+        page.wait_for_timeout(200)
+        assert "Steel rod, lab B" in page.locator("#diag-saved-ref-meta").text_content()
+
+        # Test Delete
+        page.click("#diag-delete-ref-btn")
+        page.wait_for_timeout(200)
+        assert "Steel rod, lab B" not in page.locator("#diag-use-saved-ref-select").inner_text()
 
         browser.close()

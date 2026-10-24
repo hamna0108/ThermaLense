@@ -1693,18 +1693,18 @@ const DEFAULT_DIAGNOSE_TEST_ROWS = [
   { x: 0.03, t: 100.00, u: 38.30 }
 ];
 
-function createDiagnoseTableRow(x, t, u, index, prefix) {
+function createDiagnoseTableRow(x, t, u, index, prefix = 'diag-row') {
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td class="row-index" style="text-align: center; color: var(--text-muted); font-size: 0.78rem;">${index}</td>
     <td>
-      <input type="number" class="cell-input mono" data-col="x" placeholder="e.g. 0.05" step="0.01" value="${x !== undefined && x !== null ? x : ''}">
+      <input type="number" id="${prefix}-pos-${index}" class="cell-input mono" data-col="x" placeholder="e.g. 0.05" step="0.01" value="${x !== undefined && x !== null ? x : ''}">
     </td>
     <td>
-      <input type="number" class="cell-input mono" data-col="t" placeholder="e.g. 10" step="0.1" value="${t !== undefined && t !== null ? t : ''}">
+      <input type="number" id="${prefix}-time-${index}" class="cell-input mono" data-col="t" placeholder="e.g. 10" step="0.1" value="${t !== undefined && t !== null ? t : ''}">
     </td>
     <td>
-      <input type="number" class="cell-input mono" data-col="u" placeholder="e.g. 60" step="0.1" value="${u !== undefined && u !== null ? u : ''}">
+      <input type="number" id="${prefix}-temp-${index}" class="cell-input mono" data-col="u" placeholder="e.g. 60" step="0.1" value="${u !== undefined && u !== null ? u : ''}">
     </td>
     <td style="text-align: center;">
       <button type="button" class="btn-cell-delete" aria-label="Remove row" title="Remove row">&times;</button>
@@ -1713,7 +1713,7 @@ function createDiagnoseTableRow(x, t, u, index, prefix) {
   return tr;
 }
 
-function updateDiagnoseRowNumbers(tbody, countBadge, minNeeded) {
+function updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix) {
   if (!tbody || !countBadge) return;
   const rows = Array.from(tbody.children);
   let filledCount = 0;
@@ -1728,6 +1728,12 @@ function updateDiagnoseRowNumbers(tbody, countBadge, minNeeded) {
     }
 
     const inputs = row.querySelectorAll('.cell-input');
+    if (prefix) {
+      if (inputs[0]) inputs[0].id = `${prefix}-pos-${idx + 1}`;
+      if (inputs[1]) inputs[1].id = `${prefix}-time-${idx + 1}`;
+      if (inputs[2]) inputs[2].id = `${prefix}-temp-${idx + 1}`;
+    }
+
     const xVal = inputs[0] ? inputs[0].value.trim() : '';
     const tVal = inputs[1] ? inputs[1].value.trim() : '';
     const uVal = inputs[2] ? inputs[2].value.trim() : '';
@@ -1854,7 +1860,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
       const nextIdx = tbody.children.length + 1;
       const tr = createDiagnoseTableRow('', '', '', nextIdx, prefix);
       tbody.appendChild(tr);
-      updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+      updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
       clearDiagnoseResultState();
       const firstIn = tr.querySelector('.cell-input');
       if (firstIn) firstIn.focus();
@@ -1869,7 +1875,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
     const tr = delBtn.closest('tr');
     if (tr) {
       tr.remove();
-      updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+      updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
       clearDiagnoseResultState();
     }
   });
@@ -1885,7 +1891,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
         const nextIdx = tbody.children.length + 1;
         const newTr = createDiagnoseTableRow('', '', '', nextIdx, prefix);
         tbody.appendChild(newTr);
-        updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+        updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
         clearDiagnoseResultState();
         const firstIn = newTr.querySelector('.cell-input');
         if (firstIn) firstIn.focus();
@@ -1896,7 +1902,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
   // Input event
   tbody.addEventListener('input', (e) => {
     if (e.target.classList.contains('cell-input')) {
-      updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+      updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
       clearDiagnoseResultState();
     }
   });
@@ -1941,7 +1947,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
         if (parts[2] !== undefined && inputs[2]) inputs[2].value = parts[2];
       }
 
-      updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+      updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
       clearDiagnoseResultState();
     }
   });
@@ -1980,7 +1986,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
           tbody.appendChild(createDiagnoseTableRow('', '', '', tbody.children.length + 1, prefix));
         }
 
-        updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+        updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
         clearDiagnoseResultState();
         csvInput.value = '';
       };
@@ -1988,7 +1994,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
     });
   }
 
-  updateDiagnoseRowNumbers(tbody, countBadge, minNeeded);
+  updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
 }
 
 function clearDiagnoseResultState() {
@@ -2090,6 +2096,285 @@ function initDiagnoseWorkbench() {
     });
   }
 
+  // -------------------------------------------------------------
+  // Reusable Reference Runs (localStorage with try/catch)
+  // -------------------------------------------------------------
+  const savedRefSelect = document.getElementById('diag-use-saved-ref-select');
+  const savedRefActions = document.getElementById('diag-saved-ref-actions');
+  const renameRefBtn = document.getElementById('diag-rename-ref-btn');
+  const deleteRefBtn = document.getElementById('diag-delete-ref-btn');
+  const savedRefMeta = document.getElementById('diag-saved-ref-meta');
+  const renameRefForm = document.getElementById('diag-rename-ref-form');
+  const renameNameInput = document.getElementById('diag-rename-ref-name-input');
+  const confirmRenameBtn = document.getElementById('diag-confirm-rename-ref-btn');
+  const cancelRenameBtn = document.getElementById('diag-cancel-rename-ref-btn');
+
+  const saveRefBtn = document.getElementById('diag-save-ref-btn');
+  const saveRefStatus = document.getElementById('diag-save-ref-status');
+  const saveRefForm = document.getElementById('diag-save-ref-form');
+  const saveRefNameInput = document.getElementById('diag-save-ref-name-input');
+  const confirmSaveBtn = document.getElementById('diag-confirm-save-ref-btn');
+  const cancelSaveBtn = document.getElementById('diag-cancel-save-ref-btn');
+  const saveRefError = document.getElementById('diag-save-ref-error');
+
+  function getStoredReferences() {
+    try {
+      const raw = localStorage.getItem('thermalens_saved_references');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.warn('localStorage read error:', e);
+      return [];
+    }
+  }
+
+  function setStoredReferences(refs) {
+    try {
+      localStorage.setItem('thermalens_saved_references', JSON.stringify(refs));
+      return true;
+    } catch (e) {
+      console.warn('localStorage write error:', e);
+      return false;
+    }
+  }
+
+  function updateSavedRefDropdown(selectedId = null) {
+    if (!savedRefSelect) return;
+    const refs = getStoredReferences();
+    savedRefSelect.innerHTML = '<option value="">— Select a saved reference —</option>';
+    refs.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.id;
+      const count = r.readings ? r.readings.length : 0;
+      const d = r.savedAt ? new Date(r.savedAt).toLocaleDateString() : '';
+      opt.textContent = `${r.name} (${count} readings${d ? ', ' + d : ''})`;
+      if (selectedId && r.id === selectedId) opt.selected = true;
+      savedRefSelect.appendChild(opt);
+    });
+
+    displaySavedRefMeta(selectedId || savedRefSelect.value);
+  }
+
+  function displaySavedRefMeta(refId) {
+    if (!refId) {
+      if (savedRefActions) savedRefActions.style.display = 'none';
+      if (savedRefMeta) savedRefMeta.style.display = 'none';
+      if (renameRefForm) renameRefForm.style.display = 'none';
+      STATE.activeSavedRefId = null;
+      return;
+    }
+
+    const refs = getStoredReferences();
+    const r = refs.find(x => x.id === refId);
+    if (!r) {
+      if (savedRefActions) savedRefActions.style.display = 'none';
+      if (savedRefMeta) savedRefMeta.style.display = 'none';
+      if (renameRefForm) renameRefForm.style.display = 'none';
+      STATE.activeSavedRefId = null;
+      return;
+    }
+
+    STATE.activeSavedRefId = r.id;
+    if (savedRefActions) savedRefActions.style.display = 'flex';
+    if (savedRefMeta) {
+      savedRefMeta.style.display = 'block';
+      const dStr = r.savedAt ? new Date(r.savedAt).toLocaleString() : 'Recently';
+      const nReadings = r.readings ? r.readings.length : 0;
+      let statsLine = 'Normal heat spread and noise: Not checked yet';
+      if (r.lastCheckStats) {
+        const aVal = r.lastCheckStats.alpha_baseline || '-';
+        const sVal = r.lastCheckStats.sigma || '-';
+        statsLine = `Estimated normal heat spread (&alpha;): <span class="mono">${aVal}</span> &bull; Noise: <span class="mono">${sVal}</span>`;
+      }
+      savedRefMeta.innerHTML = `
+        <div style="font-weight: 600; color: var(--text-heading);">${r.name}</div>
+        <div>Saved: ${dStr} &bull; ${nReadings} readings</div>
+        <div>${statsLine}</div>
+      `;
+    }
+  }
+
+  if (savedRefSelect) {
+    savedRefSelect.addEventListener('change', () => {
+      const refId = savedRefSelect.value;
+      displaySavedRefMeta(refId);
+      if (!refId) return;
+
+      const refs = getStoredReferences();
+      const r = refs.find(x => x.id === refId);
+      if (!r) return;
+
+      // Fill reference table
+      if (r.readings && r.readings.length > 0) {
+        baseTbody.innerHTML = '';
+        r.readings.forEach((pt, idx) => {
+          baseTbody.appendChild(createDiagnoseTableRow(
+            Number(pt.x).toFixed(2),
+            Number(pt.t).toFixed(1),
+            Number(pt.u).toFixed(2),
+            idx + 1,
+            'diag-base'
+          ));
+        });
+        updateDiagnoseRowNumbers(baseTbody, baseBadge, 20);
+      }
+
+      // Fill test-setup fields
+      if (r.setup) {
+        if (barLen && r.setup.bar_length_m !== undefined) barLen.value = r.setup.bar_length_m;
+        if (expDur && r.setup.test_duration_s !== undefined) expDur.value = r.setup.test_duration_s;
+        if (tempEdge && r.setup.boundary_temperature !== undefined) tempEdge.value = r.setup.boundary_temperature;
+        if (tempPeak && r.setup.initial_peak_temperature !== undefined) tempPeak.value = r.setup.initial_peak_temperature;
+        if (sigmaVal && r.setup.sigma !== undefined) sigmaVal.value = r.setup.sigma;
+        if (sigmaAuto && r.setup.sigma_auto !== undefined) {
+          sigmaAuto.checked = Boolean(r.setup.sigma_auto);
+          if (sigmaVal) {
+            sigmaVal.disabled = sigmaAuto.checked;
+            sigmaVal.style.opacity = sigmaAuto.checked ? '0.5' : '1.0';
+          }
+        }
+        // Two-way sync to Estimate
+        const estBar = document.getElementById('est-bar-length');
+        if (estBar && barLen) estBar.value = barLen.value;
+        const estDur = document.getElementById('est-experiment-time');
+        if (estDur && expDur) estDur.value = expDur.value;
+        const estEdge = document.getElementById('est-temp-edge');
+        if (estEdge && tempEdge) estEdge.value = tempEdge.value;
+        const estPeak = document.getElementById('est-temp-peak');
+        if (estPeak && tempPeak) estPeak.value = tempPeak.value;
+        const estSig = document.getElementById('est-sigma-val');
+        if (estSig && sigmaVal) estSig.value = sigmaVal.value;
+      }
+
+      clearDiagnoseResultState();
+    });
+  }
+
+  // Save reference button
+  if (saveRefBtn) {
+    saveRefBtn.addEventListener('click', () => {
+      if (saveRefForm) {
+        saveRefForm.style.display = (saveRefForm.style.display === 'none' || !saveRefForm.style.display) ? 'block' : 'none';
+        if (saveRefNameInput) {
+          saveRefNameInput.value = '';
+          saveRefNameInput.focus();
+        }
+        if (saveRefError) saveRefError.textContent = '';
+      }
+    });
+  }
+
+  if (cancelSaveBtn) {
+    cancelSaveBtn.addEventListener('click', () => {
+      if (saveRefForm) saveRefForm.style.display = 'none';
+      if (saveRefError) saveRefError.textContent = '';
+    });
+  }
+
+  if (confirmSaveBtn) {
+    confirmSaveBtn.addEventListener('click', () => {
+      const name = saveRefNameInput ? saveRefNameInput.value.trim() : '';
+      if (!name) {
+        if (saveRefError) saveRefError.textContent = 'Please enter a name for your reference run.';
+        return;
+      }
+      const data = parseDiagnoseTableData(baseTbody);
+      if (data.x.length < 3) {
+        if (saveRefError) saveRefError.textContent = 'Reference run table must have at least 3 readings to save.';
+        return;
+      }
+      const readings = [];
+      for (let i = 0; i < data.x.length; i++) {
+        readings.push({ x: data.x[i], t: data.t[i], u: data.y[i] });
+      }
+
+      const newRef = {
+        id: 'ref_' + Date.now(),
+        name: name,
+        savedAt: new Date().toISOString(),
+        readings: readings,
+        setup: {
+          bar_length_m: parseFloat(barLen ? barLen.value : '0.1') || 0.1,
+          test_duration_s: parseFloat(expDur ? expDur.value : '100') || 100,
+          boundary_temperature: parseFloat(tempEdge ? tempEdge.value : '20') || 20,
+          initial_peak_temperature: parseFloat(tempPeak ? tempPeak.value : '80') || 80,
+          sigma: parseFloat(sigmaVal ? sigmaVal.value : '0.5') || 0.5,
+          sigma_auto: Boolean(sigmaAuto && sigmaAuto.checked)
+        },
+        lastCheckStats: (STATE.lastDiagnoseResult && STATE.lastDiagnoseResult.response && STATE.lastDiagnoseResult.response.evidence_stats) ? {
+          alpha_baseline: formatScientificReal(STATE.lastDiagnoseResult.response.evidence_stats.alpha_baseline, 3) + ' m²/s',
+          sigma: (STATE.lastDiagnoseResult.response.effective_sigma * Math.abs(parseFloat(tempPeak?.value || 80) - parseFloat(tempEdge?.value || 20))).toFixed(2) + ' °C'
+        } : null
+      };
+
+      const refs = getStoredReferences();
+      refs.push(newRef);
+      setStoredReferences(refs);
+
+      if (saveRefForm) saveRefForm.style.display = 'none';
+      if (saveRefStatus) {
+        saveRefStatus.textContent = 'Reference saved ✓';
+        setTimeout(() => { if (saveRefStatus) saveRefStatus.textContent = ''; }, 3000);
+      }
+      updateSavedRefDropdown(newRef.id);
+    });
+  }
+
+  // Rename reference
+  if (renameRefBtn) {
+    renameRefBtn.addEventListener('click', () => {
+      const refId = savedRefSelect ? savedRefSelect.value : null;
+      if (!refId) return;
+      const refs = getStoredReferences();
+      const r = refs.find(x => x.id === refId);
+      if (!r) return;
+      if (renameRefForm) {
+        renameRefForm.style.display = 'block';
+        if (renameNameInput) {
+          renameNameInput.value = r.name;
+          renameNameInput.focus();
+        }
+      }
+    });
+  }
+
+  if (cancelRenameBtn) {
+    cancelRenameBtn.addEventListener('click', () => {
+      if (renameRefForm) renameRefForm.style.display = 'none';
+    });
+  }
+
+  if (confirmRenameBtn) {
+    confirmRenameBtn.addEventListener('click', () => {
+      const refId = savedRefSelect ? savedRefSelect.value : null;
+      if (!refId) return;
+      const newName = renameNameInput ? renameNameInput.value.trim() : '';
+      if (!newName) return;
+      const refs = getStoredReferences();
+      const r = refs.find(x => x.id === refId);
+      if (r) {
+        r.name = newName;
+        setStoredReferences(refs);
+        if (renameRefForm) renameRefForm.style.display = 'none';
+        updateSavedRefDropdown(refId);
+      }
+    });
+  }
+
+  // Delete reference
+  if (deleteRefBtn) {
+    deleteRefBtn.addEventListener('click', () => {
+      const refId = savedRefSelect ? savedRefSelect.value : null;
+      if (!refId) return;
+      let refs = getStoredReferences();
+      refs = refs.filter(x => x.id !== refId);
+      setStoredReferences(refs);
+      updateSavedRefDropdown(null);
+    });
+  }
+
+  // Initialize saved reference dropdown on load
+  updateSavedRefDropdown(null);
+
   // Drawer open / close
   if (moreOptionsBtn && drawer && drawerOverlay) {
     moreOptionsBtn.addEventListener('click', () => {
@@ -2109,7 +2394,7 @@ function initDiagnoseWorkbench() {
   if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
 
   // Load Demo Scenarios into tables
-  function loadDiagnoseDemoScenario(sc) {
+  function loadDiagnoseDemoScenario(sc, seed = 702) {
     const L = parseFloat(document.getElementById('diag-bar-length').value) || 0.1;
     const T = parseFloat(document.getElementById('diag-experiment-time').value) || 100.0;
     const Tb = parseFloat(document.getElementById('diag-temp-edge').value) || 20.0;
@@ -2125,7 +2410,7 @@ function initDiagnoseWorkbench() {
       tb.push(2.0 + (i / Math.max(1, kBase - 1)) * 98.0);
       xb.push([0.03, 0.05, 0.07][i % 3]);
     }
-    const rng = mulberry32(702);
+    const rng = mulberry32(Number(seed) || 702);
     const baseRows = [];
     for (let i = 0; i < kBase; i++) {
       const xNorm = xb[i] / L;
@@ -2437,12 +2722,12 @@ async function executeDiagnosis() {
     } else if (assignedClass === 'F') {
       banner.className = 'traffic-light-line amber';
       const fIdx = (data.faulty_sensor_idx !== undefined && data.faulty_sensor_idx !== null) ? data.faulty_sensor_idx : 1;
-      titleEl.textContent = `One sensor looks faulty: Sensor ${fIdx} (reads stuck / offset / wrong scale).`;
+      titleEl.textContent = `One sensor looks faulty: Sensor ${fIdx}. Possible causes: stuck, offset or wrong scale.`;
       
       const xRead = testData.x[fIdx] !== undefined ? testData.x[fIdx].toFixed(2) : '-';
       const tRead = testData.t[fIdx] !== undefined ? testData.t[fIdx].toFixed(1) : '-';
       const yRead = testData.y[fIdx] !== undefined ? testData.y[fIdx].toFixed(2) : '-';
-      specInfo.innerHTML = `Affected: reading #${fIdx} at position ${xRead} m, time ${tRead} s (sensor read ${yRead} &deg;C), deviating from expected cooling.`;
+      specInfo.innerHTML = `Affected reading #${fIdx}: position ${xRead} m, time ${tRead} s (sensor read ${yRead} &deg;C).`;
     } else if (assignedClass === 'C') {
       banner.className = 'traffic-light-line amber';
       let changeTimeStr = '35';
@@ -2451,6 +2736,37 @@ async function executeDiagnosis() {
       }
       titleEl.textContent = `The behaviour changed during the test, around ${changeTimeStr} s.`;
       specInfo.innerHTML = `A physical transition or external thermal disturbance occurred around ${changeTimeStr} s into the test.`;
+    }
+
+    // Honesty Note Calibrated Range Check
+    const uncalWarn = document.getElementById('diag-uncalibrated-warning');
+    if (uncalWarn) {
+      const N_test = testData.x.length;
+      const deltaT = Math.abs(Tp - Tb);
+      const noiseFrac = isAutoSigma ? (data.effective_sigma || 0) : ((sigma || 0.5) / (deltaT || 1.0));
+      const isOutside = (N_test < 10 || N_test > 20 || noiseFrac < 0.005 || noiseFrac > 0.06);
+      uncalWarn.style.display = isOutside ? 'block' : 'none';
+    }
+
+    // Update active saved reference stats if present
+    if (STATE.activeSavedRefId && es.alpha_baseline !== undefined) {
+      try {
+        const raw = localStorage.getItem('thermalens_saved_references');
+        if (raw) {
+          const refs = JSON.parse(raw);
+          const r = refs.find(x => x.id === STATE.activeSavedRefId);
+          if (r) {
+            r.lastCheckStats = {
+              alpha_baseline: formatScientificReal(es.alpha_baseline, 3) + ' m²/s',
+              sigma: (data.effective_sigma * Math.abs(Tp - Tb)).toFixed(2) + ' °C'
+            };
+            localStorage.setItem('thermalens_saved_references', JSON.stringify(refs));
+            displaySavedRefMeta(STATE.activeSavedRefId);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not update saved reference stats in localStorage:', e);
+      }
     }
 
     // Demo Scenario Callout

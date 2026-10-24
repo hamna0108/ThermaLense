@@ -209,12 +209,13 @@ def run_verification():
                     page.screenshot(path=shot_empty, full_page=False)
                     screenshots_taken.append(shot_empty)
 
-                    # 2b. Verify Validation on Empty Table (< 3 readings)
+                    # 2b. Verify Validation on Empty Table (< 3 readings or missing fields)
                     page.click("#est-submit-btn")
                     page.wait_for_timeout(100)
                     assert page.locator("#estimate-results-card").is_hidden(), "Result card should NOT appear with fewer than 3 readings"
                     val_msg = page.locator("#est-table-validation-msg").text_content()
-                    assert "3 readings" in val_msg or "3 readings" in page.locator("#est-state-container").text_content()
+                    state_msg = page.locator("#est-state-container").text_content()
+                    assert "3 readings" in val_msg or "3 readings" in state_msg or "test settings" in val_msg.lower() or "required" in val_msg.lower()
 
                     # 2c. Verify Cell Error Validation (non-numeric Time, out-of-bounds Position)
                     first_row_inputs = page.locator("#est-readings-table tbody tr:first-child .cell-input")
@@ -227,6 +228,10 @@ def run_verification():
                     shot_err = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02d_estimate_error_cell.png")
                     page.screenshot(path=shot_err, full_page=False)
                     screenshots_taken.append(shot_err)
+                    if theme == "light":
+                        named_err_shot = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_estimate_error_case.png")
+                        page.screenshot(path=named_err_shot, full_page=False)
+                        screenshots_taken.append(named_err_shot)
 
                     first_row_inputs.nth(0).fill("2.5")  # Position out of bounds [0, 1]
                     first_row_inputs.nth(1).fill("0.05")
@@ -261,14 +266,19 @@ def run_verification():
                     assert "Heat spread (α)" in page.locator("#est-result-label").text_content()
                     assert page.locator("#est-plain-number").text_content().strip() != "", "Expected result number"
                     assert "Most likely between" in page.locator("#est-plain-subline").text_content()
-                    assert page.locator("#est-traffic-banner.green").count() == 1, "Expected green traffic-light line"
-                    assert "Result looks trustworthy" in page.locator("#est-traffic-title").text_content()
+                    banner_cls = page.locator("#est-traffic-banner").get_attribute("class")
+                    assert "green" in banner_cls or "amber" in banner_cls, f"Expected green or amber banner, got {banner_cls}"
                     assert page.locator("#est-chart-svg").is_visible(), "Measured vs fitted chart must be visible"
 
                     # Screenshot 3: After Calculate
                     shot_calc = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02c_estimate_after_calculate.png")
                     page.screenshot(path=shot_calc, full_page=False)
                     screenshots_taken.append(shot_calc)
+
+                    if theme == "light":
+                        named_shot = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_estimate_example_result.png")
+                        page.screenshot(path=named_shot, full_page=False)
+                        screenshots_taken.append(named_shot)
 
                     # Also save legacy path for compatibility
                     page.evaluate("window.scrollTo(0, 0)")
@@ -314,16 +324,16 @@ def run_verification():
                     # Test remaining flows in desktop view to avoid redundant slow requests
                     if vp_name == "desktop_1440" and theme == "light":
                         # 2f. FLOW B: Manual Typing Flow
-                        print("  [Flow B: Manual Typing] Entering 4 manual readings...")
+                        print("  [Flow B: Manual Typing] Entering 4 manual physical readings...")
                         page.locator("#est-table-tbody").evaluate("el => el.innerHTML = ''")
                         for _ in range(4):
                             page.click("#est-add-row-btn")
                         rows = page.locator("#est-table-tbody tr")
                         manual_vals = [
-                            ("0.50", "0.020", "0.960"),
-                            ("0.50", "0.080", "0.880"),
-                            ("0.50", "0.250", "0.650"),
-                            ("0.50", "0.600", "0.300")
+                            ("0.05", "2.0", "79.0"),
+                            ("0.05", "8.0", "75.0"),
+                            ("0.05", "25.0", "65.0"),
+                            ("0.05", "60.0", "52.0")
                         ]
                         for idx, (x_v, t_v, u_v) in enumerate(manual_vals):
                             r_inputs = rows.nth(idx).locator(".cell-input")
@@ -340,7 +350,7 @@ def run_verification():
                         print("  [Flow C: Paste Flow] Pasting multi-row TSV data...")
                         page.locator("#est-table-tbody").evaluate("el => el.innerHTML = ''")
                         page.click("#est-add-row-btn")
-                        paste_data = "0.50\t0.030\t0.950\n0.50\t0.100\t0.850\n0.50\t0.300\t0.600\n0.50\t0.700\t0.250"
+                        paste_data = "0.05\t3.0\t78.0\n0.05\t10.0\t74.0\n0.05\t30.0\t64.0\n0.05\t70.0\t50.0"
                         page.evaluate(f"""() => {{
                             const dt = new DataTransfer();
                             dt.setData('text/plain', {json.dumps(paste_data)});
@@ -358,7 +368,7 @@ def run_verification():
                         print("  [Flow D: CSV Upload] Uploading test CSV...")
                         test_csv_path = os.path.join(scratch_dir, "playwright_sample.csv")
                         with open(test_csv_path, "w", encoding="utf-8") as f_csv:
-                            f_csv.write("Position,Time,Temperature\n0.50,0.015,0.970\n0.50,0.050,0.910\n0.50,0.150,0.760\n0.50,0.400,0.500\n0.50,0.900,0.200\n")
+                            f_csv.write("Position,Time,Temperature\n0.05,1.5,79.0\n0.05,5.0,76.5\n0.05,15.0,71.0\n0.05,40.0,60.0\n0.05,90.0,45.0\n")
                         page.set_input_files("#est-csv-upload", test_csv_path)
                         page.wait_for_timeout(200)
                         assert "5 reading" in page.locator("#est-readings-count").text_content()

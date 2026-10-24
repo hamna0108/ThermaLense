@@ -845,4 +845,104 @@ def test_real_units_diagnose_endpoint(client):
     assert "alpha_fitted" in d["evidence_stats"]
     assert "alpha_fitted_normalized" in d["evidence_stats"]
 
+def test_real_units_all_four_methods_with_nonunit_dimensions(client):
+    """Verify all 4 estimation methods with L != 1, T != 1, T_edge != 0."""
+    L = 0.2  # != 1
+    T = 50.0 # != 1
+    Tb = 15.0 # != 0
+    Tp = 75.0
+    alpha_true_norm = 0.10
+    alpha_true_real = alpha_true_norm * (L**2) / T # 0.10 * 0.04 / 50 = 8.0e-5 m^2/s
+
+    t_vals = [0.5, 1.0, 2.0, 4.0, 7.5, 12.5, 20.0, 30.0, 40.0, 50.0]
+    x_vals = [0.10] * len(t_vals) # x/L = 0.5
+    y_vals = []
+    for t_s in t_vals:
+        t_norm = t_s / T
+        u_norm = np.sin(np.pi * 0.5) * np.exp(-alpha_true_norm * (np.pi**2) * t_norm)
+        y_vals.append(float(Tb + (Tp - Tb) * u_norm))
+
+    payload = {
+        "x": x_vals,
+        "t": t_vals,
+        "y": y_vals,
+        "bar_length_m": L,
+        "test_duration_s": T,
+        "boundary_temperature": Tb,
+        "initial_peak_temperature": Tp,
+        "sigma": 0.5
+    }
+
+    for mode in ["mode3plus", "mode3", "mode2", "declared_physics"]:
+        p = dict(payload, mode=mode)
+        if mode == "declared_physics":
+            p["physics_config"] = {"u0_expr": "sin(pi*x)"}
+        res = client.post("/v1/estimate", json=p)
+        assert res.status_code == 200, f"Mode {mode} failed: {res.text}"
+        data = res.json()
+        alpha_hat = data["alpha_hat"]
+        ci95 = data["ci95"]
+        norm_alpha = data["alpha_hat_normalized"]
+
+        # Within 10% of 8.0e-5 m^2/s
+        assert 0.90 * alpha_true_real <= alpha_hat <= 1.10 * alpha_true_real, (
+            f"Mode {mode}: alpha_hat {alpha_hat} outside 10% of {alpha_true_real}"
+        )
+        # CI contains true alpha
+        assert ci95[0] <= alpha_true_real <= ci95[1], (
+            f"Mode {mode}: CI {ci95} does not contain {alpha_true_real}"
+        )
+        assert norm_alpha == pytest.approx(alpha_true_norm, rel=0.05)
+
+def test_real_units_heating_case(client):
+    """Verify estimation when bar starts cold and ends are heated (T_peak < T_edge)."""
+    L = 0.15
+    T = 80.0
+    Tb = 90.0 # Hot ends
+    Tp = 20.0 # Cold start
+    alpha_true_norm = 0.10
+    alpha_true_real = alpha_true_norm * (L**2) / T
+
+    t_vals = [1.0, 2.5, 5.0, 10.0, 20.0, 35.0, 50.0, 65.0, 80.0]
+    x_vals = [0.075] * len(t_vals) # x/L = 0.5
+    y_vals = []
+    for t_s in t_vals:
+        t_norm = t_s / T
+        u_norm = np.sin(np.pi * 0.5) * np.exp(-alpha_true_norm * (np.pi**2) * t_norm)
+        # T(t) = 90 + (20 - 90) * u_norm = 90 - 70 * u_norm (heating from 20 up towards 90)
+        y_vals.append(float(Tb + (Tp - Tb) * u_norm))
+
+    payload = {
+        "x": x_vals,
+        "t": t_vals,
+        "y": y_vals,
+        "bar_length_m": L,
+        "test_duration_s": T,
+        "boundary_temperature": Tb,
+        "initial_peak_temperature": Tp,
+        "sigma": 0.5,
+        "mode": "mode3plus"
+    }
+
+    res = client.post("/v1/estimate", json=payload)
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert 0.90 * alpha_true_real <= data["alpha_hat"] <= 1.10 * alpha_true_real
+    assert data["ci95"][0] <= alpha_true_real <= data["ci95"][1]
+    assert data["alpha_hat_normalized"] == pytest.approx(0.10, rel=0.05)
+
+def test_estimate_request_forbids_extra_fields(client):
+    """EstimateRequest must reject unknown fields with HTTP 422 (extra='forbid')."""
+    payload = {
+        "x": [0.5, 0.5, 0.5],
+        "t": [0.1, 0.2, 0.3],
+        "y": [0.8, 0.6, 0.4],
+        "sigma": 0.01,
+        "unexpected_bogus_field": 12345
+    }
+    res = client.post("/v1/estimate", json=payload)
+    assert res.status_code == 422
+    assert "extra" in res.text.lower() or "unexpected_bogus_field" in res.text
+
+
 

@@ -1270,7 +1270,7 @@ details.technical-details-card summary.technical-details-summary:hover {
   align-items: start;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 540px) {
   .test-config-row {
     grid-template-columns: 1fr;
     gap: 0.85rem;
@@ -1284,14 +1284,60 @@ details.technical-details-card summary.technical-details-summary:hover {
 
 .real-units-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-  margin-top: 0.75rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem 1.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
   align-items: start;
 }
 
+.real-units-grid .config-col {
+  min-width: 0;
+}
+
+.real-units-grid .config-col label.form-label,
+#est-about-test-card label.form-label {
+  display: block;
+  font-size: var(--fs-small);
+  font-weight: 500;
+  line-height: 1.35;
+  margin-bottom: 0.35rem;
+  white-space: normal;
+  word-break: normal;
+  overflow: visible;
+}
+
+.heating-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.heating-radio-group .radio-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.heating-radio-group .radio-label input[type="radio"] {
+  margin-top: 0.2rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.raw-flag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  opacity: 0.75;
+  margin-left: 0.3rem;
+  font-weight: normal;
+}
+
 .nowrap {
-  white-space: nowrap !important;
+  white-space: normal;
 }
 
 .input-suffix-wrap {

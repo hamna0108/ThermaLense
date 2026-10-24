@@ -329,16 +329,16 @@
                 <tr>
                   <th style="width: 38px; text-align: center;">#</th>
                   <th>
-                    <div class="col-title">Position</div>
-                    <div class="col-helper">Where on the bar: 0 = one end, 1 = other end</div>
+                    <div class="col-title" id="est-col-x-title">Position (m)</div>
+                    <div class="col-helper" id="est-col-x-helper">Where on the bar: 0 = one end, up to bar length</div>
                   </th>
                   <th>
-                    <div class="col-title">Time</div>
-                    <div class="col-helper">When it was measured</div>
+                    <div class="col-title" id="est-col-t-title">Time (s)</div>
+                    <div class="col-helper" id="est-col-t-helper">When it was measured</div>
                   </th>
                   <th>
-                    <div class="col-title">Temperature</div>
-                    <div class="col-helper">In &deg;C, or scaled so the start peak = 1 if you leave the units blank</div>
+                    <div class="col-title" id="est-col-u-title">Temperature (&deg;C)</div>
+                    <div class="col-helper" id="est-col-u-helper">What the sensor read</div>
                   </th>
                   <th style="width: 44px; text-align: center;"></th>
                 </tr>
@@ -354,61 +354,81 @@
         <!-- 2. About your test -->
         <div class="card" id="est-about-test-card">
           <h2 class="card-title">About your test</h2>
-          <div class="test-config-row" style="margin-bottom: 0.75rem;">
-            <div class="config-col" style="max-width: 320px;">
-              <label for="est-sigma-val" class="form-label nowrap" id="est-sigma-label">
-                Sensor accuracy <span id="est-sigma-unit-hint" class="mono" style="font-weight: 600; color: var(--primary-navy);"></span>
-                <span class="info-tooltip" title="Typical error of your sensor. Not sure? Leave 0.01.">&#9432;</span>
-              </label>
-              <input type="number" id="est-sigma-val" class="form-control mono" value="0.01" min="0.0001" max="100.0" step="0.005">
-            </div>
-          </div>
-
-          <!-- One collapsed group: "My readings are in real units" -->
-          <details class="temp-scaling-details" id="est-real-units-details">
-            <summary style="font-size: var(--fs-small); color: var(--text-muted); cursor: pointer; font-weight: 500; user-select: none;">
-              My readings are in real units
-            </summary>
-            <div class="real-units-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 0.75rem; align-items: start;">
+          
+          <!-- Four REQUIRED fields in 2x2 grid (Always visible, no collapsed details) -->
+          <div id="est-real-units-container">
+            <div class="real-units-grid">
               <div class="config-col">
-                <label for="est-bar-length" class="form-label nowrap">Bar length (m)</label>
+                <label for="est-bar-length" class="form-label" id="est-lbl-bar-length">Bar length (m)</label>
                 <div class="input-suffix-wrap">
-                  <input type="number" id="est-bar-length" class="form-control mono" placeholder="Optional" min="0.0001" step="0.01">
+                  <input type="number" id="est-bar-length" name="bar_length_m" class="form-control mono" placeholder="e.g. 0.1" min="0.0001" step="0.01">
                   <span class="input-suffix">m</span>
                 </div>
               </div>
               <div class="config-col">
-                <label for="est-experiment-time" class="form-label nowrap">Test duration (s)</label>
+                <label for="est-experiment-time" class="form-label" id="est-lbl-exp-duration">Test duration (s)</label>
                 <div class="input-suffix-wrap">
-                  <input type="number" id="est-experiment-time" class="form-control mono" placeholder="Optional" min="0.0001" step="0.1">
+                  <input type="number" id="est-experiment-time" name="test_duration_s" class="form-control mono" placeholder="e.g. 100" min="0.0001" step="0.1">
                   <span class="input-suffix">s</span>
                 </div>
               </div>
               <div class="config-col">
-                <label for="est-temp-edge" class="form-label nowrap">Ends of the bar are held at (&deg;C)</label>
+                <label for="est-temp-edge" class="form-label" id="est-lbl-temp-edge">Ends of the bar are held at (&deg;C)</label>
                 <div class="input-suffix-wrap">
-                  <input type="number" id="est-temp-edge" class="form-control mono" placeholder="Optional" step="0.5">
+                  <input type="number" id="est-temp-edge" name="boundary_temperature" class="form-control mono" placeholder="e.g. 20" step="0.5">
                   <span class="input-suffix">&deg;C</span>
                 </div>
               </div>
               <div class="config-col">
-                <label for="est-temp-peak" class="form-label nowrap">Hottest point at the start (&deg;C)</label>
+                <label for="est-temp-peak" class="form-label" id="est-lbl-temp-peak">Hottest point at the start (&deg;C)</label>
                 <div class="input-suffix-wrap">
-                  <input type="number" id="est-temp-peak" class="form-control mono" placeholder="Optional" step="0.5">
+                  <input type="number" id="est-temp-peak" name="initial_peak_temperature" class="form-control mono" placeholder="e.g. 80" step="0.5">
                   <span class="input-suffix">&deg;C</span>
                 </div>
               </div>
             </div>
-            <div class="test-units-helper" id="est-real-units-helper" style="margin-top: 0.5rem;">
-              When filled, the backend converts readings before calculating and converts results back to physical units.
+          </div>
+
+          <!-- Sensor accuracy below 2x2 grid -->
+          <div class="test-config-row" style="margin-top: 0.25rem; margin-bottom: 0.75rem;">
+            <div class="config-col" style="max-width: 320px;">
+              <label for="est-sigma-val" class="form-label" id="est-sigma-label">
+                Sensor accuracy (&plusmn; &deg;C)
+                <span class="info-tooltip" title="Typical measurement error of your temperature sensor. Not sure? Leave 0.5 &deg;C.">&#9432;</span>
+              </label>
+              <input type="number" id="est-sigma-val" name="sigma" class="form-control mono" value="0.5" min="0.0001" max="100.0" step="0.1">
             </div>
-          </details>
+          </div>
+
+          <!-- How was the bar heated at the start? Radio options -->
+          <div class="form-group" style="margin-top: 1rem; border-top: 1px solid var(--rule-subtle); padding-top: 0.85rem;">
+            <label class="form-label" style="font-weight: 600; margin-bottom: 0.5rem;">How was the bar heated at the start?</label>
+            <div class="heating-radio-group">
+              <label class="radio-label">
+                <input type="radio" name="est-heating-profile" id="est-heat-sine" value="sine" checked>
+                <span>
+                  <strong>Hottest in the middle, cooler toward the ends (standard)</strong><br>
+                  <span class="text-muted" style="font-size: 0.82rem;">Standard heat diffusion profile; routes to fast neural surrogate.</span>
+                </span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="est-heating-profile" id="est-heat-constant" value="constant">
+                <span>
+                  <strong>Heated evenly</strong><br>
+                  <span class="text-muted" style="font-size: 0.82rem;">Constant starting temperature; routes to exact declared physics solver (verified 95% coverage).</span>
+                </span>
+              </label>
+            </div>
+          </div>
 
           <!-- Hidden compatibility elements for existing tests -->
           <div style="display: none;">
             <div id="est-units-rule-helper"></div>
             <details id="est-temp-scaling-details"></details>
+            <details id="est-real-units-details"></details>
+            <div id="est-real-units-helper"></div>
             <div id="est-temp-rule-helper"></div>
+            <span id="est-sigma-unit-hint"></span>
             <button type="button" id="est-unit-scaled-btn" data-unit="scaled">Scaled 0–1</button>
             <button type="button" id="est-unit-real-btn" data-unit="real">Real units (m, s)</button>
             <div id="est-unit-toggle"></div>
@@ -581,6 +601,18 @@
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem;">
               <button type="button" class="btn btn-secondary btn-sm" id="est-sample-synth-btn">Generate demo readings</button>
               <button type="button" class="btn btn-secondary btn-sm" id="est-rerun-demo-btn">Rerun with new seed</button>
+            </div>
+            
+            <!-- 5. Advanced (for researchers) -->
+            <div class="drawer-section" id="est-advanced-section" style="border-top: 1px solid var(--rule-subtle); padding-top: 0.75rem; margin-top: 0.75rem;">
+              <h4 style="font-size: var(--fs-label); margin-bottom: 0.5rem;">Advanced (for researchers)</h4>
+              <label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; font-size: 0.88rem;">
+                <input type="checkbox" id="est-scaled-toggle" style="margin-top: 0.25rem;">
+                <span>
+                  <strong>My values are already scaled (0–1)</strong><br>
+                  <span class="text-muted" style="font-size: 0.8rem;">Hide physical unit fields and send dimensionless coordinates directly to the models.</span>
+                </span>
+              </label>
             </div>
             
             <!-- Compatibility elements for existing tests -->

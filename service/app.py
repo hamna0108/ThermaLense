@@ -486,10 +486,10 @@ def post_estimate(req: EstimateRequest):
             )
         t_s = t_raw / T
     else:
-        if np.any(t_raw <= 0):
+        if np.any(t_raw <= 0) or np.any(t_raw > 1.0 + 1e-9):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error_code": "VALIDATION_ERROR", "message": "Times must be positive."}
+                detail={"error_code": "VALIDATION_ERROR", "message": "Times must be within (0, 1] when test_duration_s is omitted."}
             )
         t_s = t_raw.copy()
 
@@ -602,6 +602,25 @@ def post_estimate(req: EstimateRequest):
 
     # 4. Execute estimation
     mode = req.mode.lower() if req.mode else "mode3plus"
+
+    logger.info(json.dumps({
+        "event": "estimate_request_normalized",
+        "raw_inputs": {
+            "bar_length_m": L,
+            "test_duration_s": T,
+            "boundary_temperature": T_b,
+            "initial_peak_temperature": T_p,
+            "sigma": req.sigma,
+            "mode": mode,
+            "N": len(x_raw)
+        },
+        "normalized": {
+            "x_s_range": [round(float(np.min(x_s)), 4), round(float(np.max(x_s)), 4)],
+            "t_s_range": [round(float(np.min(t_s)), 4), round(float(np.max(t_s)), 4)],
+            "y_s_range": [round(float(np.min(y_s)), 4), round(float(np.max(y_s)), 4)],
+            "effective_sigma": round(float(effective_sigma), 6)
+        }
+    }))
 
     if req.physics_config is not None or req.physics is not None or mode == "declared_physics":
         res_d4 = invert_with_declared_physics(
@@ -794,10 +813,10 @@ def post_diagnose(req: DiagnoseRequest):
         t_s = t_raw / T
         tb = tb_raw / T
     else:
-        if np.any(t_raw <= 0) or np.any(tb_raw <= 0):
+        if np.any(t_raw <= 0) or np.any(tb_raw <= 0) or np.any(t_raw > 1.0 + 1e-9) or np.any(tb_raw > 1.0 + 1e-9):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"error_code": "VALIDATION_ERROR", "message": "Times must be positive."}
+                detail={"error_code": "VALIDATION_ERROR", "message": "Times must be within (0, 1] when test_duration_s is omitted."}
             )
         t_s = t_raw.copy()
         tb = tb_raw.copy()
@@ -826,6 +845,25 @@ def post_diagnose(req: DiagnoseRequest):
     else:
         effective_sigma = float(sig_info["sigma_hat"])
     hat_a_base = float(sig_info["alpha_base"])
+
+    logger.info(json.dumps({
+        "event": "diagnose_request_normalized",
+        "raw_inputs": {
+            "bar_length_m": L,
+            "test_duration_s": T,
+            "boundary_temperature": T_b,
+            "initial_peak_temperature": T_p,
+            "sigma": req.sigma,
+            "N_ops": len(x_raw),
+            "N_base": len(xb_raw)
+        },
+        "normalized": {
+            "x_s_range": [round(float(np.min(x_s)), 4), round(float(np.max(x_s)), 4)],
+            "t_s_range": [round(float(np.min(t_s)), 4), round(float(np.max(t_s)), 4)],
+            "y_s_range": [round(float(np.min(y_s)), 4), round(float(np.max(y_s)), 4)],
+            "effective_sigma": round(float(effective_sigma), 6)
+        }
+    }))
     
     N = len(t_s)
     tau_cell = GLR_THRESHOLDS.get((N, round(effective_sigma, 2)), 7.500)

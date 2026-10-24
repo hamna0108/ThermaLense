@@ -2,7 +2,7 @@
 
 import math
 from typing import List, Optional, Dict, Any, Union
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 
 def validate_finite_list(vals: List[float], name: str, max_len: int = 1000) -> List[float]:
     if not vals:
@@ -15,6 +15,7 @@ def validate_finite_list(vals: List[float], name: str, max_len: int = 1000) -> L
     return vals
 
 class BaselineData(BaseModel):
+    model_config = ConfigDict(extra='forbid')
     x_coords: Optional[List[float]] = Field(None, description="Spatial sensor coordinates x in [0, 1]")
     t_coords: Optional[List[float]] = Field(None, description="Temporal sensor coordinates t in [0, 1]")
     readings: Optional[List[float]] = Field(None, description="Observed baseline sensor values")
@@ -55,6 +56,7 @@ class BaselineData(BaseModel):
         return self
 
 class PhysicsConfig(BaseModel):
+    model_config = ConfigDict(extra='forbid')
     u0_expr: Optional[str] = Field(None, description="Initial condition expression u0(x), e.g. 'sin(pi * x)'")
     bc_left_expr: Optional[str] = Field(None, description="Left boundary condition expression u(0, t)")
     bc_right_expr: Optional[str] = Field(None, description="Right boundary condition expression u(1, t)")
@@ -62,6 +64,7 @@ class PhysicsConfig(BaseModel):
     alpha_expr: Optional[str] = Field(None, description="Spatial variable diffusivity expression alpha(x)")
 
 class NormalizationConstants(BaseModel):
+    model_config = ConfigDict(extra='forbid')
     bar_length_m: Optional[float] = Field(None, description="Physical bar length L in metres")
     test_duration_s: Optional[float] = Field(None, description="Physical test duration T in seconds")
     boundary_temperature: Optional[float] = Field(None, description="Boundary temperature at bar ends T_boundary")
@@ -69,6 +72,7 @@ class NormalizationConstants(BaseModel):
     scale_factor: Optional[float] = Field(None, description="Diffusivity conversion factor L^2 / T")
 
 class EstimateRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
     x: Optional[List[float]] = Field(None, description="Sensor spatial coordinates x")
     t: Optional[List[float]] = Field(None, description="Sensor temporal coordinates t")
     y: Optional[List[float]] = Field(None, description="Observed sensor values")
@@ -90,6 +94,7 @@ class EstimateRequest(BaseModel):
     @classmethod
     def resolve_aliases(cls, data):
         if isinstance(data, dict):
+            # Coordinate aliases
             if 'x' in data and 'x_coords' not in data:
                 data['x_coords'] = data['x']
             if 't' in data and 't_coords' not in data:
@@ -102,6 +107,30 @@ class EstimateRequest(BaseModel):
                 data['t'] = data['t_coords']
             if 'readings' in data and 'y' not in data:
                 data['y'] = data['readings']
+
+            # Physical units field aliases
+            if 'bar_length' in data and 'bar_length_m' not in data:
+                data['bar_length_m'] = data.pop('bar_length')
+            elif 'bar_length' in data:
+                data.pop('bar_length')
+
+            for t_alias in ('test_duration', 'duration'):
+                if t_alias in data and 'test_duration_s' not in data:
+                    data['test_duration_s'] = data.pop(t_alias)
+                elif t_alias in data:
+                    data.pop(t_alias)
+
+            for b_alias in ('boundary_temp', 'ends_temperature', 'ends'):
+                if b_alias in data and 'boundary_temperature' not in data:
+                    data['boundary_temperature'] = data.pop(b_alias)
+                elif b_alias in data:
+                    data.pop(b_alias)
+
+            for p_alias in ('initial_peak_temp', 'peak_temperature', 'hottest'):
+                if p_alias in data and 'initial_peak_temperature' not in data:
+                    data['initial_peak_temperature'] = data.pop(p_alias)
+                elif p_alias in data:
+                    data.pop(p_alias)
         return data
 
     @field_validator('sigma')
@@ -148,6 +177,7 @@ class EstimateResponse(BaseModel):
     units: Optional[str] = "dimensionless"
 
 class SensorReadings(BaseModel):
+    model_config = ConfigDict(extra='forbid')
     x_coords: Optional[List[float]] = Field(None, description="Sensor spatial coordinates x in [0, 1]")
     t_coords: Optional[List[float]] = Field(None, description="Sensor temporal coordinates t in [0, 1]")
     readings: Optional[List[float]] = Field(None, description="Observed sensor values")
@@ -188,11 +218,15 @@ class SensorReadings(BaseModel):
         return self
 
 class DiagnoseRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
     readings: Optional[SensorReadings] = Field(None, description="Operational sensor measurements: {x_coords, t_coords, readings}")
     baseline: BaselineData = Field(..., description="Healthy baseline readings: {x_coords, t_coords, readings} with k >= 20")
     sigma: Optional[float] = Field(None, description="Optional declared noise std")
     x_coords: Optional[List[float]] = Field(None, description="Top-level operational x coordinates (flat format)")
     t_coords: Optional[List[float]] = Field(None, description="Top-level operational t coordinates (flat format)")
+    x: Optional[List[float]] = Field(None, description="Alias for x_coords")
+    t: Optional[List[float]] = Field(None, description="Alias for t_coords")
+    y: Optional[List[float]] = Field(None, description="Alias for readings")
     bar_length_m: Optional[float] = Field(None, description="Physical bar length L in metres (L > 0)")
     test_duration_s: Optional[float] = Field(None, description="Physical test duration T in seconds (T > 0)")
     boundary_temperature: Optional[float] = Field(None, description="Boundary temperature at bar ends T_boundary")
@@ -202,6 +236,30 @@ class DiagnoseRequest(BaseModel):
     @classmethod
     def resolve_diagnose_payload(cls, data):
         if isinstance(data, dict):
+            # Physical units field aliases
+            if 'bar_length' in data and 'bar_length_m' not in data:
+                data['bar_length_m'] = data.pop('bar_length')
+            elif 'bar_length' in data:
+                data.pop('bar_length')
+
+            for t_alias in ('test_duration', 'duration'):
+                if t_alias in data and 'test_duration_s' not in data:
+                    data['test_duration_s'] = data.pop(t_alias)
+                elif t_alias in data:
+                    data.pop(t_alias)
+
+            for b_alias in ('boundary_temp', 'ends_temperature', 'ends'):
+                if b_alias in data and 'boundary_temperature' not in data:
+                    data['boundary_temperature'] = data.pop(b_alias)
+                elif b_alias in data:
+                    data.pop(b_alias)
+
+            for p_alias in ('initial_peak_temp', 'peak_temperature', 'hottest'):
+                if p_alias in data and 'initial_peak_temperature' not in data:
+                    data['initial_peak_temperature'] = data.pop(p_alias)
+                elif p_alias in data:
+                    data.pop(p_alias)
+
             # If readings is provided as a flat array of numbers and top-level x_coords/t_coords exist
             if isinstance(data.get('readings'), list):
                 r_list = data['readings']

@@ -287,6 +287,19 @@ function handleTryExample(action) {
 // -------------------------------------------------------------------------------------------------
 
 const DEFAULT_ESTIMATE_EXAMPLE_ROWS = [
+  { x: 0.05, t: 1.00, u: 79.41 },
+  { x: 0.05, t: 1.67, u: 79.02 },
+  { x: 0.05, t: 2.78, u: 78.38 },
+  { x: 0.05, t: 4.64, u: 77.31 },
+  { x: 0.05, t: 7.74, u: 75.59 },
+  { x: 0.05, t: 12.92, u: 72.82 },
+  { x: 0.05, t: 21.54, u: 68.51 },
+  { x: 0.05, t: 35.94, u: 62.08 },
+  { x: 0.05, t: 59.95, u: 53.20 },
+  { x: 0.05, t: 100.00, u: 42.36 }
+];
+
+const DEFAULT_ESTIMATE_SCALED_ROWS = [
   { x: 0.50, t: 0.0100, u: 0.9951 },
   { x: 0.50, t: 0.0167, u: 0.9823 },
   { x: 0.50, t: 0.0278, u: 0.9794 },
@@ -299,15 +312,20 @@ const DEFAULT_ESTIMATE_EXAMPLE_ROWS = [
   { x: 0.50, t: 1.0000, u: 0.3781 }
 ];
 
-const DEFAULT_ESTIMATE_EXAMPLE = DEFAULT_ESTIMATE_EXAMPLE_ROWS.map(r => `${r.x.toFixed(4)}, ${r.t.toFixed(4)}, ${r.u.toFixed(4)}`).join('\n');
+const DEFAULT_ESTIMATE_EXAMPLE = DEFAULT_ESTIMATE_EXAMPLE_ROWS.map(r => `${r.x}, ${r.t}, ${r.u}`).join('\n');
 
 function createEstimateTableRow(x = '', t = '', u = '', rowNum = 1) {
+  const scaledToggle = document.getElementById('est-scaled-toggle');
+  const isScaled = Boolean(scaledToggle && scaledToggle.checked);
+  const xPh = isScaled ? 'e.g. 0.5' : 'e.g. 0.05';
+  const tPh = isScaled ? 'e.g. 0.1' : 'e.g. 10.0';
+  const uPh = isScaled ? 'e.g. 0.8' : 'e.g. 75.0';
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td class="row-num">${rowNum}</td>
-    <td><input type="text" class="cell-input" data-col="x" value="${x}" placeholder="e.g. 0.5" autocomplete="off" spellcheck="false"></td>
-    <td><input type="text" class="cell-input" data-col="t" value="${t}" placeholder="e.g. 0.1" autocomplete="off" spellcheck="false"></td>
-    <td><input type="text" class="cell-input" data-col="u" value="${u}" placeholder="e.g. 0.8" autocomplete="off" spellcheck="false"></td>
+    <td><input type="text" class="cell-input" data-col="x" value="${x}" placeholder="${xPh}" autocomplete="off" spellcheck="false"></td>
+    <td><input type="text" class="cell-input" data-col="t" value="${t}" placeholder="${tPh}" autocomplete="off" spellcheck="false"></td>
+    <td><input type="text" class="cell-input" data-col="u" value="${u}" placeholder="${uPh}" autocomplete="off" spellcheck="false"></td>
     <td style="text-align: center;"><button type="button" class="btn-cell-delete" title="Delete row" aria-label="Delete row">&times;</button></td>
   `;
   return tr;
@@ -344,72 +362,39 @@ function validateEstimateTable() {
   const tbody = document.getElementById('est-table-tbody');
   const validationMsg = document.getElementById('est-table-validation-msg');
   const countBadge = document.getElementById('est-readings-count');
-  const unitsHelper = document.getElementById('est-units-rule-helper');
-  const tempRuleHelper = document.getElementById('est-temp-rule-helper');
+  const scaledToggle = document.getElementById('est-scaled-toggle');
+  const isScaled = Boolean(scaledToggle && scaledToggle.checked);
+
+  let hasErrors = false;
+  let testSettingsError = '';
+  let rowErrorMessage = '';
+  let firstErrorMessage = '';
 
   const barLengthInput = document.getElementById('est-bar-length');
   const expDurationInput = document.getElementById('est-experiment-time');
-  const barLength = barLengthInput ? parseFloat(barLengthInput.value) : NaN;
-  const expDuration = expDurationInput ? parseFloat(expDurationInput.value) : NaN;
-  const hasRealUnits = (!isNaN(barLength) && barLength > 0 && !isNaN(expDuration) && expDuration > 0);
-
-  if (unitsHelper) {
-    if (hasRealUnits) {
-      unitsHelper.textContent = `Positions are in metres (0 to ${barLength} m) and times in seconds. Result will be shown in m²/s.`;
-    } else {
-      unitsHelper.textContent = 'Positions are 0–1 and time is 0–1.';
-    }
-  }
-
-  // Real temperature scaling check & label update
-  const tempPeakInput = document.getElementById('est-temp-peak');
   const tempEdgeInput = document.getElementById('est-temp-edge');
-  const tempPeakVal = tempPeakInput ? tempPeakInput.value.trim() : '';
-  const tempEdgeVal = tempEdgeInput ? tempEdgeInput.value.trim() : '';
-  const hasTempValues = (tempPeakVal !== '' || tempEdgeVal !== '');
-  
-  // Sensor accuracy label changes to "± °C" when temperatures are given
-  const sigmaUnitHint = document.getElementById('est-sigma-unit-hint');
-  if (sigmaUnitHint) {
-    sigmaUnitHint.textContent = hasTempValues ? ' (± °C)' : '';
-  }
+  const tempPeakInput = document.getElementById('est-temp-peak');
 
-  const tPeak = tempPeakInput ? parseFloat(tempPeakInput.value) : NaN;
-  const tEdge = tempEdgeInput ? parseFloat(tempEdgeInput.value) : NaN;
-  const hasTempScaling = (!isNaN(tPeak) && !isNaN(tEdge));
+  const L = barLengthInput && barLengthInput.value.trim() !== '' ? parseFloat(barLengthInput.value) : NaN;
+  const T = expDurationInput && expDurationInput.value.trim() !== '' ? parseFloat(expDurationInput.value) : NaN;
+  const Tb = tempEdgeInput && tempEdgeInput.value.trim() !== '' ? parseFloat(tempEdgeInput.value) : NaN;
+  const Tp = tempPeakInput && tempPeakInput.value.trim() !== '' ? parseFloat(tempPeakInput.value) : NaN;
 
-  const realUnitsHelper = document.getElementById('est-real-units-helper');
-  if (realUnitsHelper) {
-    if (hasTempScaling && hasRealUnits) {
-      realUnitsHelper.textContent = `Physical test: length ${barLength} m, duration ${expDuration} s, ends at ${tEdge}°C, start peak ${tPeak}°C. Result will be converted to m²/s.`;
-    } else if (hasRealUnits) {
-      realUnitsHelper.textContent = `Space-time scaling: ${barLength} m, ${expDuration} s. Diffusivity will be converted to m²/s.`;
-    } else if (hasTempScaling) {
-      realUnitsHelper.textContent = `Temperature scaling: readings normalized relative to ends (${tEdge}°C) and start peak (${tPeak}°C).`;
-    } else {
-      realUnitsHelper.textContent = 'When filled, the backend converts readings before calculating and converts results back to physical units.';
+  if (!isScaled) {
+    if (isNaN(L) || L <= 0 || isNaN(T) || T <= 0 || isNaN(Tb) || isNaN(Tp)) {
+      testSettingsError = 'Please fill in all test settings: bar length, test duration, ends temperature, and start hottest temperature.';
+    } else if (Tp === Tb) {
+      testSettingsError = 'The hottest starting temperature cannot equal the ends temperature.';
     }
   }
 
-  if (tempRuleHelper) {
-    if (hasTempScaling) {
-      const deltaT = tPeak - tEdge;
-      if (deltaT === 0) {
-        tempRuleHelper.textContent = 'Peak temperature cannot equal ends temperature.';
-      } else {
-        tempRuleHelper.textContent = `Readings and accuracy are scaled using (T − ${tEdge}°C) ÷ (${Math.abs(deltaT).toFixed(1)}°C).`;
-      }
-    } else {
-      tempRuleHelper.textContent = 'When filled, readings and accuracy are scaled to 0–1 using (T − T_ends) ÷ (T_peak − T_ends).';
-    }
+  if (!tbody) {
+    const firstErrorMessage = testSettingsError;
+    return { validCount: 0, hasErrors: Boolean(firstErrorMessage), readings: [], firstErrorMessage, isScaled, L, T, Tb, Tp };
   }
-
-  if (!tbody) return { validCount: 0, hasErrors: false, readings: [], firstErrorMessage: '' };
 
   const rows = Array.from(tbody.children);
   let validCount = 0;
-  let hasErrors = false;
-  let firstErrorMessage = '';
   const readings = [];
 
   rows.forEach((tr) => {
@@ -424,19 +409,23 @@ function validateEstimateTable() {
     const tVal = tInput.value.trim();
     const uVal = uInput.value.trim();
 
-    // Reset error styling
     xInput.classList.remove('cell-error');
     tInput.classList.remove('cell-error');
     uInput.classList.remove('cell-error');
 
-    // If completely empty row, ignore it
-    if (!xVal && !tVal && !uVal) {
-      return;
-    }
+    if (!xVal && !tVal && !uVal) return;
 
     let rowHasError = false;
 
-    // Check numbers for filled cells first
+    // Check complete cell presence
+    if (!xVal || !tVal || !uVal) {
+      if (!xVal) xInput.classList.add('cell-error');
+      if (!tVal) tInput.classList.add('cell-error');
+      if (!uVal) uInput.classList.add('cell-error');
+      rowHasError = true;
+      if (!firstErrorMessage) firstErrorMessage = 'All 3 columns (Position, Time, Temperature) are required for each reading.';
+    }
+
     const xNum = parseFloat(xVal);
     const tNum = parseFloat(tVal);
     const uNum = parseFloat(uVal);
@@ -444,53 +433,63 @@ function validateEstimateTable() {
     if (xVal && (isNaN(xNum) || !isFinite(xNum))) {
       xInput.classList.add('cell-error');
       rowHasError = true;
-      if (!firstErrorMessage) firstErrorMessage = 'Position must be a number';
+      if (!rowErrorMessage) rowErrorMessage = 'Position must be a number';
     }
     if (tVal && (isNaN(tNum) || !isFinite(tNum))) {
       tInput.classList.add('cell-error');
       rowHasError = true;
-      if (!firstErrorMessage) firstErrorMessage = 'Time must be a number';
+      if (!rowErrorMessage) rowErrorMessage = 'Time must be a number';
     }
     if (uVal && (isNaN(uNum) || !isFinite(uNum))) {
       uInput.classList.add('cell-error');
       rowHasError = true;
-      if (!firstErrorMessage) firstErrorMessage = 'Temperature must be a number';
+      if (!rowErrorMessage) rowErrorMessage = 'Temperature must be a number';
     }
 
-    // Value bounds check
-    if (!isNaN(tNum) && isFinite(tNum)) {
-      if (tNum <= 0) {
-        tInput.classList.add('cell-error');
-        rowHasError = true;
-        if (!firstErrorMessage) firstErrorMessage = 'Time must be greater than 0';
-      }
-    }
-
-    if (!isNaN(xNum) && isFinite(xNum)) {
-      if (!hasRealUnits) {
-        // Scaled 0-1
+    if (!rowHasError) {
+      if (isScaled) {
         if (xNum < 0 || xNum > 1) {
           xInput.classList.add('cell-error');
           rowHasError = true;
-          if (!firstErrorMessage) firstErrorMessage = 'Position must be between 0 and 1';
+          if (!rowErrorMessage) rowErrorMessage = 'Position must be between 0 and 1';
+        }
+        if (tNum <= 0 || tNum > 1.0) {
+          tInput.classList.add('cell-error');
+          rowHasError = true;
+          if (!rowErrorMessage) rowErrorMessage = 'Time must be between 0 and 1';
         }
       } else {
-        // Real units
-        if (xNum < 0 || xNum > barLength) {
-          xInput.classList.add('cell-error');
-          rowHasError = true;
-          if (!firstErrorMessage) firstErrorMessage = `Position must be between 0 and ${barLength} (or within the bar length)`;
+        if (!isNaN(L) && L > 0) {
+          if (xNum < 0 || xNum > L) {
+            xInput.classList.add('cell-error');
+            rowHasError = true;
+            if (!rowErrorMessage) rowErrorMessage = `Position must be between 0 and the bar length (0 to ${L} m).`;
+          }
+        } else {
+          if (xNum < 0 || xNum > 1) {
+            xInput.classList.add('cell-error');
+            rowHasError = true;
+            if (!rowErrorMessage) rowErrorMessage = 'Position must be between 0 and 1';
+          }
+        }
+        if (!isNaN(T) && T > 0) {
+          if (tNum <= 0 || tNum > T) {
+            tInput.classList.add('cell-error');
+            rowHasError = true;
+            if (!rowErrorMessage) rowErrorMessage = `Time must be between 0 and the test duration (up to ${T} s).`;
+          }
+        }
+        if (!isNaN(Tb) && !isNaN(Tp) && Tp !== Tb) {
+          const tMin = Math.min(Tb, Tp);
+          const tMax = Math.max(Tb, Tp);
+          const span = tMax - tMin;
+          if (uNum < tMin - 0.5 * span || uNum > tMax + 0.5 * span) {
+            uInput.classList.add('cell-error');
+            rowHasError = true;
+            if (!rowErrorMessage) rowErrorMessage = "These readings don't look like cooling from your stated start. Check your units or values.";
+          }
         }
       }
-    }
-
-    // Check partial row if incomplete
-    if (!xVal || !tVal || !uVal) {
-      if (!xVal) xInput.classList.add('cell-error');
-      if (!tVal) tInput.classList.add('cell-error');
-      if (!uVal) uInput.classList.add('cell-error');
-      rowHasError = true;
-      if (!firstErrorMessage) firstErrorMessage = 'All 3 columns (Position, Time, Temperature) are required for each reading.';
     }
 
     if (rowHasError) {
@@ -500,6 +499,9 @@ function validateEstimateTable() {
       readings.push({ x: xNum, t: tNum, u: uNum });
     }
   });
+
+  firstErrorMessage = rowErrorMessage || testSettingsError || firstErrorMessage;
+  hasErrors = Boolean(rowErrorMessage || testSettingsError || firstErrorMessage);
 
   if (countBadge) {
     if (validCount < 3) {
@@ -513,13 +515,12 @@ function validateEstimateTable() {
     validationMsg.textContent = firstErrorMessage;
   }
 
-  // Sync to hidden paste text for compatibility
   const hiddenPaste = document.getElementById('est-paste-text');
   if (hiddenPaste) {
     hiddenPaste.value = readings.map(r => `${r.x}, ${r.t}, ${r.u}`).join('\n');
   }
 
-  return { validCount, hasErrors, readings, firstErrorMessage };
+  return { validCount, hasErrors, readings, firstErrorMessage, isScaled, L, T, Tb, Tp };
 }
 
 function initEstimateWorkbench() {
@@ -537,16 +538,15 @@ function initEstimateWorkbench() {
   const submitBtn = document.getElementById('est-submit-btn');
   const sampleBtn = document.getElementById('est-sample-synth-btn');
   const rerunDemoBtn = document.getElementById('est-rerun-demo-btn');
-  const downloadBtn = document.getElementById('est-download-btn');
+  const downloadBtn = document.getElementById('download-estimate-btn') || document.getElementById('est-download-btn');
   const synthBtn = document.getElementById('estimate-mode-synth-btn');
   const pasteBtn = document.getElementById('estimate-mode-paste-btn');
   const pasteText = document.getElementById('est-paste-text');
-  const unitScaledBtn = document.getElementById('est-unit-scaled-btn');
-  const unitRealBtn = document.getElementById('est-unit-real-btn');
   const moreOptionsBtn = document.getElementById('est-more-options-btn');
   const drawer = document.getElementById('est-more-drawer');
   const drawerOverlay = document.getElementById('est-drawer-overlay');
   const drawerCloseBtn = document.getElementById('est-drawer-close-btn');
+  const scaledToggle = document.getElementById('est-scaled-toggle');
 
   // Initialize table with exactly 3 empty rows (the minimum)
   if (tbody && tbody.children.length === 0) {
@@ -571,7 +571,7 @@ function initEstimateWorkbench() {
     });
   }
 
-  // Real temperature scaling inputs (°C)
+  // Real temperature inputs (°C)
   const tempPeakInput = document.getElementById('est-temp-peak');
   const tempEdgeInput = document.getElementById('est-temp-edge');
   if (tempPeakInput) {
@@ -584,6 +584,83 @@ function initEstimateWorkbench() {
     tempEdgeInput.addEventListener('input', () => {
       validateEstimateTable();
       clearEstimateResultState();
+    });
+  }
+
+  if (sigmaVal) {
+    sigmaVal.addEventListener('input', () => {
+      clearEstimateResultState();
+    });
+  }
+
+  // Scaled 0-1 Toggle (Inside More options -> Advanced)
+  if (scaledToggle) {
+    scaledToggle.addEventListener('change', () => {
+      const isScaled = scaledToggle.checked;
+      const realUnitsContainer = document.getElementById('est-real-units-container');
+      if (realUnitsContainer) {
+        realUnitsContainer.style.display = isScaled ? 'none' : 'block';
+      }
+      const colXTitle = document.getElementById('est-col-x-title');
+      const colTTitle = document.getElementById('est-col-t-title');
+      const colUTitle = document.getElementById('est-col-u-title');
+      const colXHelper = document.getElementById('est-col-x-helper');
+      const colTHelper = document.getElementById('est-col-t-helper');
+      const colUHelper = document.getElementById('est-col-u-helper');
+      const sigmaLabel = document.getElementById('est-sigma-label');
+      const sigmaInput = document.getElementById('est-sigma-val');
+
+      if (isScaled) {
+        if (colXTitle) colXTitle.textContent = 'Position (0–1)';
+        if (colTTitle) colTTitle.textContent = 'Time (0–1)';
+        if (colUTitle) colUTitle.textContent = 'Temperature (0–1)';
+        if (colXHelper) colXHelper.textContent = 'Where on the bar: 0 = one end, 1 = other end';
+        if (colTHelper) colTHelper.textContent = 'When it was measured (0 to 1)';
+        if (colUHelper) colUHelper.textContent = 'Scaled so hottest point at start = 1';
+        if (sigmaLabel) sigmaLabel.innerHTML = 'Sensor accuracy (&plusmn;) <span class="info-tooltip" title="Measurement error in scaled units.">&#9432;</span>';
+        if (sigmaInput && (sigmaInput.value === '0.5' || sigmaInput.value === '0.50')) {
+          sigmaInput.value = '0.01';
+        }
+      } else {
+        if (colXTitle) colXTitle.textContent = 'Position (m)';
+        if (colTTitle) colTTitle.textContent = 'Time (s)';
+        if (colUTitle) colUTitle.textContent = 'Temperature (°C)';
+        if (colXHelper) colXHelper.textContent = 'Where on the bar: 0 = one end, up to bar length';
+        if (colTHelper) colTHelper.textContent = 'When it was measured';
+        if (colUHelper) colUHelper.textContent = 'What the sensor read';
+        if (sigmaLabel) sigmaLabel.innerHTML = 'Sensor accuracy (&plusmn; &deg;C) <span class="info-tooltip" title="Typical measurement error of your temperature sensor. Not sure? Leave 0.5 &deg;C.">&#9432;</span>';
+        if (sigmaInput && (sigmaInput.value === '0.01' || sigmaInput.value === '0.010')) {
+          sigmaInput.value = '0.5';
+        }
+      }
+      validateEstimateTable();
+      clearEstimateResultState();
+    });
+  }
+
+  // Heating Profile Radios
+  const heatSine = document.getElementById('est-heat-sine');
+  const heatConstant = document.getElementById('est-heat-constant');
+  if (heatSine) {
+    heatSine.addEventListener('change', () => {
+      if (heatSine.checked) {
+        const u0Input = document.getElementById('est-phys-u0');
+        if (u0Input) u0Input.value = 'sin(pi*x)';
+        const preset = document.getElementById('est-phys-preset');
+        if (preset) preset.value = 'sine';
+        clearEstimateResultState();
+      }
+    });
+  }
+  if (heatConstant) {
+    heatConstant.addEventListener('change', () => {
+      if (heatConstant.checked) {
+        const u0Input = document.getElementById('est-phys-u0');
+        if (u0Input) u0Input.value = '1';
+        const preset = document.getElementById('est-phys-preset');
+        if (preset) preset.value = 'constant';
+        clearEstimateResultState();
+      }
     });
   }
 
@@ -612,7 +689,7 @@ function initEstimateWorkbench() {
     tbody.addEventListener('click', (e) => {
       const delBtn = e.target.closest('.btn-cell-delete');
       if (!delBtn) return;
-      if (tbody.children.length <= 3) return; // Hide/disallow deletion when only 3 rows remain
+      if (tbody.children.length <= 3) return; // Disallow deletion when only 3 rows remain
       const tr = delBtn.closest('tr');
       if (tr) {
         tr.remove();
@@ -668,7 +745,6 @@ function initEstimateWorkbench() {
         if (targetRowIndex < 0) targetRowIndex = 0;
 
         let startIdx = 0;
-        // Skip header if non-numeric
         if (isNaN(parseFloat(firstLineParts[0])) && isNaN(parseFloat(firstLineParts[1] || ''))) {
           startIdx = 1;
         }
@@ -710,11 +786,26 @@ function initEstimateWorkbench() {
   // Use example data button
   if (useExampleBtn) {
     useExampleBtn.addEventListener('click', () => {
+      const isScaled = Boolean(scaledToggle && scaledToggle.checked);
       if (tbody) {
         tbody.innerHTML = '';
-        DEFAULT_ESTIMATE_EXAMPLE_ROWS.forEach((r, idx) => {
-          tbody.appendChild(createEstimateTableRow(r.x.toFixed(2), r.t.toFixed(4), r.u.toFixed(4), idx + 1));
-        });
+        if (isScaled) {
+          DEFAULT_ESTIMATE_SCALED_ROWS.forEach((r, idx) => {
+            tbody.appendChild(createEstimateTableRow(r.x.toFixed(2), r.t.toFixed(4), r.u.toFixed(4), idx + 1));
+          });
+          const sigmaInput = document.getElementById('est-sigma-val');
+          if (sigmaInput) sigmaInput.value = '0.01';
+        } else {
+          DEFAULT_ESTIMATE_EXAMPLE_ROWS.forEach((r, idx) => {
+            tbody.appendChild(createEstimateTableRow(r.x.toFixed(2), r.t.toFixed(2), r.u.toFixed(2), idx + 1));
+          });
+          if (barLengthInput) barLengthInput.value = '0.1';
+          if (expDurationInput) expDurationInput.value = '100';
+          if (tempEdgeInput) tempEdgeInput.value = '20';
+          if (tempPeakInput) tempPeakInput.value = '80';
+          if (sigmaVal) sigmaVal.value = '0.5';
+          if (heatSine) heatSine.checked = true;
+        }
         STATE.isEstimateDemo = false;
         updateTableRowNumbers();
         validateEstimateTable();
@@ -740,37 +831,22 @@ function initEstimateWorkbench() {
             if (!line || line.startsWith('#')) continue;
             const parts = line.split(/[,\t]+/).map(p => p.trim()).filter(Boolean);
             if (parts.length >= 3) {
-              if (isNaN(parseFloat(parts[0])) && isNaN(parseFloat(parts[1]))) continue; // header
+              if (isNaN(parseFloat(parts[0])) && isNaN(parseFloat(parts[1]))) continue;
               tbody.appendChild(createEstimateTableRow(parts[0], parts[1], parts[2]));
               added++;
             }
           }
           if (added === 0) {
-            for (let i = 0; i < 8; i++) tbody.appendChild(createEstimateTableRow());
+            for (let i = 0; i < 3; i++) tbody.appendChild(createEstimateTableRow());
           }
         }
         STATE.isEstimateDemo = false;
+        updateTableRowNumbers();
         validateEstimateTable();
         clearEstimateResultState();
         csvUpload.value = '';
       };
       reader.readAsText(file);
-    });
-  }
-
-  // Unit toggle
-  if (unitScaledBtn && unitRealBtn) {
-    unitScaledBtn.addEventListener('click', () => {
-      unitScaledBtn.classList.add('active');
-      unitRealBtn.classList.remove('active');
-      validateEstimateTable();
-      clearEstimateResultState();
-    });
-    unitRealBtn.addEventListener('click', () => {
-      unitRealBtn.classList.add('active');
-      unitScaledBtn.classList.remove('active');
-      validateEstimateTable();
-      clearEstimateResultState();
     });
   }
 
@@ -819,8 +895,9 @@ function initEstimateWorkbench() {
         }
       }
       if (added === 0) {
-        for (let i = 0; i < 8; i++) tbody.appendChild(createEstimateTableRow());
+        for (let i = 0; i < 3; i++) tbody.appendChild(createEstimateTableRow());
       }
+      updateTableRowNumbers();
       validateEstimateTable();
       clearEstimateResultState();
     });
@@ -934,25 +1011,54 @@ function runRandomDemo() {
 function generateEstimateSample() {
   const alphaTrue = parseFloat(document.getElementById('est-true-alpha').value) || 0.10;
   const N = parseInt(document.getElementById('est-num-sensors').value) || 10;
-  const sigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.01;
   const seed = parseInt(document.getElementById('est-seed').value) || 42;
   const rng = mulberry32(seed);
+  const scaledToggle = document.getElementById('est-scaled-toggle');
+  const isScaled = Boolean(scaledToggle && scaledToggle.checked);
 
   const tbody = document.getElementById('est-table-tbody');
   if (tbody) {
     tbody.innerHTML = '';
-    for (let i = 0; i < N; i++) {
-      const x = 0.50;
-      // Log-spaced time points in [0.01, 1.0]
-      const t = Math.pow(10, Math.log10(0.01) + (i / Math.max(1, N - 1)) * (Math.log10(1.0) - Math.log10(0.01)));
-      const uExact = Math.sin(Math.PI * x) * Math.exp(-alphaTrue * Math.PI * Math.PI * t);
-      const noise = randomNormal(rng, 0, sigma);
-      const y = uExact + noise;
-      tbody.appendChild(createEstimateTableRow(x.toFixed(4), t.toFixed(4), y.toFixed(5)));
+    if (isScaled) {
+      const sigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.01;
+      for (let i = 0; i < N; i++) {
+        const x = 0.50;
+        const t = Math.pow(10, Math.log10(0.01) + (i / Math.max(1, N - 1)) * (Math.log10(1.0) - Math.log10(0.01)));
+        const uExact = Math.sin(Math.PI * x) * Math.exp(-alphaTrue * Math.PI * Math.PI * t);
+        const noise = randomNormal(rng, 0, sigma);
+        const y = Math.max(0, uExact + noise);
+        tbody.appendChild(createEstimateTableRow(x.toFixed(2), t.toFixed(4), y.toFixed(4), i + 1));
+      }
+    } else {
+      const L = 0.1;
+      const T = 100.0;
+      const Tb = 20.0;
+      const Tp = 80.0;
+      const sigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.5;
+
+      const barLengthInput = document.getElementById('est-bar-length');
+      const expDurationInput = document.getElementById('est-experiment-time');
+      const tempEdgeInput = document.getElementById('est-temp-edge');
+      const tempPeakInput = document.getElementById('est-temp-peak');
+      if (barLengthInput) barLengthInput.value = String(L);
+      if (expDurationInput) expDurationInput.value = String(T);
+      if (tempEdgeInput) tempEdgeInput.value = String(Tb);
+      if (tempPeakInput) tempPeakInput.value = String(Tp);
+
+      for (let i = 0; i < N; i++) {
+        const x = 0.05;
+        const tNorm = Math.pow(10, Math.log10(0.01) + (i / Math.max(1, N - 1)) * (Math.log10(1.0) - Math.log10(0.01)));
+        const tSec = tNorm * T;
+        const uNorm = Math.sin(Math.PI * (x / L)) * Math.exp(-alphaTrue * Math.PI * Math.PI * tNorm);
+        const noise = randomNormal(rng, 0, sigma);
+        const tempC = Tb + (Tp - Tb) * uNorm + noise;
+        tbody.appendChild(createEstimateTableRow(x.toFixed(2), tSec.toFixed(2), tempC.toFixed(2), i + 1));
+      }
     }
   }
 
   STATE.isEstimateDemo = true;
+  updateTableRowNumbers();
   validateEstimateTable();
   clearEstimateResultState();
 }
@@ -962,54 +1068,31 @@ async function executeParameterEstimate() {
   const resultPanel = document.getElementById('est-result-panel');
   const emptyState = document.getElementById('est-empty-state');
   const validationMsg = document.getElementById('est-table-validation-msg');
-  const synthBtn = document.getElementById('estimate-mode-synth-btn');
-  const isSynthetic = Boolean(STATE.isEstimateDemo || (synthBtn && synthBtn.classList.contains('active')));
   const trueAlpha = parseFloat(document.getElementById('est-true-alpha').value) || 0.10;
 
-  let xList = [];
-  let tList = [];
-  let yList = [];
+  // Validate table inputs first
+  const { validCount, hasErrors, readings, firstErrorMessage, isScaled, L, T, Tb, Tp } = validateEstimateTable();
 
-  if (isSynthetic) {
-    const N = parseInt(document.getElementById('est-num-sensors').value) || 10;
-    const sigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.01;
-    const seed = parseInt(document.getElementById('est-seed').value) || 42;
-    const rng = mulberry32(seed);
-
-    for (let i = 0; i < N; i++) {
-      const x = 0.50;
-      const t = Math.pow(10, Math.log10(0.01) + (i / Math.max(1, N - 1)) * (Math.log10(1.0) - Math.log10(0.01)));
-      const uExact = Math.sin(Math.PI * x) * Math.exp(-trueAlpha * Math.PI * Math.PI * t);
-      const noise = randomNormal(rng, 0, sigma);
-      xList.push(x);
-      tList.push(t);
-      yList.push(uExact + noise);
+  if (hasErrors) {
+    if (validationMsg) validationMsg.textContent = firstErrorMessage;
+    if (stateContainer) {
+      stateContainer.innerHTML = `<div class="state-box error"><strong>Input Error:</strong> ${firstErrorMessage}</div>`;
     }
-  } else {
-    // Validate table
-    const { validCount, hasErrors, readings, firstErrorMessage } = validateEstimateTable();
-
-    if (hasErrors) {
-      if (validationMsg) validationMsg.textContent = firstErrorMessage;
-      if (stateContainer) {
-        stateContainer.innerHTML = `<div class="state-box error"><strong>Input Error:</strong> ${firstErrorMessage}</div>`;
-      }
-      return;
-    }
-
-    if (validCount < 3) {
-      const msg = 'Please enter at least 3 readings to calculate.';
-      if (validationMsg) validationMsg.textContent = msg;
-      if (stateContainer) {
-        stateContainer.innerHTML = `<div class="state-box error"><strong>Input Error:</strong> ${msg}</div>`;
-      }
-      return;
-    }
-
-    xList = readings.map(r => r.x);
-    tList = readings.map(r => r.t);
-    yList = readings.map(r => r.u);
+    return;
   }
+
+  if (validCount < 3) {
+    const msg = 'Please enter at least 3 readings to calculate.';
+    if (validationMsg) validationMsg.textContent = msg;
+    if (stateContainer) {
+      stateContainer.innerHTML = `<div class="state-box error"><strong>Input Error:</strong> ${msg}</div>`;
+    }
+    return;
+  }
+
+  const xList = readings.map(r => r.x);
+  const tList = readings.map(r => r.t);
+  const yList = readings.map(r => r.u);
 
   if (validationMsg) validationMsg.textContent = '';
   if (emptyState) emptyState.style.display = 'none';
@@ -1018,36 +1101,24 @@ async function executeParameterEstimate() {
   }
   if (resultPanel) resultPanel.style.display = 'none';
 
-  // Check physical setup and real units fields
-  const barLengthInput = document.getElementById('est-bar-length');
-  const expDurationInput = document.getElementById('est-experiment-time');
-  const barLength = barLengthInput && barLengthInput.value.trim() !== '' ? parseFloat(barLengthInput.value) : NaN;
-  const expDuration = expDurationInput && expDurationInput.value.trim() !== '' ? parseFloat(expDurationInput.value) : NaN;
-  const hasPhysicalSetup = (!isNaN(barLength) && barLength > 0 && !isNaN(expDuration) && expDuration > 0);
+  // Determine calculation mode and physics config
+  const heatConstant = document.getElementById('est-heat-constant');
+  const methodSelect = document.getElementById('est-method-select');
+  let methodMode = methodSelect ? methodSelect.value : 'mode3plus';
+  let physicsConfig = null;
 
-  // Real temperature scaling fields (°C)
-  const tempPeakInput = document.getElementById('est-temp-peak');
-  const tempEdgeInput = document.getElementById('est-temp-edge');
-  const tPeak = tempPeakInput && tempPeakInput.value.trim() !== '' ? parseFloat(tempPeakInput.value) : NaN;
-  const tEdge = tempEdgeInput && tempEdgeInput.value.trim() !== '' ? parseFloat(tempEdgeInput.value) : NaN;
-  const hasTempScaling = (!isNaN(tPeak) && !isNaN(tEdge));
-
-  // Client-side quick check: peak cannot equal ends
-  if (hasTempScaling && tPeak === tEdge) {
-    const msg = 'Peak temperature cannot equal ends temperature (division by zero).';
-    if (validationMsg) validationMsg.textContent = msg;
-    if (stateContainer) {
-      stateContainer.innerHTML = `<div class="state-box error"><strong>Input Error:</strong> ${msg}</div>`;
-    }
-    return;
+  if (heatConstant && heatConstant.checked) {
+    methodMode = 'declared_physics';
+    physicsConfig = { u0_expr: '1' };
+  } else if (methodMode === 'declared_physics') {
+    const u0Input = document.getElementById('est-phys-u0');
+    const u0Val = u0Input ? u0Input.value.trim() : 'sin(pi*x)';
+    physicsConfig = { u0_expr: u0Val };
   }
 
-  const methodSelect = document.getElementById('est-method-select');
-  const methodMode = methodSelect ? methodSelect.value : 'mode3plus';
   const noiseMode = document.getElementById('est-noise-select') ? document.getElementById('est-noise-select').value : 'declared';
-  let declaredSigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.01;
+  const declaredSigma = parseFloat(document.getElementById('est-sigma-val').value) || (isScaled ? 0.01 : 0.5);
 
-  // Send raw readings directly to backend normalisation wrapper
   const payload = {
     x: xList,
     t: tList,
@@ -1055,11 +1126,12 @@ async function executeParameterEstimate() {
     mode: methodMode
   };
 
-  // Attach optional real-world unit normalization fields when provided
-  if (!isNaN(barLength) && barLength > 0) payload.bar_length_m = barLength;
-  if (!isNaN(expDuration) && expDuration > 0) payload.test_duration_s = expDuration;
-  if (!isNaN(tEdge)) payload.boundary_temperature = tEdge;
-  if (!isNaN(tPeak)) payload.initial_peak_temperature = tPeak;
+  if (!isScaled) {
+    payload.bar_length_m = L;
+    payload.test_duration_s = T;
+    payload.boundary_temperature = Tb;
+    payload.initial_peak_temperature = Tp;
+  }
 
   if (noiseMode === 'declared') {
     payload.sigma = declaredSigma;
@@ -1082,12 +1154,11 @@ async function executeParameterEstimate() {
     payload.baseline = { x_coords: xb, t_coords: tb, readings: yb };
   }
 
-  // Declared physics check
-  const u0Input = document.getElementById('est-phys-u0');
-  const u0Val = u0Input ? u0Input.value.trim() : '';
-  if (u0Val && u0Val !== 'sin(pi*x)') {
-    payload.physics_config = { u0_expr: u0Val };
+  if (physicsConfig) {
+    payload.physics_config = physicsConfig;
   }
+
+  console.log("Estimate outgoing JSON:", JSON.stringify(payload));
 
   try {
     const res = await fetch('/v1/estimate', {
@@ -1101,16 +1172,20 @@ async function executeParameterEstimate() {
     STATE.lastEstimateResult = { 
       request: payload, 
       response: data, 
-      isDemoMode: isSynthetic, 
+      isDemoMode: Boolean(STATE.isEstimateDemo), 
       trueAlpha,
-      hasPhysicalSetup,
-      barLength,
-      expDuration
+      isScaled,
+      barLength: L,
+      expDuration: T
     };
 
+    console.log("Estimate response status:", res.status);
+    console.log("Estimate response data:", JSON.stringify(data));
+
     if (!res.ok) {
-      const errCode = data.error_code || 'ERROR';
-      const msg = data.message || (typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+      const errCode = data.error_code || (data.detail && data.detail.error_code) || 'ERROR';
+      const msg = data.message || (data.detail && data.detail.message) || (typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+      console.warn("Estimate request failed:", errCode, msg);
       if (stateContainer) {
         stateContainer.innerHTML = `
           <div class="state-box refusal">
@@ -1119,6 +1194,15 @@ async function executeParameterEstimate() {
           </div>
         `;
       }
+      const resultsCard = document.getElementById('estimate-results-card');
+      if (resultsCard) resultsCard.style.display = 'block';
+      if (resultPanel) resultPanel.style.display = 'block';
+      const numberEl = document.getElementById('est-plain-number');
+      const headlineEl = document.getElementById('est-plain-headline');
+      const sublineEl = document.getElementById('est-plain-subline');
+      if (numberEl) numberEl.textContent = 'No reliable result';
+      if (headlineEl) headlineEl.innerHTML = '<strong>No reliable result</strong>';
+      if (sublineEl) sublineEl.textContent = msg;
       return;
     }
 
@@ -1132,7 +1216,6 @@ async function executeParameterEstimate() {
     const flags = data.flags || {};
     const warnings = flags.warnings || [];
 
-    // Result Hierarchy: small label -> 1.75rem (28px) bold number -> body range line
     const numberEl = document.getElementById('est-plain-number');
     const labelEl = document.getElementById('est-result-label');
     const headlineEl = document.getElementById('est-plain-headline');
@@ -1150,24 +1233,29 @@ async function executeParameterEstimate() {
 
     const isRealResult = (data.units === 'm²/s' || (data.normalization && data.normalization.scale_factor && data.normalization.scale_factor !== 1.0));
 
-    if (isRealResult) {
+    if (flags.model_invalid) {
+      if (numberEl) numberEl.textContent = 'No reliable result';
+      if (headlineEl) headlineEl.innerHTML = '<strong>No reliable result</strong>';
+      if (sublineEl) sublineEl.textContent = 'The twin could not calculate a trustworthy heat spread from these readings.';
+    } else if (isRealResult) {
       const alphaStr = formatAlphaDisplay(alphaHat);
       const ciLoStr = formatAlphaDisplay(ci95[0]);
       const ciHiStr = formatAlphaDisplay(ci95[1]);
 
+      if (labelEl) labelEl.textContent = 'Heat spread (α)';
       if (numberEl) numberEl.innerHTML = `${alphaStr} <span style="font-size: 1.1rem; font-weight: 500; font-family: var(--font-sans); color: var(--text-muted);">m&sup2;/s</span>`;
-      if (headlineEl) headlineEl.innerHTML = `Heat spread: <strong>${alphaStr} m&sup2;/s</strong>`;
+      if (headlineEl) headlineEl.innerHTML = `Heat spread (α): <strong>${alphaStr} m&sup2;/s</strong>`;
       if (sublineEl) sublineEl.innerHTML = `Most likely between <strong>${ciLoStr}</strong> and <strong>${ciHiStr} m&sup2;/s</strong>`;
     } else {
+      if (labelEl) labelEl.textContent = 'Heat spread (α)';
       if (numberEl) numberEl.textContent = alphaHat.toFixed(3);
-      if (headlineEl) headlineEl.innerHTML = `Heat spread: <strong>${alphaHat.toFixed(3)}</strong>`;
+      if (headlineEl) headlineEl.innerHTML = `Heat spread (α): <strong>${alphaHat.toFixed(3)}</strong>`;
       if (sublineEl) sublineEl.innerHTML = `Most likely between <strong>${ci95[0].toFixed(3)}</strong> and <strong>${ci95[1].toFixed(3)}</strong>`;
     }
 
-    // ONE Traffic-Light Line
+    // Traffic-Light Line
     const banner = document.getElementById('est-traffic-banner');
     const bannerTitle = document.getElementById('est-traffic-title');
-    const bannerReasons = document.getElementById('est-traffic-reasons');
     let bannerLevel = 'green';
     let bannerText = 'Result looks trustworthy';
 
@@ -1199,13 +1287,34 @@ async function executeParameterEstimate() {
 
     if (banner) banner.className = `traffic-light-line ${bannerLevel}`;
     if (bannerTitle) bannerTitle.textContent = bannerText;
-    if (bannerReasons) bannerReasons.style.display = 'none';
+
+    // Badges: plain sentences with raw flag in small grey text
+    const badgesContainer = document.getElementById('est-badges-container');
+    if (badgesContainer) {
+      badgesContainer.innerHTML = '';
+      if (flags.model_invalid) {
+        badgesContainer.innerHTML += '<span class="badge badge-danger">Readings do not match heat model <span class="raw-flag">(model_invalid)</span></span>';
+      }
+      if (flags.out_of_range) {
+        badgesContainer.innerHTML += '<span class="badge badge-warning">Outside tested operating bounds <span class="raw-flag">(out_of_range)</span></span>';
+      }
+      if (flags.at_bound) {
+        badgesContainer.innerHTML += '<span class="badge badge-warning">Fit reached optimizer boundary <span class="raw-flag">(at_bound)</span></span>';
+      }
+      warnings.forEach(w => {
+        badgesContainer.innerHTML += `<span class="badge badge-warning">${w}</span>`;
+      });
+      if (!flags.model_invalid && !flags.out_of_range && !flags.at_bound && warnings.length === 0) {
+        badgesContainer.innerHTML += '<span class="badge badge-success">Model Valid</span>';
+      }
+    }
 
     // Demo Mode Callout
     const demoCallout = document.getElementById('est-demo-callout');
     const chartTruthLegend = document.getElementById('est-chart-truth-legend');
-    if (isSynthetic) {
-      const inInterval = (trueAlpha >= ci95[0] && trueAlpha <= ci95[1]);
+    if (STATE.isEstimateDemo) {
+      const inInterval = (trueAlpha >= (data.alpha_hat_normalized !== undefined ? data.ci95_normalized[0] : ci95[0]) &&
+                          trueAlpha <= (data.alpha_hat_normalized !== undefined ? data.ci95_normalized[1] : ci95[1]));
       if (demoCallout) {
         demoCallout.style.display = 'flex';
         demoCallout.innerHTML = `
@@ -1227,12 +1336,11 @@ async function executeParameterEstimate() {
       if (chartTruthLegend) chartTruthLegend.style.display = 'none';
     }
 
-    // Details disclosure
-    document.getElementById('est-out-ci').textContent = `[${ci95[0].toFixed(5)}, ${ci95[1].toFixed(5)}]`;
+    // Details disclosure: Normalized values only in Show details
+    document.getElementById('est-out-ci').textContent = `[${ci95[0].toExponential ? ci95[0].toExponential(3) : ci95[0]}, ${ci95[1].toExponential ? ci95[1].toExponential(3) : ci95[1]}]`;
     document.getElementById('est-out-method').textContent = data.method;
     document.getElementById('est-out-timing').textContent = data.timing_ms.toFixed(2);
 
-    // Normalised alpha and constants rows
     const rowAlphaNorm = document.getElementById('est-row-alpha-norm');
     const outAlphaNorm = document.getElementById('est-out-alpha-norm');
     const rowNormConsts = document.getElementById('est-row-norm-constants');
@@ -1274,27 +1382,6 @@ async function executeParameterEstimate() {
       dwEl.textContent = (data.dw_stat !== undefined ? data.dw_stat.toFixed(3) : (bannerLevel === 'amber' && bannerText.includes('correlated') ? 'Flagged (< 1.2 or > 2.8)' : '2.00 (uncorrelated)'));
     }
 
-    // Diagnostic Badges
-    const badgesContainer = document.getElementById('est-badges-container');
-    if (badgesContainer) {
-      badgesContainer.innerHTML = '';
-      if (flags.model_invalid) {
-        badgesContainer.innerHTML += '<span class="badge badge-danger">FLAG: model_invalid</span>';
-      }
-      if (flags.out_of_range) {
-        badgesContainer.innerHTML += '<span class="badge badge-warning">FLAG: out_of_range</span>';
-      }
-      if (flags.at_bound) {
-        badgesContainer.innerHTML += '<span class="badge badge-warning">FLAG: at_bound</span>';
-      }
-      warnings.forEach(w => {
-        badgesContainer.innerHTML += `<span class="badge badge-warning">${w}</span>`;
-      });
-      if (!flags.model_invalid && !flags.out_of_range && !flags.at_bound && warnings.length === 0) {
-        badgesContainer.innerHTML += '<span class="badge badge-success">Model Valid</span>';
-      }
-    }
-
     // JSON Dump
     const jsonDump = document.getElementById('est-json-dump');
     if (jsonDump) {
@@ -1308,6 +1395,7 @@ async function executeParameterEstimate() {
     }
 
   } catch (err) {
+    console.error("Execute estimate catch error:", err);
     if (stateContainer) {
       stateContainer.innerHTML = `<div class="state-box error"><strong>Network/Service Error:</strong> ${err.message}</div>`;
     }
@@ -1319,38 +1407,90 @@ function renderEstimateChart() {
   if (!result || !result.response || !result.request) return;
 
   const svg = document.getElementById('est-chart-svg');
+  if (!svg) return;
   const req = result.request;
   const res = result.response;
   const width = 540;
   const height = 260;
-  const pad = { top: 20, right: 20, bottom: 42, left: 75 };
+  // pad.left = 85 prevents y-axis label clipping
+  const pad = { top: 20, right: 20, bottom: 42, left: 85 };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
 
   svg.innerHTML = '';
 
-  // Data ranges (normalized for physical or dimensionless tests)
   const norm = res.normalization;
-  const L = (norm && norm.bar_length_m) ? norm.bar_length_m : 1.0;
-  const T = (norm && norm.test_duration_s) ? norm.test_duration_s : 1.0;
-  const Tb = (norm && norm.boundary_temperature !== null && norm.boundary_temperature !== undefined) ? norm.boundary_temperature : null;
-  const Tp = (norm && norm.initial_peak_temperature !== null && norm.initial_peak_temperature !== undefined) ? norm.initial_peak_temperature : null;
-  const deltaT = (Tb !== null && Tp !== null && Tp !== Tb) ? (Tp - Tb) : 1.0;
+  const isPhysical = Boolean(norm && norm.bar_length_m && norm.test_duration_s && norm.boundary_temperature !== null && norm.initial_peak_temperature !== null);
 
-  const tVals = req.t.map(t => t / T);
-  const xVals = req.x.map(x => x / L);
-  const yVals = req.y.map(y => (Tb !== null ? (y - Tb) / deltaT : y));
-  const tMin = 0.0;
-  const tMax = Math.max(1.0, ...tVals);
+  let tMin = 0.0;
+  let tMax = 1.0;
+  let yMin = 0.0;
+  let yMax = 1.2;
+  let xAxisTitle = 'Time (0–1)';
+  let yAxisTitle = 'Temperature (0–1)';
 
-  // Normalized observations y / sin(pi x)
-  const normPoints = tVals.map((t, i) => {
-    const denom = Math.sin(Math.PI * xVals[i]);
-    return { t, yNorm: denom > 1e-4 ? yVals[i] / denom : yVals[i] };
-  });
+  let normPoints = [];
+  let alphaNormLo = 0.09;
+  let alphaNormHi = 0.11;
+  let alphaNormHat = 0.10;
 
-  const yMax = Math.max(1.2, ...normPoints.map(p => p.yNorm));
-  const yMin = Math.min(-0.1, ...normPoints.map(p => p.yNorm));
+  if (isPhysical) {
+    const L = norm.bar_length_m;
+    const T = norm.test_duration_s;
+    const Tb = norm.boundary_temperature;
+    const Tp = norm.initial_peak_temperature;
+
+    tMin = 0.0;
+    tMax = T;
+    xAxisTitle = 'Time (s)';
+    yAxisTitle = 'Temperature (°C)';
+
+    alphaNormHat = (res.alpha_hat_normalized !== null && res.alpha_hat_normalized !== undefined)
+      ? res.alpha_hat_normalized
+      : (res.alpha_hat * T / (L * L));
+    alphaNormLo = (res.ci95_normalized) ? res.ci95_normalized[0] : (res.ci95[0] * T / (L * L));
+    alphaNormHi = (res.ci95_normalized) ? res.ci95_normalized[1] : (res.ci95[1] * T / (L * L));
+
+    normPoints = req.t.map((tRaw, i) => {
+      const xRaw = req.x[i];
+      const yRaw = req.y[i];
+      const sinVal = Math.sin(Math.PI * (xRaw / L));
+      const yEquivalent = (Math.abs(sinVal) > 1e-4) ? (Tb + (yRaw - Tb) / sinVal) : yRaw;
+      return { t: tRaw, yVal: yEquivalent, rawY: yRaw };
+    });
+
+    const allY = [Tb, Tp, ...normPoints.map(p => p.yVal)];
+    const rawYMin = Math.min(...allY);
+    const rawYMax = Math.max(...allY);
+    const span = Math.max(5.0, rawYMax - rawYMin);
+    yMin = rawYMin - 0.08 * span;
+    yMax = rawYMax + 0.08 * span;
+
+  } else {
+    tMin = 0.0;
+    tMax = Math.max(1.0, ...req.t);
+    xAxisTitle = 'Time (0–1)';
+    yAxisTitle = 'Temperature (0–1)';
+
+    alphaNormHat = res.alpha_hat;
+    alphaNormLo = res.ci95 ? res.ci95[0] : 0.09;
+    alphaNormHi = res.ci95 ? res.ci95[1] : 0.11;
+
+    normPoints = req.t.map((tRaw, i) => {
+      const xRaw = req.x[i];
+      const yRaw = req.y[i];
+      const sinVal = Math.sin(Math.PI * xRaw);
+      const yNorm = (Math.abs(sinVal) > 1e-4) ? (yRaw / sinVal) : yRaw;
+      return { t: tRaw, yVal: yNorm, rawY: yRaw };
+    });
+
+    const allY = [0.0, 1.0, ...normPoints.map(p => p.yVal)];
+    const rawYMin = Math.min(...allY);
+    const rawYMax = Math.max(...allY);
+    const span = Math.max(0.5, rawYMax - rawYMin);
+    yMin = Math.min(-0.05, rawYMin - 0.05 * span);
+    yMax = Math.max(1.15, rawYMax + 0.08 * span);
+  }
 
   const scaleX = t => pad.left + ((t - tMin) / (tMax - tMin)) * plotW;
   const scaleY = y => pad.top + plotH - ((y - yMin) / (yMax - yMin)) * plotH;
@@ -1360,59 +1500,80 @@ function renderEstimateChart() {
   for (let s = 0; s <= 5; s++) {
     const tG = tMin + (s / 5) * (tMax - tMin);
     const xP = scaleX(tG);
+    const tLabel = isPhysical ? (tG >= 10 ? tG.toFixed(0) : tG.toFixed(1)) : tG.toFixed(2);
     gridLines += `<line x1="${xP}" y1="${pad.top}" x2="${xP}" y2="${pad.top + plotH}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
-    gridLines += `<text x="${xP}" y="${pad.top + plotH + 18}" text-anchor="middle" fill="var(--text-muted)" font-size="10">${tG.toFixed(2)}</text>`;
+    gridLines += `<text x="${xP}" y="${pad.top + plotH + 18}" text-anchor="middle" fill="var(--text-muted)" font-size="10">${tLabel}</text>`;
   }
 
   for (let s = 0; s <= 4; s++) {
     const yG = yMin + (s / 4) * (yMax - yMin);
     const yP = scaleY(yG);
+    const yLabel = isPhysical ? yG.toFixed(1) : yG.toFixed(2);
     gridLines += `<line x1="${pad.left}" y1="${yP}" x2="${pad.left + plotW}" y2="${yP}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
-    gridLines += `<text x="${pad.left - 8}" y="${yP + 4}" text-anchor="end" fill="var(--text-muted)" font-size="10">${yG.toFixed(2)}</text>`;
+    gridLines += `<text x="${pad.left - 8}" y="${yP + 4}" text-anchor="end" fill="var(--text-muted)" font-size="10">${yLabel}</text>`;
   }
 
-  // Confidence Band Polygon
+  // Curve and polygon calculation
+  const numCurvePts = 100;
   let bandPointsTop = [];
   let bandPointsBottom = [];
-  const alphaLo = (res.ci95_normalized ? res.ci95_normalized[0] : (norm && norm.scale_factor ? res.ci95[0] / norm.scale_factor : res.ci95[0]));
-  const alphaHi = (res.ci95_normalized ? res.ci95_normalized[1] : (norm && norm.scale_factor ? res.ci95[1] / norm.scale_factor : res.ci95[1]));
-  const alphaHat = (res.alpha_hat_normalized !== null && res.alpha_hat_normalized !== undefined ? res.alpha_hat_normalized : (norm && norm.scale_factor ? res.alpha_hat / norm.scale_factor : res.alpha_hat));
-
-  const numCurvePts = 100;
-  for (let i = 0; i <= numCurvePts; i++) {
-    const t = tMin + (i / numCurvePts) * (tMax - tMin);
-    const yTop = Math.exp(-alphaLo * Math.PI * Math.PI * t);
-    const yBot = Math.exp(-alphaHi * Math.PI * Math.PI * t);
-    bandPointsTop.push(`${scaleX(t)},${scaleY(yTop)}`);
-    bandPointsBottom.unshift(`${scaleX(t)},${scaleY(yBot)}`);
-  }
-  const bandPoly = `<polygon points="${bandPointsTop.join(' ')} ${bandPointsBottom.join(' ')}" fill="var(--primary-navy)" fill-opacity="0.12"/>`;
-
-  // Fitted Curve Path
   let fittedD = [];
+
   for (let i = 0; i <= numCurvePts; i++) {
-    const t = tMin + (i / numCurvePts) * (tMax - tMin);
-    const yFit = Math.exp(-alphaHat * Math.PI * Math.PI * t);
-    fittedD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(t)} ${scaleY(yFit)}`);
+    const tCur = tMin + (i / numCurvePts) * (tMax - tMin);
+    let yFit = 0, yBound1 = 0, yBound2 = 0;
+
+    if (isPhysical) {
+      const T_ends = norm.boundary_temperature;
+      const T_peak = norm.initial_peak_temperature;
+      const deltaT = T_peak - T_ends;
+      const tNorm = tCur / norm.test_duration_s;
+
+      yFit = T_ends + deltaT * Math.exp(-alphaNormHat * Math.PI * Math.PI * tNorm);
+      yBound1 = T_ends + deltaT * Math.exp(-alphaNormLo * Math.PI * Math.PI * tNorm);
+      yBound2 = T_ends + deltaT * Math.exp(-alphaNormHi * Math.PI * Math.PI * tNorm);
+    } else {
+      yFit = Math.exp(-alphaNormHat * Math.PI * Math.PI * tCur);
+      yBound1 = Math.exp(-alphaNormLo * Math.PI * Math.PI * tCur);
+      yBound2 = Math.exp(-alphaNormHi * Math.PI * Math.PI * tCur);
+    }
+
+    const yUpper = Math.max(yBound1, yBound2);
+    const yLower = Math.min(yBound1, yBound2);
+
+    bandPointsTop.push(`${scaleX(tCur)},${scaleY(yUpper)}`);
+    bandPointsBottom.unshift(`${scaleX(tCur)},${scaleY(yLower)}`);
+    fittedD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(tCur)} ${scaleY(yFit)}`);
   }
+
+  const bandPoly = `<polygon points="${bandPointsTop.join(' ')} ${bandPointsBottom.join(' ')}" fill="var(--primary-navy)" fill-opacity="0.12"/>`;
   const fittedPath = `<path d="${fittedD.join(' ')}" fill="none" stroke="var(--primary-navy)" stroke-width="2.5"/>`;
 
-  // True Alpha Curve Path (only if demo mode)
+  // True Alpha Curve Path (demo mode)
   let truePath = '';
   if (result.isDemoMode && result.trueAlpha) {
     let trueD = [];
     for (let i = 0; i <= numCurvePts; i++) {
-      const t = tMin + (i / numCurvePts) * (tMax - tMin);
-      const yTrue = Math.exp(-result.trueAlpha * Math.PI * Math.PI * t);
-      trueD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(t)} ${scaleY(yTrue)}`);
+      const tCur = tMin + (i / numCurvePts) * (tMax - tMin);
+      let yTrue = 0;
+      if (isPhysical) {
+        const T_ends = norm.boundary_temperature;
+        const T_peak = norm.initial_peak_temperature;
+        const deltaT = T_peak - T_ends;
+        const tNorm = tCur / norm.test_duration_s;
+        yTrue = T_ends + deltaT * Math.exp(-result.trueAlpha * Math.PI * Math.PI * tNorm);
+      } else {
+        yTrue = Math.exp(-result.trueAlpha * Math.PI * Math.PI * tCur);
+      }
+      trueD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(tCur)} ${scaleY(yTrue)}`);
     }
     truePath = `<path d="${trueD.join(' ')}" fill="none" stroke="#e67e22" stroke-width="2" stroke-dasharray="4 4"/>`;
   }
 
-  // Normalized Observation Circles
+  // Points
   const circles = normPoints.map(p => `
-    <circle cx="${scaleX(p.t)}" cy="${scaleY(p.yNorm)}" r="4.5" fill="#e74c3c" stroke="#fff" stroke-width="1.2">
-      <title>Time: ${p.t.toFixed(4)}, Reading: ${p.yNorm.toFixed(4)}</title>
+    <circle cx="${scaleX(p.t)}" cy="${scaleY(p.yVal)}" r="4.5" fill="#e74c3c" stroke="#fff" stroke-width="1.2">
+      <title>Time: ${p.t.toFixed(2)}, Value: ${p.yVal.toFixed(2)}</title>
     </circle>
   `).join('');
 
@@ -1425,8 +1586,8 @@ function renderEstimateChart() {
     <!-- Axis lines & plain labels -->
     <line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
     <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
-    <text x="${pad.left + plotW / 2}" y="${height - 6}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Time</text>
-    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="22" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Cooling (reading &divide; starting shape)</text>
+    <text x="${pad.left + plotW / 2}" y="${height - 6}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">${xAxisTitle}</text>
+    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="24" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">${yAxisTitle}</text>
   `;
 }
 

@@ -1275,6 +1275,10 @@ details.technical-details-card summary.technical-details-summary:hover {
     grid-template-columns: 1fr;
     gap: 0.85rem;
   }
+  .temp-scaling-row {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+  }
 }
 
 .nowrap {
@@ -1413,21 +1417,41 @@ details.technical-details-card summary.technical-details-summary:hover {
   margin-bottom: 0;
 }
 
-/* Headline & Subline in Result */
+/* Result Hierarchy: small label -> 1.75rem (28px) bold number -> body range line
+   H1 (2rem / 32px) > result number (1.75rem / 28px) > H2 (1.35rem / 21.6px) */
+.result-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.2rem;
+}
+
+.result-number {
+  font-family: var(--font-serif);
+  font-size: 1.75rem; /* 28px: H1 (32px) > result number (28px) > H2 (21.6px) */
+  font-weight: 700;
+  color: var(--primary-navy);
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+
+.result-subline {
+  font-size: var(--fs-body); /* body size */
+  color: var(--text-muted);
+  margin-bottom: 0.85rem;
+  line-height: 1.4;
+}
+
 .result-headline {
   font-family: var(--font-serif);
-  font-size: 2.25rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: var(--primary-navy);
   line-height: 1.2;
   margin-bottom: 0.35rem;
-}
-
-.result-subline {
-  font-size: 1.05rem;
-  color: var(--text-muted);
-  margin-bottom: 0.85rem;
-  line-height: 1.4;
 }
 
 /* ONE Single Traffic-Light Line */

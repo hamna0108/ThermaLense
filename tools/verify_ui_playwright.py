@@ -184,10 +184,27 @@ def run_verification():
                     # 2a. Verify Empty State & Table Initialization
                     assert page.locator("#estimate-results-card").is_hidden(), "Result card should NOT be visible before calculation"
                     assert page.locator("#est-result-panel").is_hidden(), "Result panel should NOT be visible on fresh load"
-                    assert page.locator("#est-readings-table tbody tr").count() == 8, "Expected 8 initial table rows"
+                    assert page.locator("#est-readings-table tbody tr").count() == 3, "Expected 3 initial table rows"
                     assert "0 of 3 needed" in page.locator("#est-readings-count").text_content(), "Expected '0 of 3 needed' on fresh load"
+                    # Verify × delete buttons are hidden when only 3 rows exist
+                    first_del_vis = page.locator("#est-readings-table tbody tr:first-child .btn-cell-delete").evaluate("el => window.getComputedStyle(el).visibility")
+                    assert first_del_vis == "hidden", "Expected delete button to be hidden when only 3 rows exist"
 
-                    # Screenshot 1: Empty state
+                    # Verify Tab in last cell of last row adds a new row
+                    last_cell = page.locator("#est-readings-table tbody tr:last-child .cell-input[data-col='u']")
+                    last_cell.focus()
+                    page.keyboard.press("Tab")
+                    page.wait_for_timeout(100)
+                    assert page.locator("#est-readings-table tbody tr").count() == 4, "Expected 4 rows after pressing Tab in last cell"
+                    # Now delete button on row 4 is visible; click it to return to 3 rows
+                    del_btn_r4 = page.locator("#est-readings-table tbody tr:last-child .btn-cell-delete")
+                    del_vis_r4 = del_btn_r4.evaluate("el => window.getComputedStyle(el).visibility")
+                    assert del_vis_r4 == "visible", "Expected delete button to be visible when > 3 rows exist"
+                    del_btn_r4.click()
+                    page.wait_for_timeout(100)
+                    assert page.locator("#est-readings-table tbody tr").count() == 3, "Expected 3 rows after deleting 4th row"
+
+                    # Screenshot 1: Empty state (3 rows)
                     shot_empty = os.path.join(SCREENSHOTS_DIR, f"{vp_name}_{theme}_02a_estimate_empty.png")
                     page.screenshot(path=shot_empty, full_page=False)
                     screenshots_taken.append(shot_empty)
@@ -240,8 +257,9 @@ def run_verification():
                     page.wait_for_selector("#est-result-panel", state="visible")
                     page.wait_for_timeout(250)
 
-                    # Assert Result Card contents
-                    assert "Heat spread:" in page.locator("#est-plain-headline").text_content()
+                    # Assert Result Card contents & Typography hierarchy
+                    assert "Heat spread (α)" in page.locator("#est-result-label").text_content()
+                    assert page.locator("#est-plain-number").text_content().strip() != "", "Expected result number"
                     assert "Most likely between" in page.locator("#est-plain-subline").text_content()
                     assert page.locator("#est-traffic-banner.green").count() == 1, "Expected green traffic-light line"
                     assert "Result looks trustworthy" in page.locator("#est-traffic-title").text_content()

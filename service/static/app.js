@@ -316,9 +316,16 @@ function createEstimateTableRow(x = '', t = '', u = '', rowNum = 1) {
 function updateTableRowNumbers() {
   const tbody = document.getElementById('est-table-tbody');
   if (!tbody) return;
-  Array.from(tbody.children).forEach((tr, idx) => {
+  const rows = Array.from(tbody.children);
+  const canDelete = rows.length > 3;
+  rows.forEach((tr, idx) => {
     const numTd = tr.querySelector('.row-num');
     if (numTd) numTd.textContent = (idx + 1).toString();
+    const delBtn = tr.querySelector('.btn-cell-delete');
+    if (delBtn) {
+      delBtn.style.visibility = canDelete ? 'visible' : 'hidden';
+      delBtn.setAttribute('aria-hidden', canDelete ? 'false' : 'true');
+    }
   });
 }
 
@@ -338,6 +345,7 @@ function validateEstimateTable() {
   const validationMsg = document.getElementById('est-table-validation-msg');
   const countBadge = document.getElementById('est-readings-count');
   const unitsHelper = document.getElementById('est-units-rule-helper');
+  const tempRuleHelper = document.getElementById('est-temp-rule-helper');
 
   const barLengthInput = document.getElementById('est-bar-length');
   const expDurationInput = document.getElementById('est-experiment-time');
@@ -350,6 +358,26 @@ function validateEstimateTable() {
       unitsHelper.textContent = `Positions are in metres (0 to ${barLength} m) and times in seconds. Result will be shown in m²/s.`;
     } else {
       unitsHelper.textContent = 'Positions are 0–1 and time is 0–1.';
+    }
+  }
+
+  // Real temperature scaling check
+  const tempPeakInput = document.getElementById('est-temp-peak');
+  const tempEdgeInput = document.getElementById('est-temp-edge');
+  const tPeak = tempPeakInput ? parseFloat(tempPeakInput.value) : NaN;
+  const tEdge = tempEdgeInput ? parseFloat(tempEdgeInput.value) : NaN;
+  const hasTempScaling = (!isNaN(tPeak) && !isNaN(tEdge));
+
+  if (tempRuleHelper) {
+    if (hasTempScaling) {
+      const deltaT = tPeak - tEdge;
+      if (deltaT <= 0) {
+        tempRuleHelper.textContent = 'Peak temperature must be higher than ends temperature.';
+      } else {
+        tempRuleHelper.textContent = `Readings and accuracy are scaled to 0–1 using (T − ${tEdge}°C) ÷ (${deltaT.toFixed(1)}°C).`;
+      }
+    } else {
+      tempRuleHelper.textContent = 'When filled, readings and accuracy are scaled to 0–1 using (T − T_ends) ÷ (T_peak − T_ends).';
     }
   }
 
@@ -497,9 +525,9 @@ function initEstimateWorkbench() {
   const drawerOverlay = document.getElementById('est-drawer-overlay');
   const drawerCloseBtn = document.getElementById('est-drawer-close-btn');
 
-  // Initialize table with 8 empty rows
+  // Initialize table with exactly 3 empty rows (the minimum)
   if (tbody && tbody.children.length === 0) {
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 3; i++) {
       tbody.appendChild(createEstimateTableRow('', '', '', i + 1));
     }
   }
@@ -520,6 +548,23 @@ function initEstimateWorkbench() {
     });
   }
 
+  // Real temperature scaling inputs (°C)
+  const tempPeakInput = document.getElementById('est-temp-peak');
+  const tempEdgeInput = document.getElementById('est-temp-edge');
+  if (tempPeakInput) {
+    tempPeakInput.addEventListener('input', () => {
+      validateEstimateTable();
+      clearEstimateResultState();
+    });
+  }
+  if (tempEdgeInput) {
+    tempEdgeInput.addEventListener('input', () => {
+      validateEstimateTable();
+      clearEstimateResultState();
+    });
+  }
+
+  updateTableRowNumbers();
   validateEstimateTable();
   clearEstimateResultState();
 
@@ -539,20 +584,38 @@ function initEstimateWorkbench() {
     });
   }
 
-  // Delete row delegation and input validation
+  // Delete row delegation, Tab key auto-add, and input validation
   if (tbody) {
     tbody.addEventListener('click', (e) => {
       const delBtn = e.target.closest('.btn-cell-delete');
       if (!delBtn) return;
+      if (tbody.children.length <= 3) return; // Hide/disallow deletion when only 3 rows remain
       const tr = delBtn.closest('tr');
       if (tr) {
         tr.remove();
-        if (tbody.children.length === 0) {
-          tbody.appendChild(createEstimateTableRow('', '', '', 1));
-        }
         updateTableRowNumbers();
         validateEstimateTable();
         clearEstimateResultState();
+      }
+    });
+
+    // Pressing Tab in the last cell of the last row adds a new row
+    tbody.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab' && !e.shiftKey) {
+        const targetInput = e.target.closest('.cell-input');
+        if (!targetInput) return;
+        const tr = targetInput.closest('tr');
+        if (tr && tr === tbody.lastElementChild && targetInput.getAttribute('data-col') === 'u') {
+          e.preventDefault();
+          const nextIdx = tbody.children.length + 1;
+          const newTr = createEstimateTableRow('', '', '', nextIdx);
+          tbody.appendChild(newTr);
+          updateTableRowNumbers();
+          validateEstimateTable();
+          clearEstimateResultState();
+          const firstInput = newTr.querySelector('.cell-input');
+          if (firstInput) firstInput.focus();
+        }
       }
     });
 
@@ -920,10 +983,33 @@ async function executeParameterEstimate() {
 
   let xPayload = [...xList];
   let tPayload = [...tList];
+  let yPayload = [...yList];
 
   if (hasPhysicalSetup && isRealUnits) {
     xPayload = xList.map(x => x / barLength);
     tPayload = tList.map(t => t / expDuration);
+  }
+
+  // Real temperature scaling (°C): u = (T - T_edge) / (T_peak - T_edge), sigma scaled likewise
+  const tempPeakInput = document.getElementById('est-temp-peak');
+  const tempEdgeInput = document.getElementById('est-temp-edge');
+  const tPeak = tempPeakInput ? parseFloat(tempPeakInput.value) : NaN;
+  const tEdge = tempEdgeInput ? parseFloat(tempEdgeInput.value) : NaN;
+  const hasTempScaling = (!isNaN(tPeak) && !isNaN(tEdge));
+  let declaredSigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.01;
+
+  if (hasTempScaling) {
+    const deltaT = tPeak - tEdge;
+    if (deltaT <= 0) {
+      const msg = 'Peak temperature must be higher than ends temperature.';
+      if (validationMsg) validationMsg.textContent = msg;
+      if (stateContainer) {
+        stateContainer.innerHTML = `<div class="state-box error"><strong>Input Error:</strong> ${msg}</div>`;
+      }
+      return;
+    }
+    yPayload = yList.map(u => (u - tEdge) / deltaT);
+    declaredSigma = declaredSigma / deltaT;
   }
 
   const methodSelect = document.getElementById('est-method-select');
@@ -933,12 +1019,12 @@ async function executeParameterEstimate() {
   const payload = {
     x: xPayload,
     t: tPayload,
-    y: yList,
+    y: yPayload,
     mode: methodMode
   };
 
   if (noiseMode === 'declared') {
-    payload.sigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.01;
+    payload.sigma = declaredSigma;
   } else if (noiseMode === 'baseline') {
     const rngBase = mulberry32(101);
     const xb = [], tb = [], yb = [];
@@ -1009,7 +1095,9 @@ async function executeParameterEstimate() {
     const flags = data.flags || {};
     const warnings = flags.warnings || [];
 
-    // Headline & Subline
+    // Result Hierarchy: small label -> 1.75rem (28px) bold number -> body range line
+    const numberEl = document.getElementById('est-plain-number');
+    const labelEl = document.getElementById('est-result-label');
     const headlineEl = document.getElementById('est-plain-headline');
     const sublineEl = document.getElementById('est-plain-subline');
     const outAlphaHidden = document.getElementById('est-out-alpha');
@@ -1029,10 +1117,12 @@ async function executeParameterEstimate() {
       const ciLoReal = ci95[0] * scale;
       const ciHiReal = ci95[1] * scale;
 
-      headlineEl.innerHTML = `Heat spread: <strong>${formatAlphaVal(alphaReal)} m&sup2;/s</strong>`;
+      if (numberEl) numberEl.innerHTML = `${formatAlphaVal(alphaReal)} <span style="font-size: 1.1rem; font-weight: 500; font-family: var(--font-sans); color: var(--text-muted);">m&sup2;/s</span>`;
+      if (headlineEl) headlineEl.innerHTML = `Heat spread: <strong>${formatAlphaVal(alphaReal)} m&sup2;/s</strong>`;
       sublineEl.innerHTML = `Most likely between <strong>${formatAlphaVal(ciLoReal)}</strong> and <strong>${formatAlphaVal(ciHiReal)} m&sup2;/s</strong>`;
     } else {
-      headlineEl.innerHTML = `Heat spread: <strong>${alphaHat.toFixed(3)}</strong>`;
+      if (numberEl) numberEl.textContent = alphaHat.toFixed(3);
+      if (headlineEl) headlineEl.innerHTML = `Heat spread: <strong>${alphaHat.toFixed(3)}</strong>`;
       sublineEl.innerHTML = `Most likely between <strong>${ci95[0].toFixed(3)}</strong> and <strong>${ci95[1].toFixed(3)}</strong>`;
     }
 
@@ -1163,7 +1253,7 @@ function renderEstimateChart() {
   const res = result.response;
   const width = 540;
   const height = 260;
-  const pad = { top: 20, right: 25, bottom: 42, left: 55 };
+  const pad = { top: 20, right: 20, bottom: 42, left: 75 };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
 
@@ -1259,7 +1349,7 @@ function renderEstimateChart() {
     <line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
     <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
     <text x="${pad.left + plotW / 2}" y="${height - 6}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Time</text>
-    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="16" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Cooling (reading &divide; starting shape)</text>
+    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="22" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Cooling (reading &divide; starting shape)</text>
   `;
 }
 

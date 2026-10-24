@@ -210,6 +210,25 @@ This document records the foundational architectural decisions made across the D
 
 ---
 
+### Decision 11: Real-World Unit Normalisation as a Backend Wrapper Layer
+- **Options Tried:**
+  1. *Retraining on Dimensional Scales:* Retraining neural operator surrogates (FNO, PINN) across continuous dimensional parameter spaces with variable physical lengths $L$, durations $T$, and arbitrary temperature scales.
+  2. *Frontend Client-Side Normalisation:* Scaling sensor coordinates and readings in client-side JavaScript before sending JSON requests to the API.
+  3. *Declarative Backend Normalisation Wrapper Layer:* Serving frozen dimensionless models as-is, wrapping endpoints (`/v1/estimate` and `/v1/diagnose`) with an affine space-time-temperature transformation layer that accepts optional physical parameters ($L$, $T$, $T_{\text{boundary}}$, $T_{\text{peak}}$, $\sigma$), validates physical consistency, normalizes to canonical dimensionless variables ($x_{\text{norm}} = x/L$, $t_{\text{norm}} = t/T$, $u = (T_{\text{reading}} - T_{\text{boundary}})/(T_{\text{peak}} - T_{\text{boundary}})$, $\sigma_u = \sigma / |T_{\text{peak}} - T_{\text{boundary}}|$), invokes the frozen numerical/neural pipeline, converts results back ($\alpha_{\text{real}} = \hat{\alpha} \cdot L^2/T$, scaling confidence bounds likewise), and echoes normalization constants and normalized alpha in the response.
+- **Option Selected:** Declarative Backend Normalisation Wrapper Layer (Option 3). Frozen model weights (`models/`) and benchmark tables (`data/results/`) remain strictly bit-for-bit unchanged.
+- **Why:**
+  - *Mathematical Isomorphism of the Heat Equation:* The dimensional 1D unsteady heat conduction equation is $\frac{\partial T}{\partial t} = \alpha_{\text{real}} \frac{\partial^2 T}{\partial x^2}$ on $x \in [0, L], t \in [0, T]$ with boundary conditions $T(0, t) = T(L, t) = T_b$ and initial distribution $T(x, 0) = T_b + (T_p - T_b) u_0(x/L)$. Substituting dimensionless space $\tilde{x} = x/L$, dimensionless time $\tilde{t} = t/T$, and normalized temperature $u = (T - T_b)/(T_p - T_b)$ yields $\frac{\partial u}{\partial \tilde{t}} = \left(\alpha_{\text{real}} \frac{T}{L^2}\right) \frac{\partial^2 u}{\partial \tilde{x}^2} = \hat{\alpha} \frac{\partial^2 u}{\partial \tilde{x}^2}$. Because the linear parabolic PDE is scale-invariant, the dimensionless system is isomorphic to the canonical unit problem on $[0, 1] \times [0, 1]$. Retraining neural surrogates on dimensional data would introduce surrogate generalization errors and invalidate verified benchmark tables, whereas the wrapper layer preserves 100% of the verified benchmark accuracy (94.0% Wald coverage) with zero model drift.
+  - *Never Deriving Constants from Readings:* Normalization constants must be explicitly provided by the user or client. The service strictly refuses to infer $L, T, T_b, T_p$ from sample extrema ($\min/\max$ of readings), as noise fluctuations, discrete sensor spacing, or boundary sensor absence would introduce systematic calibration bias into diffusivity estimation.
+  - *Affine-Invariance & Unit Consistency:* Any affine transformation on temperature (e.g. Celsius to Fahrenheit: $T \to 1.8 T + 32$, $\sigma \to 1.8 \sigma$) cancels analytically in $u = (T - T_b)/(T_p - T_b)$ and $\sigma_u = \sigma / |T_p - T_b|$, guaranteeing identical dimensionless optimization objectives and identical normalized diffusivity estimates $\hat{\alpha}$.
+  - *Clear Error Handling & Non-Silent Unit Validation:* Inputs are strictly checked: $T_p \neq T_b$ (rejects division by zero), positions $\in [0, L]$, times $\in [0, T]$. If normalized readings fall far outside $[-0.5, 1.5]$ (such as Kelvin readings mixed with Celsius boundary specifications), the backend emits a clear warning (`"These readings don't look like cooling from your stated start. Check units or values."`) and never silently converts or guesses unit conventions.
+  - *Empirical Recovery & Preset Benchmark:*
+    - Synthetic recovery tests across multiple physical configurations (including cooling and heating cases with $T_p < T_b$) prove exact recovery of $\alpha_{\text{real}}$ within 95% Wald confidence intervals.
+    - Preset "Bar heated evenly, ends at room temperature" (constant initial condition $u_0(x) = 1.0$) was evaluated across 200 uncherry-picked random seeds prior to shipping: achieved **97.0% coverage** (194/200), **+0.063% mean relative bias**, and **0.924% median relative error**, confirming it meets production deployment standards.
+- **Status:** **Decided by architecture and physics invariance; frozen models and benchmark tables unchanged.**
+- **Evidence File:** `service/app.py`, `service/models.py`, `tests/test_service.py`, `scratch/test_preset_constant_u0.py`.
+
+---
+
 ### Limitations & Reproducibility Notes
 
 1. **FNO Boundary Masking & Inference State (Mode 3 Reproducibility):**

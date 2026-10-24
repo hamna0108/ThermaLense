@@ -361,20 +361,43 @@ function validateEstimateTable() {
     }
   }
 
-  // Real temperature scaling check
+  // Real temperature scaling check & label update
   const tempPeakInput = document.getElementById('est-temp-peak');
   const tempEdgeInput = document.getElementById('est-temp-edge');
+  const tempPeakVal = tempPeakInput ? tempPeakInput.value.trim() : '';
+  const tempEdgeVal = tempEdgeInput ? tempEdgeInput.value.trim() : '';
+  const hasTempValues = (tempPeakVal !== '' || tempEdgeVal !== '');
+  
+  // Sensor accuracy label changes to "± °C" when temperatures are given
+  const sigmaUnitHint = document.getElementById('est-sigma-unit-hint');
+  if (sigmaUnitHint) {
+    sigmaUnitHint.textContent = hasTempValues ? ' (± °C)' : '';
+  }
+
   const tPeak = tempPeakInput ? parseFloat(tempPeakInput.value) : NaN;
   const tEdge = tempEdgeInput ? parseFloat(tempEdgeInput.value) : NaN;
   const hasTempScaling = (!isNaN(tPeak) && !isNaN(tEdge));
 
+  const realUnitsHelper = document.getElementById('est-real-units-helper');
+  if (realUnitsHelper) {
+    if (hasTempScaling && hasRealUnits) {
+      realUnitsHelper.textContent = `Physical test: length ${barLength} m, duration ${expDuration} s, ends at ${tEdge}°C, start peak ${tPeak}°C. Result will be converted to m²/s.`;
+    } else if (hasRealUnits) {
+      realUnitsHelper.textContent = `Space-time scaling: ${barLength} m, ${expDuration} s. Diffusivity will be converted to m²/s.`;
+    } else if (hasTempScaling) {
+      realUnitsHelper.textContent = `Temperature scaling: readings normalized relative to ends (${tEdge}°C) and start peak (${tPeak}°C).`;
+    } else {
+      realUnitsHelper.textContent = 'When filled, the backend converts readings before calculating and converts results back to physical units.';
+    }
+  }
+
   if (tempRuleHelper) {
     if (hasTempScaling) {
       const deltaT = tPeak - tEdge;
-      if (deltaT <= 0) {
-        tempRuleHelper.textContent = 'Peak temperature must be higher than ends temperature.';
+      if (deltaT === 0) {
+        tempRuleHelper.textContent = 'Peak temperature cannot equal ends temperature.';
       } else {
-        tempRuleHelper.textContent = `Readings and accuracy are scaled to 0–1 using (T − ${tEdge}°C) ÷ (${deltaT.toFixed(1)}°C).`;
+        tempRuleHelper.textContent = `Readings and accuracy are scaled using (T − ${tEdge}°C) ÷ (${Math.abs(deltaT).toFixed(1)}°C).`;
       }
     } else {
       tempRuleHelper.textContent = 'When filled, readings and accuracy are scaled to 0–1 using (T − T_ends) ÷ (T_peak − T_ends).';
@@ -836,6 +859,29 @@ function initEstimateWorkbench() {
     });
   }
 
+  // Preset setups in "My setup is different"
+  const physPreset = document.getElementById('est-phys-preset');
+  const u0Input = document.getElementById('est-phys-u0');
+  if (physPreset && u0Input) {
+    physPreset.addEventListener('change', () => {
+      if (physPreset.value === 'constant') {
+        u0Input.value = '1';
+      } else if (physPreset.value === 'sine') {
+        u0Input.value = 'sin(pi*x)';
+      }
+    });
+    u0Input.addEventListener('input', () => {
+      const v = u0Input.value.trim();
+      if (v === '1') {
+        physPreset.value = 'constant';
+      } else if (v === 'sin(pi*x)' || v === 'sin(pi * x)') {
+        physPreset.value = 'sine';
+      } else {
+        physPreset.value = 'custom';
+      }
+    });
+  }
+
   // Demo tools buttons
   if (synthBtn) {
     synthBtn.addEventListener('click', () => {
@@ -972,56 +1018,48 @@ async function executeParameterEstimate() {
   }
   if (resultPanel) resultPanel.style.display = 'none';
 
-  // Check physical setup and real units toggle
+  // Check physical setup and real units fields
   const barLengthInput = document.getElementById('est-bar-length');
   const expDurationInput = document.getElementById('est-experiment-time');
-  const barLength = barLengthInput ? parseFloat(barLengthInput.value) : NaN;
-  const expDuration = expDurationInput ? parseFloat(expDurationInput.value) : NaN;
-  const unitRealBtn = document.getElementById('est-unit-real-btn');
-  const isRealUnits = (unitRealBtn && unitRealBtn.classList.contains('active')) || (!isNaN(barLength) && barLength > 0 && !isNaN(expDuration) && expDuration > 0);
+  const barLength = barLengthInput && barLengthInput.value.trim() !== '' ? parseFloat(barLengthInput.value) : NaN;
+  const expDuration = expDurationInput && expDurationInput.value.trim() !== '' ? parseFloat(expDurationInput.value) : NaN;
   const hasPhysicalSetup = (!isNaN(barLength) && barLength > 0 && !isNaN(expDuration) && expDuration > 0);
 
-  let xPayload = [...xList];
-  let tPayload = [...tList];
-  let yPayload = [...yList];
-
-  if (hasPhysicalSetup && isRealUnits) {
-    xPayload = xList.map(x => x / barLength);
-    tPayload = tList.map(t => t / expDuration);
-  }
-
-  // Real temperature scaling (°C): u = (T - T_edge) / (T_peak - T_edge), sigma scaled likewise
+  // Real temperature scaling fields (°C)
   const tempPeakInput = document.getElementById('est-temp-peak');
   const tempEdgeInput = document.getElementById('est-temp-edge');
-  const tPeak = tempPeakInput ? parseFloat(tempPeakInput.value) : NaN;
-  const tEdge = tempEdgeInput ? parseFloat(tempEdgeInput.value) : NaN;
+  const tPeak = tempPeakInput && tempPeakInput.value.trim() !== '' ? parseFloat(tempPeakInput.value) : NaN;
+  const tEdge = tempEdgeInput && tempEdgeInput.value.trim() !== '' ? parseFloat(tempEdgeInput.value) : NaN;
   const hasTempScaling = (!isNaN(tPeak) && !isNaN(tEdge));
-  let declaredSigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.01;
 
-  if (hasTempScaling) {
-    const deltaT = tPeak - tEdge;
-    if (deltaT <= 0) {
-      const msg = 'Peak temperature must be higher than ends temperature.';
-      if (validationMsg) validationMsg.textContent = msg;
-      if (stateContainer) {
-        stateContainer.innerHTML = `<div class="state-box error"><strong>Input Error:</strong> ${msg}</div>`;
-      }
-      return;
+  // Client-side quick check: peak cannot equal ends
+  if (hasTempScaling && tPeak === tEdge) {
+    const msg = 'Peak temperature cannot equal ends temperature (division by zero).';
+    if (validationMsg) validationMsg.textContent = msg;
+    if (stateContainer) {
+      stateContainer.innerHTML = `<div class="state-box error"><strong>Input Error:</strong> ${msg}</div>`;
     }
-    yPayload = yList.map(u => (u - tEdge) / deltaT);
-    declaredSigma = declaredSigma / deltaT;
+    return;
   }
 
   const methodSelect = document.getElementById('est-method-select');
   const methodMode = methodSelect ? methodSelect.value : 'mode3plus';
   const noiseMode = document.getElementById('est-noise-select') ? document.getElementById('est-noise-select').value : 'declared';
+  let declaredSigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.01;
 
+  // Send raw readings directly to backend normalisation wrapper
   const payload = {
-    x: xPayload,
-    t: tPayload,
-    y: yPayload,
+    x: xList,
+    t: tList,
+    y: yList,
     mode: methodMode
   };
+
+  // Attach optional real-world unit normalization fields when provided
+  if (!isNaN(barLength) && barLength > 0) payload.bar_length_m = barLength;
+  if (!isNaN(expDuration) && expDuration > 0) payload.test_duration_s = expDuration;
+  if (!isNaN(tEdge)) payload.boundary_temperature = tEdge;
+  if (!isNaN(tPeak)) payload.initial_peak_temperature = tPeak;
 
   if (noiseMode === 'declared') {
     payload.sigma = declaredSigma;
@@ -1066,7 +1104,6 @@ async function executeParameterEstimate() {
       isDemoMode: isSynthetic, 
       trueAlpha,
       hasPhysicalSetup,
-      isRealUnits,
       barLength,
       expDuration
     };
@@ -1101,29 +1138,30 @@ async function executeParameterEstimate() {
     const headlineEl = document.getElementById('est-plain-headline');
     const sublineEl = document.getElementById('est-plain-subline');
     const outAlphaHidden = document.getElementById('est-out-alpha');
-    if (outAlphaHidden) outAlphaHidden.textContent = alphaHat.toFixed(6);
+    if (outAlphaHidden) outAlphaHidden.textContent = alphaHat.toExponential ? alphaHat.toExponential(6) : String(alphaHat);
 
-    function formatAlphaVal(v) {
+    function formatAlphaDisplay(v) {
       if (v === null || v === undefined || isNaN(v)) return '-';
       if (Math.abs(v) < 0.001 || Math.abs(v) >= 1000) {
-        return v.toExponential(3).replace('e', ' × 10^').replace('+', '');
+        return v.toExponential(1).replace('+', '');
       }
       return v.toFixed(3);
     }
 
-    if (hasPhysicalSetup) {
-      const scale = (barLength * barLength) / expDuration;
-      const alphaReal = alphaHat * scale;
-      const ciLoReal = ci95[0] * scale;
-      const ciHiReal = ci95[1] * scale;
+    const isRealResult = (data.units === 'm²/s' || (data.normalization && data.normalization.scale_factor && data.normalization.scale_factor !== 1.0));
 
-      if (numberEl) numberEl.innerHTML = `${formatAlphaVal(alphaReal)} <span style="font-size: 1.1rem; font-weight: 500; font-family: var(--font-sans); color: var(--text-muted);">m&sup2;/s</span>`;
-      if (headlineEl) headlineEl.innerHTML = `Heat spread: <strong>${formatAlphaVal(alphaReal)} m&sup2;/s</strong>`;
-      sublineEl.innerHTML = `Most likely between <strong>${formatAlphaVal(ciLoReal)}</strong> and <strong>${formatAlphaVal(ciHiReal)} m&sup2;/s</strong>`;
+    if (isRealResult) {
+      const alphaStr = formatAlphaDisplay(alphaHat);
+      const ciLoStr = formatAlphaDisplay(ci95[0]);
+      const ciHiStr = formatAlphaDisplay(ci95[1]);
+
+      if (numberEl) numberEl.innerHTML = `${alphaStr} <span style="font-size: 1.1rem; font-weight: 500; font-family: var(--font-sans); color: var(--text-muted);">m&sup2;/s</span>`;
+      if (headlineEl) headlineEl.innerHTML = `Heat spread: <strong>${alphaStr} m&sup2;/s</strong>`;
+      if (sublineEl) sublineEl.innerHTML = `Most likely between <strong>${ciLoStr}</strong> and <strong>${ciHiStr} m&sup2;/s</strong>`;
     } else {
       if (numberEl) numberEl.textContent = alphaHat.toFixed(3);
       if (headlineEl) headlineEl.innerHTML = `Heat spread: <strong>${alphaHat.toFixed(3)}</strong>`;
-      sublineEl.innerHTML = `Most likely between <strong>${ci95[0].toFixed(3)}</strong> and <strong>${ci95[1].toFixed(3)}</strong>`;
+      if (sublineEl) sublineEl.innerHTML = `Most likely between <strong>${ci95[0].toFixed(3)}</strong> and <strong>${ci95[1].toFixed(3)}</strong>`;
     }
 
     // ONE Traffic-Light Line
@@ -1194,6 +1232,38 @@ async function executeParameterEstimate() {
     document.getElementById('est-out-method').textContent = data.method;
     document.getElementById('est-out-timing').textContent = data.timing_ms.toFixed(2);
 
+    // Normalised alpha and constants rows
+    const rowAlphaNorm = document.getElementById('est-row-alpha-norm');
+    const outAlphaNorm = document.getElementById('est-out-alpha-norm');
+    const rowNormConsts = document.getElementById('est-row-norm-constants');
+    const outNormConsts = document.getElementById('est-out-norm-constants');
+
+    if (data.alpha_hat_normalized !== null && data.alpha_hat_normalized !== undefined) {
+      if (rowAlphaNorm) rowAlphaNorm.style.display = '';
+      if (outAlphaNorm) {
+        const ciNormPart = data.ci95_normalized ? ` (95% CI: [${data.ci95_normalized[0].toFixed(4)}, ${data.ci95_normalized[1].toFixed(4)}])` : '';
+        outAlphaNorm.textContent = `${data.alpha_hat_normalized.toFixed(5)}${ciNormPart}`;
+      }
+    } else {
+      if (rowAlphaNorm) rowAlphaNorm.style.display = 'none';
+    }
+
+    if (data.normalization) {
+      if (rowNormConsts) rowNormConsts.style.display = '';
+      if (outNormConsts) {
+        const norm = data.normalization;
+        const parts = [];
+        if (norm.bar_length_m !== null && norm.bar_length_m !== undefined) parts.push(`L = ${norm.bar_length_m} m`);
+        if (norm.test_duration_s !== null && norm.test_duration_s !== undefined) parts.push(`T = ${norm.test_duration_s} s`);
+        if (norm.boundary_temperature !== null && norm.boundary_temperature !== undefined) parts.push(`Ends = ${norm.boundary_temperature} °C`);
+        if (norm.initial_peak_temperature !== null && norm.initial_peak_temperature !== undefined) parts.push(`Peak = ${norm.initial_peak_temperature} °C`);
+        if (norm.scale_factor !== null && norm.scale_factor !== undefined) parts.push(`Scale L²/T = ${norm.scale_factor.toExponential(2).replace('+', '')}`);
+        outNormConsts.textContent = parts.join(', ');
+      }
+    } else {
+      if (rowNormConsts) rowNormConsts.style.display = 'none';
+    }
+
     const chi2El = document.getElementById('est-out-chi2');
     if (chi2El) {
       chi2El.textContent = (data.chi2_dof !== undefined ? data.chi2_dof.toFixed(3) : (flags.model_invalid ? '> 1.88 (rejected)' : '< 1.88 (accepted)'));
@@ -1259,10 +1329,17 @@ function renderEstimateChart() {
 
   svg.innerHTML = '';
 
-  // Data ranges
-  const tVals = req.t;
-  const yVals = req.y;
-  const xVals = req.x;
+  // Data ranges (normalized for physical or dimensionless tests)
+  const norm = res.normalization;
+  const L = (norm && norm.bar_length_m) ? norm.bar_length_m : 1.0;
+  const T = (norm && norm.test_duration_s) ? norm.test_duration_s : 1.0;
+  const Tb = (norm && norm.boundary_temperature !== null && norm.boundary_temperature !== undefined) ? norm.boundary_temperature : null;
+  const Tp = (norm && norm.initial_peak_temperature !== null && norm.initial_peak_temperature !== undefined) ? norm.initial_peak_temperature : null;
+  const deltaT = (Tb !== null && Tp !== null && Tp !== Tb) ? (Tp - Tb) : 1.0;
+
+  const tVals = req.t.map(t => t / T);
+  const xVals = req.x.map(x => x / L);
+  const yVals = req.y.map(y => (Tb !== null ? (y - Tb) / deltaT : y));
   const tMin = 0.0;
   const tMax = Math.max(1.0, ...tVals);
 
@@ -1297,9 +1374,9 @@ function renderEstimateChart() {
   // Confidence Band Polygon
   let bandPointsTop = [];
   let bandPointsBottom = [];
-  const alphaLo = res.ci95[0];
-  const alphaHi = res.ci95[1];
-  const alphaHat = res.alpha_hat;
+  const alphaLo = (res.ci95_normalized ? res.ci95_normalized[0] : (norm && norm.scale_factor ? res.ci95[0] / norm.scale_factor : res.ci95[0]));
+  const alphaHi = (res.ci95_normalized ? res.ci95_normalized[1] : (norm && norm.scale_factor ? res.ci95[1] / norm.scale_factor : res.ci95[1]));
+  const alphaHat = (res.alpha_hat_normalized !== null && res.alpha_hat_normalized !== undefined ? res.alpha_hat_normalized : (norm && norm.scale_factor ? res.alpha_hat / norm.scale_factor : res.alpha_hat));
 
   const numCurvePts = 100;
   for (let i = 0; i <= numCurvePts; i++) {

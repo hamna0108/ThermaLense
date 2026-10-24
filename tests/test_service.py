@@ -606,4 +606,243 @@ def test_default_example_200_seeds_coverage_and_bias(client):
     assert abs(mean_bias_pct) < 1.0, f"Mean relative bias {mean_bias_pct:.3f}% was >= 1.0%"
     assert median_err_pct < 3.0, f"Median relative error {median_err_pct:.3f}% was >= 3.0%"
 
+# -------------------------------------------------------------------------------------------------
+# Real-World Units Normalisation Layer Tests
+# -------------------------------------------------------------------------------------------------
+
+def test_real_units_recovery_cooling_and_heating(client):
+    """Synthetic data generated in °C, metres, seconds with known alpha_real must recover alpha_real in 95% CI."""
+    t_norm = np.array([0.0100, 0.0167, 0.0278, 0.0464, 0.0774, 0.1292, 0.2154, 0.3594, 0.5995, 1.0000])
+    x_norm = np.full(10, 0.50)
+
+    # Configuration 1: Standard cooling in °C, m, s
+    L1 = 0.50      # metres
+    T1 = 10.0      # seconds
+    Tb1 = 20.0     # °C (boundary)
+    Tp1 = 100.0    # °C (initial peak)
+    alpha_norm1 = 0.10
+    alpha_real1 = alpha_norm1 * (L1 ** 2) / T1  # 0.0025 m²/s
+    delta_T1 = Tp1 - Tb1
+    sigma_u = 0.005
+    sigma_real1 = sigma_u * abs(delta_T1)  # 0.40 °C
+
+    u_norm1 = np.sin(np.pi * x_norm) * np.exp(-alpha_norm1 * (np.pi ** 2) * t_norm)
+    rng1 = np.random.RandomState(42)
+    y_real1 = Tb1 + delta_T1 * u_norm1 + rng1.normal(0, sigma_real1, size=len(u_norm1))
+
+    payload1 = {
+        "x": (x_norm * L1).tolist(),
+        "t": (t_norm * T1).tolist(),
+        "y": y_real1.tolist(),
+        "bar_length_m": L1,
+        "test_duration_s": T1,
+        "boundary_temperature": Tb1,
+        "initial_peak_temperature": Tp1,
+        "sigma": sigma_real1,
+        "mode": "mode3plus"
+    }
+
+    res1 = client.post("/v1/estimate", json=payload1)
+    assert res1.status_code == 200, res1.text
+    d1 = res1.json()
+    assert d1["units"] == "m²/s"
+    assert d1["ci95"][0] <= alpha_real1 <= d1["ci95"][1], f"True {alpha_real1} not in CI {d1['ci95']}"
+    assert abs(d1["alpha_hat"] - alpha_real1) / alpha_real1 < 0.06
+    assert abs(d1["alpha_hat_normalized"] - alpha_norm1) / alpha_norm1 < 0.06
+    assert d1["normalization"]["bar_length_m"] == L1
+    assert d1["normalization"]["test_duration_s"] == T1
+    assert d1["normalization"]["boundary_temperature"] == Tb1
+    assert d1["normalization"]["initial_peak_temperature"] == Tp1
+    assert d1["normalization"]["scale_factor"] == pytest.approx((L1**2)/T1, rel=1e-5)
+
+    # Configuration 2: Heating case (Tp < Tb: cold bar heated from warm ends)
+    L2 = 1.0       # metres
+    T2 = 5.0       # seconds
+    Tb2 = 100.0    # °C (boundary maintained hot)
+    Tp2 = 20.0     # °C (initial center cold)
+    alpha_norm2 = 0.10
+    alpha_real2 = alpha_norm2 * (L2 ** 2) / T2  # 0.020 m²/s
+    delta_T2 = Tp2 - Tb2  # -80.0 °C
+    sigma_real2 = sigma_u * abs(delta_T2)  # 0.40 °C
+
+    u_norm2 = np.sin(np.pi * x_norm) * np.exp(-alpha_norm2 * (np.pi ** 2) * t_norm)
+    rng2 = np.random.RandomState(0)
+    y_real2 = Tb2 + delta_T2 * u_norm2 + rng2.normal(0, sigma_real2, size=len(u_norm2))
+
+    payload2 = {
+        "x": (x_norm * L2).tolist(),
+        "t": (t_norm * T2).tolist(),
+        "y": y_real2.tolist(),
+        "bar_length_m": L2,
+        "test_duration_s": T2,
+        "boundary_temperature": Tb2,
+        "initial_peak_temperature": Tp2,
+        "sigma": sigma_real2,
+        "mode": "mode3plus"
+    }
+
+    res2 = client.post("/v1/estimate", json=payload2)
+    assert res2.status_code == 200, res2.text
+    d2 = res2.json()
+    assert d2["units"] == "m²/s"
+    assert d2["ci95"][0] <= alpha_real2 <= d2["ci95"][1], f"Heating true {alpha_real2} not in CI {d2['ci95']}"
+    assert abs(d2["alpha_hat"] - alpha_real2) / alpha_real2 < 0.06
+    assert abs(d2["alpha_hat_normalized"] - alpha_norm2) / alpha_norm2 < 0.06
+
+def test_real_units_affine_invariance(client):
+    """Affine-rescaling temperatures (Celsius to Fahrenheit) must produce mathematically identical normalized requests."""
+    t_norm = np.array([0.0100, 0.0200, 0.0500, 0.1000, 0.2000, 0.4000, 0.8000, 1.0000])
+    x_norm = np.full(8, 0.50)
+    alpha_true = 0.10
+    u_norm = np.sin(np.pi * x_norm) * np.exp(-alpha_true * (np.pi ** 2) * t_norm)
+
+    # Celsius inputs
+    Tb_C = 20.0
+    Tp_C = 100.0
+    sigma_C = 0.80
+    rng = np.random.RandomState(99)
+    y_C = Tb_C + (Tp_C - Tb_C) * u_norm + rng.normal(0, sigma_C, size=len(u_norm))
+
+    # Fahrenheit affine scaling: T_F = 1.8 * T_C + 32.0, sigma_F = 1.8 * sigma_C
+    Tb_F = 1.8 * Tb_C + 32.0
+    Tp_F = 1.8 * Tp_C + 32.0
+    sigma_F = 1.8 * sigma_C
+    y_F = 1.8 * y_C + 32.0
+
+    payload_C = {
+        "x": x_norm.tolist(),
+        "t": t_norm.tolist(),
+        "y": y_C.tolist(),
+        "boundary_temperature": Tb_C,
+        "initial_peak_temperature": Tp_C,
+        "sigma": sigma_C,
+        "mode": "mode3plus"
+    }
+
+    payload_F = {
+        "x": x_norm.tolist(),
+        "t": t_norm.tolist(),
+        "y": y_F.tolist(),
+        "boundary_temperature": Tb_F,
+        "initial_peak_temperature": Tp_F,
+        "sigma": sigma_F,
+        "mode": "mode3plus"
+    }
+
+    res_C = client.post("/v1/estimate", json=payload_C)
+    res_F = client.post("/v1/estimate", json=payload_F)
+
+    assert res_C.status_code == 200, res_C.text
+    assert res_F.status_code == 200, res_F.text
+
+    d_C = res_C.json()
+    d_F = res_F.json()
+
+    # Normalized estimates and statistics must be strictly identical under affine transformation
+    assert d_C["alpha_hat_normalized"] == pytest.approx(d_F["alpha_hat_normalized"], rel=1e-5)
+    assert d_C["ci95_normalized"][0] == pytest.approx(d_F["ci95_normalized"][0], rel=1e-5)
+    assert d_C["ci95_normalized"][1] == pytest.approx(d_F["ci95_normalized"][1], rel=1e-5)
+    assert d_C["effective_sigma"] == pytest.approx(d_F["effective_sigma"], rel=1e-5)
+    assert d_C["chi2_dof"] == pytest.approx(d_F["chi2_dof"], rel=1e-5)
+
+def test_real_units_validation_errors(client):
+    """Backend must return clear HTTP 400 errors for invalid physical unit inputs."""
+    base_payload = {
+        "x": [0.2, 0.5, 0.8],
+        "t": [0.1, 0.2, 0.3],
+        "y": [0.8, 0.6, 0.4],
+        "sigma": 0.01
+    }
+
+    # 1. T_peak == T_boundary
+    p = dict(base_payload, boundary_temperature=50.0, initial_peak_temperature=50.0)
+    r = client.post("/v1/estimate", json=p)
+    assert r.status_code == 400
+    assert "division by zero" in r.text or "cannot equal" in r.text
+
+    # 2. Only one temperature provided
+    p = dict(base_payload, boundary_temperature=50.0)
+    r = client.post("/v1/estimate", json=p)
+    assert r.status_code == 400
+    assert "Both boundary_temperature and initial_peak_temperature" in r.text
+
+    # 3. Only one dimension provided (bar_length_m without test_duration_s)
+    p = dict(base_payload, bar_length_m=1.0)
+    r = client.post("/v1/estimate", json=p)
+    assert r.status_code == 400
+    assert "Both bar_length_m and test_duration_s" in r.text
+
+    # 4. Positions outside [0, L]
+    p = dict(base_payload, bar_length_m=1.0, test_duration_s=2.0, x=[0.2, 1.25, 0.8])
+    r = client.post("/v1/estimate", json=p)
+    assert r.status_code == 400
+    assert "Positions must be within [0, 1.0] m" in r.text
+
+    # 5. Times outside [0, T]
+    p = dict(base_payload, bar_length_m=1.0, test_duration_s=2.0, t=[0.1, 2.5, 1.0])
+    r = client.post("/v1/estimate", json=p)
+    assert r.status_code == 400
+    assert "Times must be within [0, 2.0] s" in r.text
+
+    # 6. Non-positive bar length
+    p = dict(base_payload, bar_length_m=-0.5, test_duration_s=1.0)
+    r = client.post("/v1/estimate", json=p)
+    assert r.status_code == 400
+
+def test_real_units_reasonableness_warning_on_unphysical_mix(client):
+    """Normalised readings falling far outside [-0.5, 1.5] trigger warning without silent conversion."""
+    # User provides Kelvin readings (~300 K) with Celsius boundaries (20°C, 100°C)
+    # Normalized: u = (300 - 20) / 80 = 3.5 >> 1.5
+    payload = {
+        "x": [0.5, 0.5, 0.5],
+        "t": [0.1, 0.2, 0.3],
+        "y": [300.0, 295.0, 290.0],
+        "boundary_temperature": 20.0,
+        "initial_peak_temperature": 100.0,
+        "sigma": 1.0
+    }
+    r = client.post("/v1/estimate", json=payload)
+    assert r.status_code == 200
+    d = r.json()
+    warnings = d["flags"]["warnings"]
+    expected_warning = "These readings don't look like cooling from your stated start. Check units or values."
+    assert any(expected_warning in w for w in warnings), f"Warning not found in {warnings}"
+
+def test_real_units_diagnose_endpoint(client):
+    """Verify that /v1/diagnose accepts physical units, validates inputs, and echoes scaling metadata."""
+    L = 0.5
+    T = 10.0
+    Tb = 20.0
+    Tp = 100.0
+    sigma_real = 0.80
+
+    xb = np.full(20, 0.25)
+    tb = np.linspace(0.5, 9.5, 20)
+    yb = Tb + (Tp - Tb) * np.sin(np.pi * 0.5) * np.exp(-0.10 * (np.pi**2) * (tb / T))
+
+    x_test = [0.25] * 10
+    t_test = np.linspace(0.5, 9.0, 10).tolist()
+    y_test = (Tb + (Tp - Tb) * np.sin(np.pi * 0.5) * np.exp(-0.10 * (np.pi**2) * (np.array(t_test) / T))).tolist()
+
+    payload = {
+        "readings": {"x": x_test, "t": t_test, "y": y_test},
+        "baseline": {"x": xb.tolist(), "t": tb.tolist(), "y": yb.tolist()},
+        "bar_length_m": L,
+        "test_duration_s": T,
+        "boundary_temperature": Tb,
+        "initial_peak_temperature": Tp,
+        "sigma": sigma_real
+    }
+
+    res = client.post("/v1/diagnose", json=payload)
+    assert res.status_code == 200, res.text
+    d = res.json()
+    assert d["assigned_class"] in ["H", "A", "F", "C"]
+    assert d["normalization"]["bar_length_m"] == L
+    assert d["normalization"]["test_duration_s"] == T
+    assert d["normalization"]["boundary_temperature"] == Tb
+    assert d["normalization"]["initial_peak_temperature"] == Tp
+    assert "alpha_fitted" in d["evidence_stats"]
+    assert "alpha_fitted_normalized" in d["evidence_stats"]
+
 

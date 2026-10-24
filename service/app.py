@@ -36,7 +36,7 @@ if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
 from service.models import (
-    EstimateRequest, EstimateResponse, EstimateFlags,
+    EstimateRequest, EstimateResponse, EstimateFlags, NormalizationConstants,
     DiagnoseRequest, DiagnoseResponse,
     PlacementRequest, PlacementResponse,
     FieldRequest, FieldResponse,
@@ -406,21 +406,117 @@ def get_metrics():
 
 @app.post("/v1/estimate", response_model=EstimateResponse)
 def post_estimate(req: EstimateRequest):
-    """Parameter inversion with goodness-of-fit gating, range guard, and baseline estimation."""
+    """Parameter inversion with goodness-of-fit gating, range guard, baseline estimation, and unit normalization."""
     t0 = time.perf_counter()
-    x_coords = req.x_coords or req.x
-    t_coords = req.t_coords or req.t
-    readings = req.readings or req.y
-    x_s = np.array(x_coords, dtype=float)
-    t_s = np.array(t_coords, dtype=float)
-    y_s = np.array(readings, dtype=float)
+    x_raw = np.array(req.x_coords or req.x, dtype=float)
+    t_raw = np.array(req.t_coords or req.t, dtype=float)
+    y_raw = np.array(req.readings or req.y, dtype=float)
+
+    L = req.bar_length_m
+    T = req.test_duration_s
+    T_b = req.boundary_temperature
+    T_p = req.initial_peak_temperature
+
+    warnings_list = []
+
+    # 1. Validate real-world unit parameters
+    # Temperature validation: T_peak != T_boundary
+    if (T_b is not None and T_p is None) or (T_b is None and T_p is not None):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "VALIDATION_ERROR",
+                "message": "Both boundary_temperature and initial_peak_temperature must be provided together for temperature normalisation."
+            }
+        )
+    if T_b is not None and T_p is not None:
+        if not math.isfinite(T_b) or not math.isfinite(T_p):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "Temperatures must be finite numbers."}
+            )
+        if T_b == T_p:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "initial_peak_temperature cannot equal boundary_temperature (division by zero)."}
+            )
+
+    # Space-time dimension coupling validation
+    if (L is not None and T is None) or (L is None and T is not None):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "VALIDATION_ERROR",
+                "message": "Both bar_length_m and test_duration_s must be provided together for physical space-time normalisation."
+            }
+        )
+
+    # Position validation: positions within [0, L]
+    if L is not None:
+        if not math.isfinite(L) or L <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "bar_length_m must be a positive finite number."}
+            )
+        if np.any(x_raw < -1e-9) or np.any(x_raw > L + 1e-9):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": f"Positions must be within [0, {L}] m."}
+            )
+        x_s = x_raw / L
+    else:
+        if np.any(x_raw < -1e-9) or np.any(x_raw > 1.0 + 1e-9):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "Positions must be within [0, 1] when bar_length_m is omitted."}
+            )
+        x_s = x_raw.copy()
+
+    # Time validation: times within [0, T]
+    if T is not None:
+        if not math.isfinite(T) or T <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "test_duration_s must be a positive finite number."}
+            )
+        if np.any(t_raw < -1e-9) or np.any(t_raw > T + 1e-9):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": f"Times must be within [0, {T}] s."}
+            )
+        t_s = t_raw / T
+    else:
+        if np.any(t_raw <= 0):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "Times must be positive."}
+            )
+        t_s = t_raw.copy()
+
+    # Temperature normalisation: u = (T_reading - T_boundary) / (T_peak - T_boundary)
+    # sigma_u = sigma / |T_peak - T_boundary|
+    delta_T = None
+    if T_b is not None and T_p is not None:
+        delta_T = T_p - T_b
+        y_s = (y_raw - T_b) / delta_T
+        raw_sigma = req.sigma
+        scaled_declared_sigma = (raw_sigma / abs(delta_T)) if raw_sigma is not None else None
+    else:
+        y_s = y_raw.copy()
+        scaled_declared_sigma = req.sigma
+
+    # Reading reasonableness check:
+    # If normalised readings fall far outside about [-0.5, 1.5], return plain warning.
+    # Reject Kelvin/Fahrenheit-looking mixes only through this warning, never silently convert.
+    if np.any(y_s < -0.5) or np.any(y_s > 1.5):
+        warnings_list.append("These readings don't look like cooling from your stated start. Check units or values.")
+
     prec = APP_STATE.get("prec")
     if prec is None:
         prec = precompute_surrogates()
         APP_STATE["prec"] = prec
-    warnings_list = []
-    
-    # 0. Secure Expression Parsing for Declared Physics
+
+    # 2. Secure Expression Parsing for Declared Physics
     u0_fn = None
     bc_fn = None
     source_fn = None
@@ -470,17 +566,17 @@ def post_estimate(req: EstimateRequest):
         elif callable(u0_candidate):
             u0_fn = u0_candidate
 
-    # 1. Determine effective sigma
-    if req.sigma is not None:
-        effective_sigma = float(req.sigma)
+    # 3. Determine effective sigma (on normalized scale)
+    if scaled_declared_sigma is not None:
+        effective_sigma = float(scaled_declared_sigma)
     elif req.baseline is not None:
         xb_coords = req.baseline.x_coords or req.baseline.x
         tb_coords = req.baseline.t_coords or req.baseline.t
         yb_readings = req.baseline.readings or req.baseline.y
-        xb = np.array(xb_coords, dtype=float)
-        tb = np.array(tb_coords, dtype=float)
-        yb = np.array(yb_readings, dtype=float)
-        k = len(yb)
+        xb_raw = np.array(xb_coords, dtype=float)
+        tb_raw = np.array(tb_coords, dtype=float)
+        yb_raw = np.array(yb_readings, dtype=float)
+        k = len(yb_raw)
         if k < 20:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -489,6 +585,9 @@ def post_estimate(req: EstimateRequest):
                     "message": f"Measurement noise sigma was not provided and baseline readings k={k} < 20. Service requires declared sigma or k >= 20 baseline readings."
                 }
             )
+        xb = xb_raw / L if L is not None else xb_raw
+        tb = tb_raw / T if T is not None else tb_raw
+        yb = (yb_raw - T_b) / delta_T if delta_T is not None else yb_raw
         sig_info = estimate_sigma_from_baseline(xb, tb, yb, min_readings=20, allow_fewer=False)
         effective_sigma = float(sig_info["sigma_hat"])
         warnings_list.extend(sig_info["warnings"])
@@ -500,8 +599,8 @@ def post_estimate(req: EstimateRequest):
                 "message": "Measurement noise sigma was not provided and no baseline was supplied. Service requires declared sigma or k >= 20 baseline readings."
             }
         )
-        
-    # 2. Execute estimation
+
+    # 4. Execute estimation
     mode = req.mode.lower() if req.mode else "mode3plus"
 
     if req.physics_config is not None or req.physics is not None or mode == "declared_physics":
@@ -529,7 +628,7 @@ def post_estimate(req: EstimateRequest):
         se_log_chk = np.sqrt(crb_check) / (hat_alpha * np.log(10)) if (crb_check != np.inf and crb_check > 0) else None
         is_at_b, _, b_info = check_bound_pinning(hat_alpha, se_log10=se_log_chk, return_info=True)
 
-    # 3. Compute 95% Wald Confidence Interval
+    # 5. Compute 95% Wald Confidence Interval
     crb_val = cramer_rao_bound(hat_alpha, t_s, x_s, effective_sigma)
     if crb_val != np.inf and crb_val > 0:
         se_log = np.sqrt(crb_val) / (hat_alpha * np.log(10))
@@ -539,7 +638,7 @@ def post_estimate(req: EstimateRequest):
         ci_lo = float(max(1e-4, hat_alpha * 0.8))
         ci_hi = float(min(20.0, hat_alpha * 1.2))
 
-    # 4. Goodness-of-Fit Gate (D2)
+    # 6. Goodness-of-Fit Gate (D2)
     gof_res = evaluate_goodness_of_fit(x_s, t_s, y_s, hat_alpha, effective_sigma)
     model_invalid = gof_res["model_invalid"]
     warnings_list.extend(gof_res["warnings"])
@@ -548,10 +647,49 @@ def post_estimate(req: EstimateRequest):
     GLOBAL_METRICS.record_estimate_flags(model_invalid, out_of_range)
     
     timing_ms = round((time.perf_counter() - t0) * 1000.0, 2)
-    
+
+    # 7. Convert results back to real-world units
+    has_real_scaling = (L is not None and T is not None)
+    if has_real_scaling:
+        alpha_scale = (L ** 2) / T
+        alpha_real = hat_alpha * alpha_scale
+        ci95_real = [ci_lo * alpha_scale, ci_hi * alpha_scale]
+        norm_obj = NormalizationConstants(
+            bar_length_m=L,
+            test_duration_s=T,
+            boundary_temperature=T_b,
+            initial_peak_temperature=T_p,
+            scale_factor=alpha_scale
+        )
+        resp_alpha_hat = float(alpha_real)
+        resp_ci95 = [float(ci95_real[0]), float(ci95_real[1])]
+        resp_norm_alpha = float(hat_alpha)
+        resp_norm_ci95 = [float(ci_lo), float(ci_hi)]
+        resp_units = "m²/s"
+    elif (T_b is not None and T_p is not None):
+        norm_obj = NormalizationConstants(
+            bar_length_m=None,
+            test_duration_s=None,
+            boundary_temperature=T_b,
+            initial_peak_temperature=T_p,
+            scale_factor=1.0
+        )
+        resp_alpha_hat = float(hat_alpha)
+        resp_ci95 = [float(ci_lo), float(ci_hi)]
+        resp_norm_alpha = float(hat_alpha)
+        resp_norm_ci95 = [float(ci_lo), float(ci_hi)]
+        resp_units = "dimensionless"
+    else:
+        norm_obj = None
+        resp_alpha_hat = float(hat_alpha)
+        resp_ci95 = [float(ci_lo), float(ci_hi)]
+        resp_norm_alpha = None
+        resp_norm_ci95 = None
+        resp_units = "dimensionless"
+
     return EstimateResponse(
-        alpha_hat=float(hat_alpha),
-        ci95=[float(ci_lo), float(ci_hi)],
+        alpha_hat=resp_alpha_hat,
+        ci95=resp_ci95,
         method=method_str,
         flags=EstimateFlags(
             model_invalid=model_invalid,
@@ -563,25 +701,114 @@ def post_estimate(req: EstimateRequest):
         timing_ms=timing_ms,
         chi2_dof=round(float(gof_res.get("chi2_dof", 0.0)), 4),
         dw_stat=round(float(gof_res.get("dw_stat", 2.0)), 4) if gof_res.get("dw_stat") is not None else None,
+        alpha_hat_normalized=resp_norm_alpha,
+        ci95_normalized=resp_norm_ci95,
+        normalization=norm_obj,
+        units=resp_units
     )
 
 @app.post("/v1/diagnose", response_model=DiagnoseResponse)
 def post_diagnose(req: DiagnoseRequest):
-    """Sensor anomaly and physical change-point diagnosis via baseline-informed cascade."""
+    """Sensor anomaly and physical change-point diagnosis via baseline-informed cascade with optional normalization."""
     t0 = time.perf_counter()
-    x_coords = req.readings.x_coords or req.readings.x
-    t_coords = req.readings.t_coords or req.readings.t
-    readings = req.readings.readings or req.readings.y
-    x_s = np.array(x_coords, dtype=float)
-    t_s = np.array(t_coords, dtype=float)
-    y_s = np.array(readings, dtype=float)
+    x_raw = np.array(req.readings.x_coords or req.readings.x, dtype=float)
+    t_raw = np.array(req.readings.t_coords or req.readings.t, dtype=float)
+    y_raw = np.array(req.readings.readings or req.readings.y, dtype=float)
     
-    xb_coords = req.baseline.x_coords or req.baseline.x
-    tb_coords = req.baseline.t_coords or req.baseline.t
-    yb_readings = req.baseline.readings or req.baseline.y
-    xb = np.array(xb_coords, dtype=float)
-    tb = np.array(tb_coords, dtype=float)
-    yb = np.array(yb_readings, dtype=float)
+    xb_raw = np.array(req.baseline.x_coords or req.baseline.x, dtype=float)
+    tb_raw = np.array(req.baseline.t_coords or req.baseline.t, dtype=float)
+    yb_raw = np.array(req.baseline.readings or req.baseline.y, dtype=float)
+
+    L = req.bar_length_m
+    T = req.test_duration_s
+    T_b = req.boundary_temperature
+    T_p = req.initial_peak_temperature
+
+    delta_T = None
+    if (T_b is not None and T_p is None) or (T_b is None and T_p is not None):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "VALIDATION_ERROR",
+                "message": "Both boundary_temperature and initial_peak_temperature must be provided together for temperature normalisation."
+            }
+        )
+    if T_b is not None and T_p is not None:
+        if not math.isfinite(T_b) or not math.isfinite(T_p):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "Temperatures must be finite numbers."}
+            )
+        if T_b == T_p:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "initial_peak_temperature cannot equal boundary_temperature (division by zero)."}
+            )
+        delta_T = T_p - T_b
+
+    # Space-time dimension coupling validation
+    if (L is not None and T is None) or (L is None and T is not None):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "VALIDATION_ERROR",
+                "message": "Both bar_length_m and test_duration_s must be provided together for physical space-time normalisation."
+            }
+        )
+
+    # Position validation: positions within [0, L]
+    if L is not None:
+        if not math.isfinite(L) or L <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "bar_length_m must be a positive finite number."}
+            )
+        if np.any(x_raw < -1e-9) or np.any(x_raw > L + 1e-9) or np.any(xb_raw < -1e-9) or np.any(xb_raw > L + 1e-9):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": f"Positions must be within [0, {L}] m."}
+            )
+        x_s = x_raw / L
+        xb = xb_raw / L
+    else:
+        if np.any(x_raw < -1e-9) or np.any(x_raw > 1.0 + 1e-9) or np.any(xb_raw < -1e-9) or np.any(xb_raw > 1.0 + 1e-9):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "Positions must be within [0, 1] when bar_length_m is omitted."}
+            )
+        x_s = x_raw.copy()
+        xb = xb_raw.copy()
+
+    # Time validation: times within [0, T]
+    if T is not None:
+        if not math.isfinite(T) or T <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "test_duration_s must be a positive finite number."}
+            )
+        if np.any(t_raw < -1e-9) or np.any(t_raw > T + 1e-9) or np.any(tb_raw < -1e-9) or np.any(tb_raw > T + 1e-9):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": f"Times must be within [0, {T}] s."}
+            )
+        t_s = t_raw / T
+        tb = tb_raw / T
+    else:
+        if np.any(t_raw <= 0) or np.any(tb_raw <= 0):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "Times must be positive."}
+            )
+        t_s = t_raw.copy()
+        tb = tb_raw.copy()
+
+    # Temperature normalisation
+    if delta_T is not None:
+        y_s = (y_raw - T_b) / delta_T
+        yb = (yb_raw - T_b) / delta_T
+    else:
+        y_s = y_raw.copy()
+        yb = yb_raw.copy()
     
     k = len(yb)
     if k < 20:
@@ -594,7 +821,10 @@ def post_diagnose(req: DiagnoseRequest):
         )
         
     sig_info = estimate_sigma_from_baseline(xb, tb, yb, min_readings=20, allow_fewer=False)
-    effective_sigma = float(req.sigma) if req.sigma is not None else float(sig_info["sigma_hat"])
+    if req.sigma is not None:
+        effective_sigma = float(req.sigma) / abs(delta_T) if delta_T is not None else float(req.sigma)
+    else:
+        effective_sigma = float(sig_info["sigma_hat"])
     hat_a_base = float(sig_info["alpha_base"])
     
     N = len(t_s)
@@ -605,9 +835,19 @@ def post_diagnose(req: DiagnoseRequest):
     assigned_class = predict_cascade_class(glr_stat, tau_cell, fit_res, fit_res["alpha_hat"], best_rss_c, effective_sigma)
     
     faulty_idx = fit_res["best_fault_sensor"] if assigned_class == "F" else None
-    change_time = best_tc if assigned_class == "C" else None
+    change_time = (best_tc * T) if (assigned_class == "C" and T is not None and best_tc is not None) else (best_tc if assigned_class == "C" else None)
     
     timing_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+
+    has_real_scaling = (L is not None and T is not None)
+    alpha_scale = ((L ** 2) / T) if has_real_scaling else 1.0
+    norm_obj = NormalizationConstants(
+        bar_length_m=L,
+        test_duration_s=T,
+        boundary_temperature=T_b,
+        initial_peak_temperature=T_p,
+        scale_factor=alpha_scale
+    ) if (has_real_scaling or delta_T is not None) else None
     
     return DiagnoseResponse(
         assigned_class=assigned_class,
@@ -616,14 +856,18 @@ def post_diagnose(req: DiagnoseRequest):
             "glr_threshold": round(tau_cell, 3),
             "bic_healthy": round(fit_res["bic_0"], 2),
             "bic_sensor_fault": round(fit_res["bic_f"], 2),
-            "alpha_fitted": round(fit_res["alpha_hat"], 6),
-            "alpha_baseline": round(hat_a_base, 6),
+            "alpha_fitted": round(fit_res["alpha_hat"] * alpha_scale, 6),
+            "alpha_baseline": round(hat_a_base * alpha_scale, 6),
+            "alpha_fitted_normalized": round(fit_res["alpha_hat"], 6),
+            "alpha_baseline_normalized": round(hat_a_base, 6),
             "chi2_reduced": round(fit_res["chi2_red"], 3)
         },
         faulty_sensor_idx=faulty_idx,
         change_time=change_time,
         effective_sigma=round(effective_sigma, 6),
-        timing_ms=timing_ms
+        timing_ms=timing_ms,
+        normalization=norm_obj,
+        units="m²/s" if has_real_scaling else "dimensionless"
     )
 
 @app.post("/v1/placement", response_model=PlacementResponse)

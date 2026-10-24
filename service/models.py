@@ -61,9 +61,16 @@ class PhysicsConfig(BaseModel):
     source_expr: Optional[str] = Field(None, description="Distributed volumetric source expression s(x, t)")
     alpha_expr: Optional[str] = Field(None, description="Spatial variable diffusivity expression alpha(x)")
 
+class NormalizationConstants(BaseModel):
+    bar_length_m: Optional[float] = Field(None, description="Physical bar length L in metres")
+    test_duration_s: Optional[float] = Field(None, description="Physical test duration T in seconds")
+    boundary_temperature: Optional[float] = Field(None, description="Boundary temperature at bar ends T_boundary")
+    initial_peak_temperature: Optional[float] = Field(None, description="Initial peak temperature T_peak")
+    scale_factor: Optional[float] = Field(None, description="Diffusivity conversion factor L^2 / T")
+
 class EstimateRequest(BaseModel):
-    x: Optional[List[float]] = Field(None, description="Sensor spatial coordinates x in [0, 1]")
-    t: Optional[List[float]] = Field(None, description="Sensor temporal coordinates t in [0, 1]")
+    x: Optional[List[float]] = Field(None, description="Sensor spatial coordinates x")
+    t: Optional[List[float]] = Field(None, description="Sensor temporal coordinates t")
     y: Optional[List[float]] = Field(None, description="Observed sensor values")
     x_coords: Optional[List[float]] = Field(None, description="Alias for x")
     t_coords: Optional[List[float]] = Field(None, description="Alias for t")
@@ -73,6 +80,11 @@ class EstimateRequest(BaseModel):
     physics: Optional[Dict[str, Any]] = Field(None, description="Optional declared physics inputs (u0_fn, bc_fn, source_fn)")
     physics_config: Optional[PhysicsConfig] = Field(None, description="Declared physics expression configuration strings")
     mode: Optional[str] = Field("mode3plus", description="Parameter inversion mode: 'mode3plus' (default), 'mode2', 'mode3', 'declared_physics'")
+    # Real-world units normalization parameters
+    bar_length_m: Optional[float] = Field(None, description="Physical bar length L in metres (L > 0)")
+    test_duration_s: Optional[float] = Field(None, description="Physical test duration T in seconds (T > 0)")
+    boundary_temperature: Optional[float] = Field(None, description="Boundary temperature at bar ends T_boundary")
+    initial_peak_temperature: Optional[float] = Field(None, description="Initial peak temperature at t=0, x=L/2 T_peak")
 
     @model_validator(mode='before')
     @classmethod
@@ -129,6 +141,11 @@ class EstimateResponse(BaseModel):
     timing_ms: float
     chi2_dof: Optional[float] = None
     dw_stat: Optional[float] = None
+    # Real-world units normalization metadata
+    alpha_hat_normalized: Optional[float] = None
+    ci95_normalized: Optional[List[float]] = None
+    normalization: Optional[NormalizationConstants] = None
+    units: Optional[str] = "dimensionless"
 
 class SensorReadings(BaseModel):
     x_coords: Optional[List[float]] = Field(None, description="Sensor spatial coordinates x in [0, 1]")
@@ -176,6 +193,10 @@ class DiagnoseRequest(BaseModel):
     sigma: Optional[float] = Field(None, description="Optional declared noise std")
     x_coords: Optional[List[float]] = Field(None, description="Top-level operational x coordinates (flat format)")
     t_coords: Optional[List[float]] = Field(None, description="Top-level operational t coordinates (flat format)")
+    bar_length_m: Optional[float] = Field(None, description="Physical bar length L in metres (L > 0)")
+    test_duration_s: Optional[float] = Field(None, description="Physical test duration T in seconds (T > 0)")
+    boundary_temperature: Optional[float] = Field(None, description="Boundary temperature at bar ends T_boundary")
+    initial_peak_temperature: Optional[float] = Field(None, description="Initial peak temperature at t=0, x=L/2 T_peak")
 
     @model_validator(mode='before')
     @classmethod
@@ -201,6 +222,8 @@ class DiagnoseResponse(BaseModel):
     change_time: Optional[float] = None
     effective_sigma: float
     timing_ms: float
+    normalization: Optional[NormalizationConstants] = None
+    units: Optional[str] = "dimensionless"
 
 class PlacementRequest(BaseModel):
     N: int = Field(..., ge=2, le=500, description="Total number of sensor observation points")

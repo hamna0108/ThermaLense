@@ -1275,10 +1275,19 @@ details.technical-details-card summary.technical-details-summary:hover {
     grid-template-columns: 1fr;
     gap: 0.85rem;
   }
-  .temp-scaling-row {
+  .temp-scaling-row,
+  .real-units-grid {
     grid-template-columns: 1fr !important;
     gap: 0.85rem !important;
   }
+}
+
+.real-units-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+  align-items: start;
 }
 
 .nowrap {

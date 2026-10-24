@@ -338,7 +338,7 @@
                   </th>
                   <th>
                     <div class="col-title">Temperature</div>
-                    <div class="col-helper">Scaled so the hottest point at the start = 1</div>
+                    <div class="col-helper">In &deg;C, or scaled so the start peak = 1 if you leave the units blank</div>
                   </th>
                   <th style="width: 44px; text-align: center;"></th>
                 </tr>
@@ -354,61 +354,61 @@
         <!-- 2. About your test -->
         <div class="card" id="est-about-test-card">
           <h2 class="card-title">About your test</h2>
-          <div class="test-config-row">
-            <div class="config-col">
-              <label for="est-sigma-val" class="form-label nowrap">
-                Sensor accuracy
+          <div class="test-config-row" style="margin-bottom: 0.75rem;">
+            <div class="config-col" style="max-width: 320px;">
+              <label for="est-sigma-val" class="form-label nowrap" id="est-sigma-label">
+                Sensor accuracy <span id="est-sigma-unit-hint" class="mono" style="font-weight: 600; color: var(--primary-navy);"></span>
                 <span class="info-tooltip" title="Typical error of your sensor. Not sure? Leave 0.01.">&#9432;</span>
               </label>
-              <input type="number" id="est-sigma-val" class="form-control mono" value="0.01" min="0.0001" max="1.0" step="0.005">
+              <input type="number" id="est-sigma-val" class="form-control mono" value="0.01" min="0.0001" max="100.0" step="0.005">
             </div>
-            <div class="config-col">
-              <label for="est-bar-length" class="form-label nowrap">Bar length</label>
-              <div class="input-suffix-wrap">
-                <input type="number" id="est-bar-length" class="form-control mono" placeholder="Optional" min="0.001" step="0.01">
-                <span class="input-suffix">m</span>
-              </div>
-            </div>
-            <div class="config-col">
-              <label for="est-experiment-time" class="form-label nowrap">Test time</label>
-              <div class="input-suffix-wrap">
-                <input type="number" id="est-experiment-time" class="form-control mono" placeholder="Optional" min="0.001" step="0.1">
-                <span class="input-suffix">s</span>
-              </div>
-            </div>
-          </div>
-          <div class="test-units-helper" id="est-units-rule-helper">
-            Positions are 0–1 and time is 0–1.
           </div>
 
-          <!-- Real Temperatures (°C) Collapsed Disclosure -->
-          <details class="temp-scaling-details" id="est-temp-scaling-details" style="margin-top: 0.75rem;">
+          <!-- One collapsed group: "My readings are in real units" -->
+          <details class="temp-scaling-details" id="est-real-units-details">
             <summary style="font-size: var(--fs-small); color: var(--text-muted); cursor: pointer; font-weight: 500; user-select: none;">
-              Using real temperatures (&deg;C)?
+              My readings are in real units
             </summary>
-            <div class="temp-scaling-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 0.5rem; align-items: start;">
+            <div class="real-units-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 0.75rem; align-items: start;">
               <div class="config-col">
-                <label for="est-temp-peak" class="form-label nowrap">Peak temperature at the start</label>
+                <label for="est-bar-length" class="form-label nowrap">Bar length (m)</label>
                 <div class="input-suffix-wrap">
-                  <input type="number" id="est-temp-peak" class="form-control mono" placeholder="Optional" step="0.5">
-                  <span class="input-suffix">&deg;C</span>
+                  <input type="number" id="est-bar-length" class="form-control mono" placeholder="Optional" min="0.0001" step="0.01">
+                  <span class="input-suffix">m</span>
                 </div>
               </div>
               <div class="config-col">
-                <label for="est-temp-edge" class="form-label nowrap">Temperature the ends are held at</label>
+                <label for="est-experiment-time" class="form-label nowrap">Test duration (s)</label>
+                <div class="input-suffix-wrap">
+                  <input type="number" id="est-experiment-time" class="form-control mono" placeholder="Optional" min="0.0001" step="0.1">
+                  <span class="input-suffix">s</span>
+                </div>
+              </div>
+              <div class="config-col">
+                <label for="est-temp-edge" class="form-label nowrap">Ends of the bar are held at (&deg;C)</label>
                 <div class="input-suffix-wrap">
                   <input type="number" id="est-temp-edge" class="form-control mono" placeholder="Optional" step="0.5">
                   <span class="input-suffix">&deg;C</span>
                 </div>
               </div>
+              <div class="config-col">
+                <label for="est-temp-peak" class="form-label nowrap">Hottest point at the start (&deg;C)</label>
+                <div class="input-suffix-wrap">
+                  <input type="number" id="est-temp-peak" class="form-control mono" placeholder="Optional" step="0.5">
+                  <span class="input-suffix">&deg;C</span>
+                </div>
+              </div>
             </div>
-            <div class="test-units-helper" id="est-temp-rule-helper" style="margin-top: 0.35rem;">
-              When filled, readings and accuracy are scaled to 0–1 using (T &minus; T_ends) &divide; (T_peak &minus; T_ends).
+            <div class="test-units-helper" id="est-real-units-helper" style="margin-top: 0.5rem;">
+              When filled, the backend converts readings before calculating and converts results back to physical units.
             </div>
           </details>
 
           <!-- Hidden compatibility elements for existing tests -->
           <div style="display: none;">
+            <div id="est-units-rule-helper"></div>
+            <details id="est-temp-scaling-details"></details>
+            <div id="est-temp-rule-helper"></div>
             <button type="button" id="est-unit-scaled-btn" data-unit="scaled">Scaled 0–1</button>
             <button type="button" id="est-unit-real-btn" data-unit="real">Real units (m, s)</button>
             <div id="est-unit-toggle"></div>
@@ -485,6 +485,14 @@
                       <td style="font-weight: 600;">Solver timing</td>
                       <td><span id="est-out-timing" class="mono">-</span> ms (<span id="est-out-method">mode3plus</span>)</td>
                     </tr>
+                    <tr id="est-row-alpha-norm" style="display: none;">
+                      <td style="font-weight: 600;">Normalised heat spread (&alpha;&#770;_norm)</td>
+                      <td id="est-out-alpha-norm" class="mono">-</td>
+                    </tr>
+                    <tr id="est-row-norm-constants" style="display: none;">
+                      <td style="font-weight: 600;">Normalisation constants</td>
+                      <td id="est-out-norm-constants" class="mono" style="font-size: 0.8rem;">-</td>
+                    </tr>
                   </tbody>
                 </table>
 
@@ -526,9 +534,15 @@
 
           <!-- 2. Declared Physics -->
           <div id="est-physics-config-group" style="display: none;" class="form-group">
+            <label for="est-phys-preset" class="form-label">Preset setups</label>
+            <select id="est-phys-preset" class="form-select" style="margin-bottom: 0.6rem;">
+              <option value="sine" selected>Standard: Sine wave (sin(πx))</option>
+              <option value="constant">Bar heated evenly, ends at room temperature</option>
+              <option value="custom">Custom expression</option>
+            </select>
             <label for="est-phys-u0" class="form-label">Initial temperature profile u₀(x)</label>
             <input type="text" id="est-phys-u0" class="form-control mono" value="sin(pi*x)" placeholder="sin(pi*x)">
-            <div class="form-help">Custom initial heat distribution across the bar.</div>
+            <div class="form-help">Custom initial heat distribution across the bar (normalised units).</div>
           </div>
 
           <!-- 3. Baseline-based accuracy estimate -->

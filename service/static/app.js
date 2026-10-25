@@ -367,6 +367,152 @@ const DEFAULT_ESTIMATE_SCALED_ROWS = [
 
 const DEFAULT_ESTIMATE_EXAMPLE = DEFAULT_ESTIMATE_EXAMPLE_ROWS.map(r => `${r.x}, ${r.t}, ${r.u}`).join('\n');
 
+// -------------------------------------------------------------------------------------------------
+// Shared Readings Across Tabs ("My readings")
+// -------------------------------------------------------------------------------------------------
+const SHARED_STORAGE_KEY = 'thermalens_shared_readings';
+let isSyncingSharedReadings = false;
+
+function saveSharedReadingsToStorage(readings) {
+  try {
+    const hasData = readings && readings.some(r => (r.x && String(r.x).trim()) || (r.t && String(r.t).trim()) || (r.u && String(r.u).trim()));
+    if (!hasData) {
+      localStorage.removeItem(SHARED_STORAGE_KEY);
+    } else {
+      localStorage.setItem(SHARED_STORAGE_KEY, JSON.stringify(readings));
+    }
+  } catch (e) {
+    // Graceful fallback if storage is blocked or quota exceeded
+  }
+}
+
+function loadSharedReadingsFromStorage() {
+  try {
+    const raw = localStorage.getItem(SHARED_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    // Graceful fallback if storage is blocked or corrupted
+  }
+  return null;
+}
+
+function clearSharedReadingsStorage() {
+  try {
+    localStorage.removeItem(SHARED_STORAGE_KEY);
+  } catch (e) {
+    // Graceful fallback
+  }
+}
+
+function extractSharedReadings(sourcePrefix = 'est') {
+  const tbodyId = (sourcePrefix === 'est') ? 'est-table-tbody' : 'diag-test-table-tbody';
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return [];
+  const rows = Array.from(tbody.children);
+  return rows.map(tr => {
+    const inputs = tr.querySelectorAll('.cell-input');
+    return {
+      x: inputs[0] ? inputs[0].value.trim() : '',
+      t: inputs[1] ? inputs[1].value.trim() : '',
+      u: inputs[2] ? inputs[2].value.trim() : ''
+    };
+  });
+}
+
+function syncSharedReadings(sourcePrefix = 'est') {
+  if (isSyncingSharedReadings) return;
+  isSyncingSharedReadings = true;
+  try {
+    const readings = extractSharedReadings(sourcePrefix);
+    saveSharedReadingsToStorage(readings);
+
+    if (sourcePrefix === 'est') {
+      const diagTestTbody = document.getElementById('diag-test-table-tbody');
+      const diagTestBadge = document.getElementById('diag-test-count');
+      if (diagTestTbody) {
+        diagTestTbody.innerHTML = '';
+        readings.forEach((r, idx) => {
+          diagTestTbody.appendChild(createDiagnoseTableRow(r.x, r.t, r.u, idx + 1, 'diag-test'));
+        });
+        if (diagTestBadge) {
+          updateDiagnoseRowNumbers(diagTestTbody, diagTestBadge, 3, 'diag-test');
+        }
+      }
+      clearDiagnoseResultState();
+    } else if (sourcePrefix === 'diag-test') {
+      const estTbody = document.getElementById('est-table-tbody');
+      if (estTbody) {
+        estTbody.innerHTML = '';
+        readings.forEach((r, idx) => {
+          estTbody.appendChild(createEstimateTableRow(r.x, r.t, r.u, idx + 1));
+        });
+        updateTableRowNumbers();
+        validateEstimateTable();
+      }
+      clearEstimateResultState();
+    }
+  } finally {
+    isSyncingSharedReadings = false;
+  }
+}
+
+function setSharedReadings(readings, clearResults = true) {
+  if (isSyncingSharedReadings) return;
+  isSyncingSharedReadings = true;
+  try {
+    saveSharedReadingsToStorage(readings);
+
+    // 1. Populate Estimate table
+    const estTbody = document.getElementById('est-table-tbody');
+    if (estTbody) {
+      estTbody.innerHTML = '';
+      readings.forEach((r, idx) => {
+        estTbody.appendChild(createEstimateTableRow(r.x, r.t, r.u, idx + 1));
+      });
+      updateTableRowNumbers();
+      validateEstimateTable();
+    }
+
+    // 2. Populate Diagnose test table
+    const diagTestTbody = document.getElementById('diag-test-table-tbody');
+    const diagTestBadge = document.getElementById('diag-test-count');
+    if (diagTestTbody) {
+      diagTestTbody.innerHTML = '';
+      readings.forEach((r, idx) => {
+        diagTestTbody.appendChild(createDiagnoseTableRow(r.x, r.t, r.u, idx + 1, 'diag-test'));
+      });
+      if (diagTestBadge) {
+        updateDiagnoseRowNumbers(diagTestTbody, diagTestBadge, 3, 'diag-test');
+      }
+    }
+
+    if (clearResults) {
+      clearEstimateResultState();
+      clearDiagnoseResultState();
+    }
+  } finally {
+    isSyncingSharedReadings = false;
+  }
+}
+
+function clearSharedReadingsData() {
+  const blankRows = [
+    { x: '', t: '', u: '' },
+    { x: '', t: '', u: '' },
+    { x: '', t: '', u: '' }
+  ];
+  clearSharedReadingsStorage();
+  setSharedReadings(blankRows, true);
+  const note = document.getElementById('est-removed-sensor-note');
+  if (note) note.style.display = 'none';
+  STATE.removedSensorInfo = null;
+}
+
 function createEstimateTableRow(x = '', t = '', u = '', rowNum = 1) {
   const scaledToggle = document.getElementById('est-scaled-toggle');
   const isScaled = Boolean(scaledToggle && scaledToggle.checked);
@@ -731,6 +877,7 @@ function initEstimateWorkbench() {
         updateTableRowNumbers();
         validateEstimateTable();
         clearEstimateResultState();
+        syncSharedReadings('est');
         const firstInput = tr.querySelector('.cell-input');
         if (firstInput) firstInput.focus();
       }
@@ -749,6 +896,7 @@ function initEstimateWorkbench() {
         updateTableRowNumbers();
         validateEstimateTable();
         clearEstimateResultState();
+        syncSharedReadings('est');
       }
     });
 
@@ -766,6 +914,7 @@ function initEstimateWorkbench() {
           updateTableRowNumbers();
           validateEstimateTable();
           clearEstimateResultState();
+          syncSharedReadings('est');
           const firstInput = newTr.querySelector('.cell-input');
           if (firstInput) firstInput.focus();
         }
@@ -776,6 +925,7 @@ function initEstimateWorkbench() {
       if (e.target.classList.contains('cell-input')) {
         validateEstimateTable();
         clearEstimateResultState();
+        syncSharedReadings('est');
       }
     });
 
@@ -832,6 +982,7 @@ function initEstimateWorkbench() {
         updateTableRowNumbers();
         validateEstimateTable();
         clearEstimateResultState();
+        syncSharedReadings('est');
       }
     });
   }
@@ -840,30 +991,82 @@ function initEstimateWorkbench() {
   if (useExampleBtn) {
     useExampleBtn.addEventListener('click', () => {
       const isScaled = Boolean(scaledToggle && scaledToggle.checked);
-      if (tbody) {
-        tbody.innerHTML = '';
-        if (isScaled) {
-          DEFAULT_ESTIMATE_SCALED_ROWS.forEach((r, idx) => {
-            tbody.appendChild(createEstimateTableRow(r.x.toFixed(2), r.t.toFixed(4), r.u.toFixed(4), idx + 1));
-          });
-          const sigmaInput = document.getElementById('est-sigma-val');
-          if (sigmaInput) sigmaInput.value = '0.01';
-        } else {
-          DEFAULT_ESTIMATE_EXAMPLE_ROWS.forEach((r, idx) => {
-            tbody.appendChild(createEstimateTableRow(r.x.toFixed(2), r.t.toFixed(2), r.u.toFixed(2), idx + 1));
-          });
-          if (barLengthInput) barLengthInput.value = '0.1';
-          if (expDurationInput) expDurationInput.value = '100';
-          if (tempEdgeInput) tempEdgeInput.value = '20';
-          if (tempPeakInput) tempPeakInput.value = '80';
-          if (sigmaVal) sigmaVal.value = '0.5';
-          if (heatSine) heatSine.checked = true;
-        }
-        STATE.isEstimateDemo = false;
-        updateTableRowNumbers();
-        validateEstimateTable();
-        clearEstimateResultState();
+      if (isScaled) {
+        setSharedReadings(DEFAULT_ESTIMATE_SCALED_ROWS, true);
+        const sigmaInput = document.getElementById('est-sigma-val');
+        if (sigmaInput) sigmaInput.value = '0.01';
+      } else {
+        setSharedReadings(DEFAULT_ESTIMATE_EXAMPLE_ROWS, true);
+        if (barLengthInput) barLengthInput.value = '0.1';
+        if (expDurationInput) expDurationInput.value = '100';
+        if (tempEdgeInput) tempEdgeInput.value = '20';
+        if (tempPeakInput) tempPeakInput.value = '80';
+        if (sigmaVal) sigmaVal.value = '0.5';
+        if (heatSine) heatSine.checked = true;
       }
+      STATE.isEstimateDemo = false;
+      const note = document.getElementById('est-removed-sensor-note');
+      if (note) note.style.display = 'none';
+      STATE.removedSensorInfo = null;
+    });
+  }
+
+  // Clear my data button
+  const estClearBtn = document.getElementById('est-clear-data-btn');
+  if (estClearBtn) {
+    estClearBtn.addEventListener('click', clearSharedReadingsData);
+  }
+
+  // Undo button for removed faulty sensor
+  const estUndoBtn = document.getElementById('est-undo-remove-sensor-btn');
+  if (estUndoBtn) {
+    estUndoBtn.addEventListener('click', () => {
+      if (STATE.removedSensorInfo && STATE.removedSensorInfo.originalReadings) {
+        setSharedReadings(STATE.removedSensorInfo.originalReadings, true);
+        STATE.removedSensorInfo = null;
+        const note = document.getElementById('est-removed-sensor-note');
+        if (note) note.style.display = 'none';
+      }
+    });
+  }
+
+  // Hand-off: "Check this data for problems"
+  const estGotoDiagBtn = document.getElementById('est-goto-diagnose-btn');
+  if (estGotoDiagBtn) {
+    estGotoDiagBtn.addEventListener('click', () => {
+      window.location.hash = '#diagnose';
+      const diagCard = document.getElementById('diag-test-card');
+      if (diagCard) diagCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  // Hand-off: "See the temperature map for this value"
+  const estGotoFieldBtn = document.getElementById('est-goto-field-btn');
+  if (estGotoFieldBtn) {
+    estGotoFieldBtn.addEventListener('click', () => {
+      const data = STATE.lastEstimateResult ? STATE.lastEstimateResult.response : null;
+      let alphaNorm = data ? data.alpha_hat_normalized : null;
+      if (alphaNorm === null || alphaNorm === undefined || isNaN(alphaNorm)) {
+        if (data && data.alpha_hat) {
+          const L = parseFloat(document.getElementById('est-bar-length').value) || 0.1;
+          const T = parseFloat(document.getElementById('est-experiment-time').value) || 100.0;
+          if (data.units === 'm²/s' || (L && T)) {
+            alphaNorm = data.alpha_hat * T / (L * L);
+          } else {
+            alphaNorm = data.alpha_hat;
+          }
+        } else {
+          alphaNorm = 0.10;
+        }
+      }
+      const fieldAlphaInput = document.getElementById('field-alpha');
+      if (fieldAlphaInput && alphaNorm !== undefined && !isNaN(alphaNorm)) {
+        fieldAlphaInput.value = alphaNorm.toFixed(3);
+        fieldAlphaInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      window.location.hash = '#field';
+      const fieldCard = document.getElementById('field-results-card');
+      if (fieldCard) fieldCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 
@@ -897,6 +1100,7 @@ function initEstimateWorkbench() {
         updateTableRowNumbers();
         validateEstimateTable();
         clearEstimateResultState();
+        syncSharedReadings('est');
         csvUpload.value = '';
       };
       reader.readAsText(file);
@@ -1871,6 +2075,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
       updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
       clearDiagnoseResultState();
       if (prefix === 'diag-base') markProfileAsModified();
+      if (prefix === 'diag-test') syncSharedReadings('diag-test');
       const firstIn = tr.querySelector('.cell-input');
       if (firstIn) firstIn.focus();
     });
@@ -1887,6 +2092,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
       updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
       clearDiagnoseResultState();
       if (prefix === 'diag-base') markProfileAsModified();
+      if (prefix === 'diag-test') syncSharedReadings('diag-test');
     }
   });
 
@@ -1904,6 +2110,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
         updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
         clearDiagnoseResultState();
         if (prefix === 'diag-base') markProfileAsModified();
+        if (prefix === 'diag-test') syncSharedReadings('diag-test');
         const firstIn = newTr.querySelector('.cell-input');
         if (firstIn) firstIn.focus();
       }
@@ -1916,6 +2123,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
       updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
       clearDiagnoseResultState();
       if (prefix === 'diag-base') markProfileAsModified();
+      if (prefix === 'diag-test') syncSharedReadings('diag-test');
     }
   });
 
@@ -1961,6 +2169,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
 
       updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
       clearDiagnoseResultState();
+      if (prefix === 'diag-test') syncSharedReadings('diag-test');
     }
   });
 
@@ -2000,6 +2209,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
 
         updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
         clearDiagnoseResultState();
+        if (prefix === 'diag-test') syncSharedReadings('diag-test');
         csvInput.value = '';
       };
       reader.readAsText(file);
@@ -2016,6 +2226,10 @@ function clearDiagnoseResultState() {
   if (resPanel) resPanel.style.display = 'none';
   const stateContainer = document.getElementById('diag-state-container');
   if (stateContainer) stateContainer.innerHTML = '';
+  const gotoEstBtn = document.getElementById('diag-goto-estimate-btn');
+  const gotoEstNoFaultBtn = document.getElementById('diag-goto-estimate-without-fault-btn');
+  if (gotoEstBtn) gotoEstBtn.style.display = 'none';
+  if (gotoEstNoFaultBtn) gotoEstNoFaultBtn.style.display = 'none';
 }
 
 function syncSharedField(id1, id2) {
@@ -2773,7 +2987,8 @@ function initDiagnoseWorkbench() {
     testRows.forEach((r, idx) => {
       testTbody.appendChild(createDiagnoseTableRow(r.x.toFixed(2), r.t.toFixed(2), r.u.toFixed(2), idx + 1, 'diag-test'));
     });
-    updateDiagnoseRowNumbers(testTbody, testBadge, 3);
+    updateDiagnoseRowNumbers(testTbody, testBadge, 3, 'diag-test');
+    syncSharedReadings('diag-test');
 
     STATE.diagnoseDemo = {
       scenario: sc,
@@ -2815,14 +3030,15 @@ function initDiagnoseWorkbench() {
       DEFAULT_DIAGNOSE_BASELINE_ROWS.forEach((r, idx) => {
         baseTbody.appendChild(createDiagnoseTableRow(r.x.toFixed(2), r.t.toFixed(1), r.u.toFixed(2), idx + 1, 'diag-base'));
       });
-      updateDiagnoseRowNumbers(baseTbody, baseBadge, 20);
+      updateDiagnoseRowNumbers(baseTbody, baseBadge, 20, 'diag-base');
 
       // Populate Test table (10 realistic noisy readings, seed 0)
       testTbody.innerHTML = '';
       DEFAULT_DIAGNOSE_TEST_ROWS.forEach((r, idx) => {
         testTbody.appendChild(createDiagnoseTableRow(r.x.toFixed(2), r.t.toFixed(2), r.u.toFixed(2), idx + 1, 'diag-test'));
       });
-      updateDiagnoseRowNumbers(testTbody, testBadge, 3);
+      updateDiagnoseRowNumbers(testTbody, testBadge, 3, 'diag-test');
+      syncSharedReadings('diag-test');
 
       STATE.diagnoseDemo = {
         scenario: 'H',
@@ -2832,6 +3048,66 @@ function initDiagnoseWorkbench() {
       };
 
       clearDiagnoseResultState();
+    });
+  }
+
+  // Clear my data button
+  const diagClearBtn = document.getElementById('diag-test-clear-data-btn');
+  if (diagClearBtn) {
+    diagClearBtn.addEventListener('click', clearSharedReadingsData);
+  }
+
+  // Hand-off: "Estimate the heat spread"
+  const diagGotoEstBtn = document.getElementById('diag-goto-estimate-btn');
+  if (diagGotoEstBtn) {
+    diagGotoEstBtn.addEventListener('click', () => {
+      window.location.hash = '#estimate';
+      const estCard = document.getElementById('est-readings-card');
+      if (estCard) estCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  // Hand-off: "Estimate without sensor k"
+  const diagGotoEstNoFaultBtn = document.getElementById('diag-goto-estimate-without-fault-btn');
+  if (diagGotoEstNoFaultBtn) {
+    diagGotoEstNoFaultBtn.addEventListener('click', () => {
+      const currentReadings = extractSharedReadings('diag-test');
+      if (currentReadings.length === 0) return;
+
+      const fIdx = (STATE.lastDiagnoseResult && STATE.lastDiagnoseResult.response && STATE.lastDiagnoseResult.response.faulty_sensor_idx !== undefined && STATE.lastDiagnoseResult.response.faulty_sensor_idx !== null)
+        ? STATE.lastDiagnoseResult.response.faulty_sensor_idx
+        : 1;
+
+      let targetIdx = fIdx;
+      if (targetIdx < 0 || targetIdx >= currentReadings.length) {
+        targetIdx = fIdx - 1;
+      }
+      if (targetIdx < 0 || targetIdx >= currentReadings.length) {
+        targetIdx = 0;
+      }
+
+      const removedRow = currentReadings[targetIdx];
+      const newReadings = currentReadings.filter((_, idx) => idx !== targetIdx);
+
+      STATE.removedSensorInfo = {
+        sensorLabel: fIdx,
+        targetIdx: targetIdx,
+        removedRow: removedRow,
+        originalReadings: [...currentReadings]
+      };
+
+      setSharedReadings(newReadings, true);
+
+      const noteEl = document.getElementById('est-removed-sensor-note');
+      const noteText = document.getElementById('est-removed-sensor-text');
+      if (noteEl && noteText) {
+        noteText.textContent = `Sensor ${fIdx} was removed from these readings.`;
+        noteEl.style.display = 'flex';
+      }
+
+      window.location.hash = '#estimate';
+      const estTable = document.getElementById('est-readings-table');
+      if (estTable) estTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
 
@@ -3001,15 +3277,22 @@ async function executeDiagnosis() {
     const alphaFit = es.alpha_fitted !== undefined ? formatScientificReal(es.alpha_fitted, 3) : '-';
     const alphaBase = es.alpha_baseline !== undefined ? formatScientificReal(es.alpha_baseline, 3) : '-';
 
+    const gotoEstBtn = document.getElementById('diag-goto-estimate-btn');
+    const gotoEstNoFaultBtn = document.getElementById('diag-goto-estimate-without-fault-btn');
+
     // Format one plain-sentence traffic light line
     if (assignedClass === 'H') {
       banner.className = 'traffic-light-line green';
       titleEl.textContent = 'Everything looks normal.';
       specInfo.innerHTML = `Your test readings conform to the reference baseline (heat spread &alpha; &approx; ${alphaBase}).`;
+      if (gotoEstBtn) gotoEstBtn.style.display = 'inline-block';
+      if (gotoEstNoFaultBtn) gotoEstNoFaultBtn.style.display = 'none';
     } else if (assignedClass === 'A') {
       banner.className = 'traffic-light-line amber';
       titleEl.textContent = 'The material behaves differently from your reference run.';
       specInfo.innerHTML = `The heat dissipation rate shifted significantly (&alpha; &approx; ${alphaFit}) compared to your baseline (&alpha;<sub>base</sub> &approx; ${alphaBase}).`;
+      if (gotoEstBtn) gotoEstBtn.style.display = 'inline-block';
+      if (gotoEstNoFaultBtn) gotoEstNoFaultBtn.style.display = 'none';
     } else if (assignedClass === 'F') {
       banner.className = 'traffic-light-line amber';
       const fIdx = (data.faulty_sensor_idx !== undefined && data.faulty_sensor_idx !== null) ? data.faulty_sensor_idx : 1;
@@ -3019,6 +3302,11 @@ async function executeDiagnosis() {
       const tRead = testData.t[fIdx] !== undefined ? testData.t[fIdx].toFixed(1) : '-';
       const yRead = testData.y[fIdx] !== undefined ? testData.y[fIdx].toFixed(2) : '-';
       specInfo.innerHTML = `Affected reading #${fIdx}: position ${xRead} m, time ${tRead} s (sensor read ${yRead} &deg;C).`;
+      if (gotoEstBtn) gotoEstBtn.style.display = 'none';
+      if (gotoEstNoFaultBtn) {
+        gotoEstNoFaultBtn.textContent = `Estimate without sensor ${fIdx}`;
+        gotoEstNoFaultBtn.style.display = 'inline-block';
+      }
     } else if (assignedClass === 'C') {
       banner.className = 'traffic-light-line amber';
       let changeTimeStr = '35';
@@ -3027,6 +3315,8 @@ async function executeDiagnosis() {
       }
       titleEl.textContent = `The behaviour changed during the test, around ${changeTimeStr} s.`;
       specInfo.innerHTML = `A physical transition or external thermal disturbance occurred around ${changeTimeStr} s into the test.`;
+      if (gotoEstBtn) gotoEstBtn.style.display = 'inline-block';
+      if (gotoEstNoFaultBtn) gotoEstNoFaultBtn.style.display = 'none';
     }
 
     // Honesty Note Calibrated Range Check
@@ -3303,12 +3593,52 @@ function renderDiagnoseChart() {
 function initPlacementWorkbench() {
   const submitBtn = document.getElementById('place-submit-btn');
   const downloadBtn = document.getElementById('place-download-btn');
+  const placeUseTimesBtn = document.getElementById('place-use-times-btn');
 
-  submitBtn.addEventListener('click', executePlacement);
-  downloadBtn.addEventListener('click', () => {
-    if (!STATE.lastPlacementResult) return;
-    downloadJson(STATE.lastPlacementResult, 'placement_schedule.json');
-  });
+  if (submitBtn) submitBtn.addEventListener('click', executePlacement);
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      if (!STATE.lastPlacementResult) return;
+      downloadJson(STATE.lastPlacementResult, 'placement_schedule.json');
+    });
+  }
+
+  // Hand-off: "Use these times in my readings"
+  if (placeUseTimesBtn) {
+    placeUseTimesBtn.addEventListener('click', () => {
+      if (!STATE.lastPlacementResult || !STATE.lastPlacementResult.response) return;
+      const data = STATE.lastPlacementResult.response;
+      const t1 = data.t_stage1 || [];
+      const t2 = data.t_stage2_nominal || [];
+      const timesNorm = [...t1, ...t2];
+      if (timesNorm.length === 0) return;
+
+      const T = parseFloat(document.getElementById('est-experiment-time').value) || 100.0;
+      const currentReadings = extractSharedReadings('est');
+      const maxRows = Math.max(currentReadings.length, timesNorm.length);
+      const updatedReadings = [];
+
+      for (let i = 0; i < maxRows; i++) {
+        const cur = currentReadings[i] || { x: '', t: '', u: '' };
+        if (i < timesNorm.length) {
+          const tSec = Math.round(timesNorm[i] * T * 100) / 100;
+          updatedReadings.push({
+            x: cur.x,
+            t: tSec.toString(),
+            u: cur.u
+          });
+        } else {
+          updatedReadings.push({ ...cur });
+        }
+      }
+
+      setSharedReadings(updatedReadings, true);
+
+      window.location.hash = '#estimate';
+      const estTable = document.getElementById('est-readings-table');
+      if (estTable) estTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
 }
 
 async function executePlacement() {
@@ -4155,6 +4485,19 @@ document.addEventListener('DOMContentLoaded', () => {
   initFieldWorkbench();
   initPoissonWorkbench();
   initOverviewTaskCards();
+
+  // Load shared readings from storage if available, else initialize with 3 empty rows
+  const savedReadings = loadSharedReadingsFromStorage();
+  if (savedReadings && savedReadings.length >= 3) {
+    setSharedReadings(savedReadings, false);
+  } else {
+    const defaultThreeRows = [
+      { x: '', t: '', u: '' },
+      { x: '', t: '', u: '' },
+      { x: '', t: '', u: '' }
+    ];
+    setSharedReadings(defaultThreeRows, false);
+  }
 
   window.addEventListener('hashchange', handleRoute);
   handleRoute();

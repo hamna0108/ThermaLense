@@ -354,6 +354,16 @@
             <input type="file" id="est-csv-upload" accept=".csv,.txt" style="display: none;">
             <button type="button" class="btn btn-secondary btn-sm" id="est-csv-btn">Upload CSV</button>
             <button type="button" class="btn btn-secondary btn-sm" id="est-use-example-btn">Use example</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="est-clear-data-btn">Clear my data</button>
+          </div>
+
+          <!-- Note when a faulty sensor row was removed -->
+          <div id="est-removed-sensor-note" class="traffic-light-line blue" style="display: none; margin-bottom: 0.75rem; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <span class="traffic-light-dot">ⓘ</span>
+              <span id="est-removed-sensor-text">Sensor was removed from these readings.</span>
+            </div>
+            <button type="button" class="btn btn-secondary btn-sm" id="est-undo-remove-sensor-btn" style="padding: 0.15rem 0.5rem; font-size: 0.8rem;">Undo</button>
           </div>
 
           <!-- Editable Table -->
@@ -515,6 +525,12 @@
                 <div class="legend-item"><span class="legend-swatch" style="background-color: rgba(31, 58, 95, 0.15);"></span> 95% confidence range</div>
                 <div class="legend-item" id="est-chart-truth-legend" style="display: none;"><span class="legend-line" style="border-top: 2px dashed #e67e22;"></span> Actual test material (known value)</div>
               </div>
+            </div>
+
+            <!-- Hand-off actions -->
+            <div class="result-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; margin-bottom: 1rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="est-goto-diagnose-btn">Check this data for problems</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="est-goto-field-btn">See the temperature map for this value</button>
             </div>
 
             <!-- ONE Collapsed "Show details" -->
@@ -813,6 +829,7 @@
             <button type="button" class="btn btn-secondary btn-sm" id="diag-test-add-row-btn">+ Add row</button>
             <input type="file" id="diag-test-csv-upload" accept=".csv,.txt" style="display: none;">
             <button type="button" class="btn btn-secondary btn-sm" id="diag-test-csv-btn">Upload CSV</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="diag-test-clear-data-btn">Clear my data</button>
           </div>
 
           <div class="readings-table-wrap">
@@ -922,6 +939,12 @@
 
             <!-- Specific Fault/Change/Readings details in plain language -->
             <div id="diag-specific-info" style="margin: 0.6rem 0; font-size: 0.92rem; line-height: 1.5; color: var(--text-normal);"></div>
+
+            <!-- Hand-off actions -->
+            <div class="result-actions" id="diag-handoff-actions" style="margin-top: 0.75rem; margin-bottom: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" id="diag-goto-estimate-btn" style="display: none;">Estimate the heat spread</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="diag-goto-estimate-without-fault-btn" style="display: none;">Estimate without sensor k</button>
+            </div>
 
             <!-- Demo Mode Callout (shown when running a demo scenario) -->
             <div id="diag-demo-callout" class="demo-mode-callout" style="display: none;"></div>
@@ -1125,8 +1148,11 @@
               </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-              <button type="button" class="btn btn-secondary btn-sm" id="place-download-btn">Download Result (JSON)</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <button type="button" class="btn btn-primary btn-sm" id="place-use-times-btn">Use these times in my readings</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="place-download-btn">Download Result (JSON)</button>
+              </div>
               <span class="text-muted" style="font-size: 0.8rem;">Solved in <span id="place-timing" class="mono">-</span> ms</span>
             </div>
 

@@ -21,3 +21,11 @@ models/fno_v3/
 *.zip
 data/results/pinn_ablation/checkpoints/
 
+# User-created profiles in data/profiles (ignore all except demo profiles)
+data/profiles/*
+!data/profiles/00000000-0000-4000-8000-000000000001.json
+!data/profiles/00000000-0000-4000-8000-000000000001.csv
+!data/profiles/00000000-0000-4000-8000-000000000002.json
+!data/profiles/00000000-0000-4000-8000-000000000002.csv
+
+

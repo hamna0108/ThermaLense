@@ -21,9 +21,25 @@ import json
 import zipfile
 import pytest
 from fastapi.testclient import TestClient
-
 from service.app import app
-from service.profiles import DEMO_UUID_1, DEMO_UUID_2, generate_demo_profile_data
+
+import shutil
+from pathlib import Path
+import service.profiles as prof_mod
+from service.profiles import DEMO_UUID_1, DEMO_UUID_2, generate_demo_profile_data, PROFILES_DIR
+
+@pytest.fixture(autouse=True)
+def isolated_profiles_dir(tmp_path, monkeypatch):
+    """Run all profile tests in an ephemeral temporary directory initialized with demo profiles."""
+    test_dir = tmp_path / "profiles"
+    test_dir.mkdir(parents=True, exist_ok=True)
+    for demo_id in [DEMO_UUID_1, DEMO_UUID_2]:
+        for ext in [".json", ".csv"]:
+            src = PROFILES_DIR / f"{demo_id}{ext}"
+            if src.exists():
+                shutil.copy(src, test_dir / f"{demo_id}{ext}")
+    monkeypatch.setattr(prof_mod, "PROFILES_DIR", test_dir)
+    yield test_dir
 
 @pytest.fixture(scope="module")
 def client():

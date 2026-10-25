@@ -926,13 +926,13 @@
             <!-- Demo Mode Callout (shown when running a demo scenario) -->
             <div id="diag-demo-callout" class="demo-mode-callout" style="display: none;"></div>
 
-            <!-- Chart: Measured vs Baseline -->
-            <div class="chart-title">Measured vs baseline</div>
+            <!-- Chart: Readings vs what normal would look like -->
+            <div class="chart-title">Readings vs what normal would look like</div>
             <div class="chart-wrapper">
               <svg id="diag-chart-svg" class="chart-svg" viewBox="0 0 540 260" preserveAspectRatio="xMidYMid meet"></svg>
               <div class="chart-legend" id="diag-chart-legend">
-                <div class="legend-item"><span class="legend-line" style="background-color: var(--primary-navy);"></span> Baseline expected cooling</div>
-                <div class="legend-item"><span class="legend-swatch" style="background-color: #2980b9; border-radius: 50%;"></span> Operational readings</div>
+                <div class="legend-item"><span class="legend-line" style="background-color: var(--primary-navy);"></span> Normal expected cooling (at sensor position)</div>
+                <div class="legend-item"><span class="legend-swatch" style="background-color: #2980b9; border-radius: 50%;"></span> Operational reading</div>
                 <div class="legend-item" id="diag-fault-legend-item" style="display: none;"><span class="legend-swatch" style="background-color: #e74c3c; border-radius: 50%;"></span> Flagged faulty sensor</div>
               </div>
             </div>
@@ -999,12 +999,14 @@
             <select id="diag-scenario-select" class="form-select">
               <option value="H" selected>Healthy run (Class H)</option>
               <option value="A">Anomalous heat spread (Class A: rapid cooling)</option>
+              <option value="A_weak">Small change in heat spread (factor 1.3)</option>
               <option value="F_stuck">Sensor fault: stuck reading (Class F: sensor #3 pinned)</option>
               <option value="F_bias">Sensor fault: persistent calibration bias (Class F: +5 °C offset)</option>
+              <option value="F_weak_bias">Weak sensor offset (about 3 sigma)</option>
               <option value="C">Mid-test change (Class C: heat spread jump at 35 s)</option>
               <option value="refusal_baseline">Refusal test: baseline k=10 &lt; 20 readings</option>
             </select>
-            <div class="form-help">Loads realistic simulated readings in real units based on your test settings, so a mentor can verify the result.</div>
+            <div class="form-help">Loads simulated readings in real units. Note: clear-cut demo cases, not the benchmark accuracy. Weak effects (e.g. 3&sigma; offset or factor 1.3 diffusion change) demonstrate statistical sensitivity limits.</div>
           </div>
 
           <div style="margin-top: 0.75rem;">
@@ -1527,7 +1529,89 @@
         </figure>
       </div>
 
-      <!-- Section 4: Stress Testing Summary -->
+      <!-- Section 3b: Demo Scenarios vs Statistical Benchmark Honesty -->
+      <div class="card" style="border-left: 4px solid var(--accent-blue, #2563eb);">
+        <h2 class="card-title" style="color: var(--accent-blue, #2563eb);">3b. Demo Scenarios vs Benchmark Honesty</h2>
+        <p style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.75rem;">
+          <strong>Clear-cut demo cases, not the benchmark accuracy:</strong> The interactive demo presets in the Diagnose workbench are clear-cut illustrative cases designed for operational demonstration, not representative of empirical sensitivity limits.
+        </p>
+        <p style="font-size: 0.88rem; line-height: 1.6; margin-bottom: 0.75rem; background: var(--bg-surface-raised); padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--rule-subtle);">
+          <strong>Why change-time error is exactly 0.00 s in clear-cut demos:</strong> In the clear-cut change-point demo, the estimated change time matches the injected time (35.0 s) with 0.00 s error across all 20 tested random seeds. This occurs because the generalized likelihood ratio candidate grid is defined discretely as <code>tc_grid = np.arange(0.05, 0.75, 0.05)</code>, which for a 100 s test evaluates candidate times in 5.0 s increments (5 s, 10 s, &hellip;, 35 s, 40 s, &hellip;). Because 35.0 s (0.35 normalized) is an exact discrete candidate on the search grid, the discrete argmax lands directly on 35.0 s. This does <em>not</em> represent continuous timing accuracy, which is bounded by the discrete grid spacing (&plusmn;2.5 s) and the sensor sampling interval.
+        </p>
+        <h3 style="font-size: 0.9rem; margin: 0.75rem 0 0.5rem 0;">Empirical Detection Rates Across 20 Random Seeds (Clear-Cut vs Harder Scenarios)</h3>
+        <div class="table-container">
+          <table class="booktabs" style="font-size: 0.85rem;">
+            <thead>
+              <tr>
+                <th>Demo Scenario</th>
+                <th>Injected Condition</th>
+                <th>Expected Class</th>
+                <th class="text-right">Detected / 20</th>
+                <th class="text-right">Empirical Rate</th>
+                <th>Actual Class Breakdown</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Healthy run</strong></td>
+                <td>Standard cooling, &sigma; = 0.5 &deg;C</td>
+                <td>Class H</td>
+                <td class="text-right mono">18 / 20</td>
+                <td class="text-right mono">90%</td>
+                <td>18 H, 1 C, 1 F (10% false alarms)</td>
+              </tr>
+              <tr>
+                <td><strong>Clear-cut anomaly</strong></td>
+                <td>Factor 2.5 heat spread (&alpha; = 2.5&times;10&minus;4 m&sup2;/s)</td>
+                <td>Class A</td>
+                <td class="text-right mono">20 / 20</td>
+                <td class="text-right mono">100%</td>
+                <td>20 A</td>
+              </tr>
+              <tr style="background: var(--bg-surface-raised);">
+                <td><strong>Small change in heat spread (Hard)</strong></td>
+                <td>Factor 1.3 heat spread (&alpha; = 1.3&times;10&minus;5 m&sup2;/s)</td>
+                <td>Class A</td>
+                <td class="text-right mono">0 / 20</td>
+                <td class="text-right mono">0%</td>
+                <td>19 C, 1 F (GLR detects temporal deviation as shift)</td>
+              </tr>
+              <tr>
+                <td><strong>Stuck sensor</strong></td>
+                <td>Sensor #3 pinned at 50 &deg;C</td>
+                <td>Class F</td>
+                <td class="text-right mono">20 / 20</td>
+                <td class="text-right mono">100%</td>
+                <td>20 F</td>
+              </tr>
+              <tr>
+                <td><strong>Large sensor bias</strong></td>
+                <td>Sensor #5 offset +5 &deg;C (~10&sigma;)</td>
+                <td>Class F</td>
+                <td class="text-right mono">20 / 20</td>
+                <td class="text-right mono">100%</td>
+                <td>20 F</td>
+              </tr>
+              <tr style="background: var(--bg-surface-raised);">
+                <td><strong>Weak sensor offset (Hard)</strong></td>
+                <td>Sensor #5 offset +1.5 &deg;C (~3&sigma;)</td>
+                <td>Class F</td>
+                <td class="text-right mono">7 / 20</td>
+                <td class="text-right mono">35%</td>
+                <td>7 F, 12 H, 1 C (offset buried in noise 60% of runs)</td>
+              </tr>
+              <tr>
+                <td><strong>Mid-test change</strong></td>
+                <td>Diffusivity jump at tc = 35.0 s</td>
+                <td>Class C</td>
+                <td class="text-right mono">20 / 20</td>
+                <td class="text-right mono">100%</td>
+                <td>20 C (all tc = 35.0 s due to grid alignment)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
       <div class="card">
         <h2 class="card-title">4. Empirical Stress Testing (Week 5 Matrix v2b)</h2>
         <p class="text-muted" style="margin-bottom: 0.75rem;">13 Scenarios × 3 Severities across 5 Frozen Modules (100 reps/cell). Source: <code>stress_summary_v2b.csv</code></p>

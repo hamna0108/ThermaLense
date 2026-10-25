@@ -24,6 +24,13 @@ uvicorn service.app:app --host 0.0.0.0 --port 8000
 | `POST` | `/v1/placement` | Generate two-stage adaptive sensor placement schedules concentrating observations around $t^* = 1/(\pi^2 \hat{\alpha})$. |
 | `POST` | `/v1/field` | Generate 2D spatial-temporal heat field $u(x, t)$ on grid. Measured at 101×201 resolution on this machine: numerical solver 7.3–18.6 ms (p50: 7.3 ms, p95: 18.0–18.6 ms) vs FNO surrogate 134–166 ms (p50: 134–144 ms, p95: 145–166 ms); Poisson solver 0.5 ms vs FNO 20.5 ms. FNO is NOT faster than the solver for field generation here; its value is the surrogate grid inside inversion (Mode 3 ~0.7 ms/fit). |
 | `POST` | `/v1/poisson` | Solve 2D Poisson $-\nabla^2 u = f$ using exact sparse LU solver, FNO, and linear ridge baseline; flags `high_frequency_source` if sine modes $> 4$. |
+| `GET` | `/v1/profiles` | List summaries of all saved and demo bar profiles. |
+| `GET` | `/v1/profiles/{id}` | Get full profile detail including metadata and readings. |
+| `POST` | `/v1/profiles` | Create a new bar profile (runs save-time sanity check against heat diffusion and autocorrelation; supports `force=true`). |
+| `PUT` | `/v1/profiles/{id}` | Rename a bar profile or update material notes. |
+| `DELETE` | `/v1/profiles/{id}` | Delete a user-created bar profile (demo profiles protected). |
+| `GET` | `/v1/profiles/{id}/export` | Export profile as portable `.zip` archive. |
+| `POST` | `/v1/profiles/import` | Import profile from `.zip` or `.csv` + `.json` pair. |
 | `GET` | `/health` | Healthcheck endpoint reporting service liveness and timestamp. |
 | `GET` | `/version` | Provenance metadata: git commit SHA, tags, and SHA-256 hashes of all model checkpoints. |
 | `GET` | `/metrics` | Prometheus-style metrics snapshot: request counts, errors, refusals, p50/p95 latency, and flag shares. |
@@ -229,7 +236,29 @@ Outputs are written to `eval_summary.json` and `eval_summary.csv` in the specifi
 
 ---
 
-## 3. Docker Deployment
+## 3. Bar Profiles Reference Library & Operational Policy
+
+The service provides a server-side **Bar Profiles** reference library stored as paired plain files (`{id}.json` and `{id}.csv`) under `data/profiles/`.
+
+### Architecture & Operational Policy
+- **Single-Lab Workbench Model:** Built for physical test plant operators and laboratory technicians on local dedicated workstations or an internal laboratory intranet. The service operates intentionally without authentication or user login. It is **NOT intended or designed for public multi-tenant internet hosting**.
+- **Security & Integrity:**
+  - Filesystem identifiers are server-generated UUIDv4 strings. Display names are metadata only; user-supplied paths are rejected with HTTP 422 to prevent directory traversal.
+  - Resource bounds: maximum 50 profiles total, maximum 5,000 readings per profile, maximum 1 MB payload size.
+  - Strict physical coordinate bounds ($x \in [0, L]$, $t \in (0, T]$, finite numbers).
+- **Save-Time Fit Guard:** Saving or importing a profile checks the reference run against normal heat diffusion and autocorrelation (`estimate_sigma_from_baseline`, `fit_three_models_bic_detailed`). If non-conforming, it emits an honest warning (`"This doesn't look like a clean normal run. Save anyway?"`) with measured heat spread and noise, preventing accidental baseline corruption.
+- **Portability:** Export and import of profiles as portable `.zip` archives or `.csv` + `.json` pairs.
+
+### Limits of Demo Scenarios
+- **Clear-Cut Illustrative Cases:** The standard presets in the Diagnose workbench (Healthy, Factor 2.5 Anomaly, Stuck Sensor, +5 °C Bias, Change at 35 s) are extreme, clear-cut synthetic test cases designed for immediate visual verification, NOT for estimating statistical sensitivity.
+- **Change-Time Accuracy Artifact:** The change-time error in the clear-cut demo is exactly 0.00 s because the discrete GLR candidate grid `np.arange(0.05, 0.75, 0.05)` has 5.0 s steps for $T=100$ s, and 35.0 s coincides exactly with a discrete candidate point ($0.35$). It does not represent continuous timing accuracy, which is bounded by the discrete grid spacing ($\pm 2.5$ s) and sensor sampling interval.
+- **Harder Scenarios (20-Seed Empirical Benchmark):**
+  - **Weak Sensor Offset (~3σ = +1.5 °C):** Detected only 35% of the time (7/20); 12/20 runs are within normal noise variation (Class H).
+  - **Small Anomaly (Factor 1.3 diffusion):** 0% classified as pure stationary anomaly (Class A); 19/20 trigger the GLR temporal test (Class C) due to subtle time-dependent divergence under finite sampling.
+
+---
+
+## 4. Docker Deployment
 
 A lightweight, secure container image is provided via `Dockerfile` and `.dockerignore`.
 
@@ -251,7 +280,7 @@ curl http://localhost:8000/health
 
 ---
 
-## 4. Test Suite & Verification Audits
+## 5. Test Suite & Verification Audits
 
 ### Run Full Test Suite
 ```bash
@@ -269,7 +298,7 @@ python src/audit_poisson.py
 
 ---
 
-## 5. Repository Architecture
+## 6. Repository Architecture
 
 - `service/`: FastAPI application (`app.py`), schemas (`models.py`), and thread-safe metrics (`metrics.py`).
 - `evaluation/`: One-command verification runner (`run_all.py`).

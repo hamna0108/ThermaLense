@@ -2111,24 +2111,24 @@ function initDiagnoseWorkbench() {
   // -------------------------------------------------------------
   // Bar Profiles (Reference Library)
   // -------------------------------------------------------------
-  const diagProfileSelect = document.getElementById('diag-profile-select') || document.getElementById('diag-use-saved-ref-select');
+  const diagProfileSelect = document.getElementById('diag-profile-select');
   const estProfileSelect = document.getElementById('est-profile-select');
 
-  const diagRenameBtn = document.getElementById('diag-profile-rename-btn') || document.getElementById('diag-rename-ref-btn');
-  const diagDeleteBtn = document.getElementById('diag-profile-delete-btn') || document.getElementById('diag-delete-ref-btn');
-  const diagRenameForm = document.getElementById('diag-profile-rename-form') || document.getElementById('diag-rename-ref-form');
-  const diagRenameInput = document.getElementById('diag-profile-rename-input') || document.getElementById('diag-rename-ref-name-input');
-  const diagConfirmRenameBtn = document.getElementById('diag-profile-confirm-rename-btn') || document.getElementById('diag-confirm-rename-ref-btn');
-  const diagCancelRenameBtn = document.getElementById('diag-profile-cancel-rename-btn') || document.getElementById('diag-cancel-rename-ref-btn');
+  const diagRenameBtn = document.getElementById('diag-profile-rename-btn');
+  const diagDeleteBtn = document.getElementById('diag-profile-delete-btn');
+  const diagRenameForm = document.getElementById('diag-profile-rename-form');
+  const diagRenameInput = document.getElementById('diag-profile-rename-input');
+  const diagConfirmRenameBtn = document.getElementById('diag-profile-confirm-rename-btn');
+  const diagCancelRenameBtn = document.getElementById('diag-profile-cancel-rename-btn');
 
-  const diagSaveProfileBtn = document.getElementById('diag-save-profile-btn') || document.getElementById('diag-save-ref-btn');
-  const diagSaveProfileForm = document.getElementById('diag-save-profile-form') || document.getElementById('diag-save-ref-form');
-  const diagSaveNameInput = document.getElementById('diag-save-profile-name-input') || document.getElementById('diag-save-ref-name-input');
+  const diagSaveProfileBtn = document.getElementById('diag-save-profile-btn');
+  const diagSaveProfileForm = document.getElementById('diag-save-profile-form');
+  const diagSaveNameInput = document.getElementById('diag-save-profile-name-input');
   const diagSaveNoteInput = document.getElementById('diag-save-profile-note-input');
-  const diagConfirmSaveBtn = document.getElementById('diag-confirm-save-profile-btn') || document.getElementById('diag-confirm-save-ref-btn');
-  const diagCancelSaveBtn = document.getElementById('diag-cancel-save-profile-btn') || document.getElementById('diag-cancel-save-ref-btn');
-  const diagSaveStatus = document.getElementById('diag-save-profile-status') || document.getElementById('diag-save-ref-status');
-  const diagSaveError = document.getElementById('diag-save-profile-error') || document.getElementById('diag-save-ref-error');
+  const diagConfirmSaveBtn = document.getElementById('diag-confirm-save-profile-btn');
+  const diagCancelSaveBtn = document.getElementById('diag-cancel-save-profile-btn');
+  const diagSaveStatus = document.getElementById('diag-save-profile-status');
+  const diagSaveError = document.getElementById('diag-save-profile-error');
 
   const diagExportBtn = document.getElementById('diag-profile-export-btn');
   const estExportBtn = document.getElementById('est-profile-export-btn');
@@ -2722,6 +2722,9 @@ function initDiagnoseWorkbench() {
       } else if (sc === 'A') {
         uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-2.50 * (Math.PI ** 2) * tNorm);
         groundTruthText = 'Anomalous heat spread (rapid cooling, alpha = 2.5e-4 m²/s)';
+      } else if (sc === 'A_weak') {
+        uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-0.13 * (Math.PI ** 2) * tNorm);
+        groundTruthText = 'Small change in heat spread (alpha = 1.3e-5 m²/s, factor 1.3)';
       } else if (sc === 'F_stuck') {
         uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-0.10 * (Math.PI ** 2) * tNorm);
         groundTruthText = 'Sensor Fault: Sensor #3 Stuck at 50 °C';
@@ -2729,6 +2732,11 @@ function initDiagnoseWorkbench() {
       } else if (sc === 'F_bias') {
         uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-0.10 * (Math.PI ** 2) * tNorm);
         groundTruthText = 'Sensor Fault: Sensor #5 Calibration Offset (+5 °C)';
+        faultyIdx = 5;
+      } else if (sc === 'F_weak_bias') {
+        uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-0.10 * (Math.PI ** 2) * tNorm);
+        const weakOffset = Math.round(3.0 * sig * 100) / 100;
+        groundTruthText = `Weak Sensor Offset: Sensor #5 Offset (+${weakOffset} °C, ~3σ)`;
         faultyIdx = 5;
       } else if (sc === 'C') {
         const tcNorm = 0.35;
@@ -2748,6 +2756,7 @@ function initDiagnoseWorkbench() {
       let uNoisy = uClean + randomNormal(rng, 0, sig);
       if (sc === 'F_stuck' && i === 3) uNoisy = 50.0;
       if (sc === 'F_bias' && i === 5) uNoisy += 5.0;
+      if (sc === 'F_weak_bias' && i === 5) uNoisy += (3.0 * sig);
 
       testRows.push({ x: xo[i], t: to[i], u: Math.round(uNoisy * 100) / 100 });
     }
@@ -2757,7 +2766,7 @@ function initDiagnoseWorkbench() {
     baseRows.forEach((r, idx) => {
       baseTbody.appendChild(createDiagnoseTableRow(r.x.toFixed(2), r.t.toFixed(1), r.u.toFixed(2), idx + 1, 'diag-base'));
     });
-    updateDiagnoseRowNumbers(baseTbody, baseBadge, 20);
+    updateDiagnoseRowNumbers(baseTbody, baseBadge, 20, 'diag-base');
 
     // Populate Test table
     testTbody.innerHTML = '';
@@ -3030,26 +3039,7 @@ async function executeDiagnosis() {
       uncalWarn.style.display = isOutside ? 'block' : 'none';
     }
 
-    // Update active saved reference stats if present
-    if (STATE.activeSavedRefId && es.alpha_baseline !== undefined) {
-      try {
-        const raw = localStorage.getItem('thermalens_saved_references');
-        if (raw) {
-          const refs = JSON.parse(raw);
-          const r = refs.find(x => x.id === STATE.activeSavedRefId);
-          if (r) {
-            r.lastCheckStats = {
-              alpha_baseline: formatScientificReal(es.alpha_baseline, 3) + ' m²/s',
-              sigma: (data.effective_sigma * Math.abs(Tp - Tb)).toFixed(2) + ' °C'
-            };
-            localStorage.setItem('thermalens_saved_references', JSON.stringify(refs));
-            displaySavedRefMeta(STATE.activeSavedRefId);
-          }
-        }
-      } catch (e) {
-        console.warn('Could not update saved reference stats in localStorage:', e);
-      }
-    }
+
 
     // Demo Scenario Callout
     if (STATE.diagnoseDemo && STATE.diagnoseDemo.groundTruthText) {
@@ -3157,10 +3147,25 @@ function renderDiagnoseChart() {
   const Tp = req.initial_peak_temperature !== undefined ? req.initial_peak_temperature : 80.0;
   const deltaT = Tp - Tb;
 
+  // Baseline Curve: alpha_base
+  const alphaBaseNorm = (res.evidence_stats && typeof res.evidence_stats.alpha_baseline_normalized === 'number')
+    ? res.evidence_stats.alpha_baseline_normalized
+    : ((res.evidence_stats && typeof res.evidence_stats.alpha_baseline === 'number') ? (res.evidence_stats.alpha_baseline * T / (L ** 2)) : 0.10);
+
+  // Compute expected normal temperature for each reading at ITS OWN position
+  const expectedY = to.map((t, idx) => {
+    const xCoord = xo[idx] !== undefined ? xo[idx] : 0.05;
+    const xNorm = xCoord / L;
+    const tNorm = t / T;
+    const uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-alphaBaseNorm * (Math.PI ** 2) * tNorm);
+    return Tb + deltaT * uNorm;
+  });
+
   const tMin = 0.0;
   const tMax = Math.max(T, ...to);
-  const rawYMin = Math.min(Tb, ...yo);
-  const rawYMax = Math.max(Tp, ...yo);
+  const allY = [...yo, ...expectedY, Tb, Tp];
+  const rawYMin = Math.min(...allY);
+  const rawYMax = Math.max(...allY);
 
   const xAxis = computeNiceAxis(tMin, tMax, 5);
   const yAxis = computeNiceAxis(rawYMin, rawYMax, 5);
@@ -3184,22 +3189,44 @@ function renderDiagnoseChart() {
     gridLines += `<text x="${pad.left - 8}" y="${yP + 4}" text-anchor="end" fill="var(--text-muted)" font-size="10">${yLabel}</text>`;
   });
 
-  // Baseline Curve: alpha_base
-  const alphaBaseNorm = (res.evidence_stats && typeof res.evidence_stats.alpha_baseline_normalized === 'number')
-    ? res.evidence_stats.alpha_baseline_normalized
-    : ((res.evidence_stats && typeof res.evidence_stats.alpha_baseline === 'number') ? (res.evidence_stats.alpha_baseline * T / (L ** 2)) : 0.10);
+  // Group unique sensor positions among readings to draw expected normal curves
+  const uniqueX = [];
+  xo.forEach(x => {
+    const rounded = Math.round(x * 1000) / 1000;
+    if (!uniqueX.includes(rounded)) uniqueX.push(rounded);
+  });
+  uniqueX.sort((a, b) => a - b);
+  if (uniqueX.length === 0) uniqueX.push(Math.round((L / 2) * 1000) / 1000);
 
   const numPts = 100;
-  let baseD = [];
-  for (let i = 0; i <= numPts; i++) {
-    const tCur = tMin + (i / numPts) * (tMax - tMin);
-    const tNorm = tCur / T;
-    const xNorm = 0.50; // midpoint of bar
-    const uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-alphaBaseNorm * (Math.PI ** 2) * tNorm);
-    const yReal = Tb + deltaT * uNorm;
-    baseD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(tCur)} ${scaleY(yReal)}`);
-  }
-  const basePath = `<path d="${baseD.join(' ')}" fill="none" stroke="var(--primary-navy)" stroke-width="2.5"/>`;
+  const curvePaths = uniqueX.map((xVal) => {
+    const xNorm = xVal / L;
+    const isMid = Math.abs(xVal - L / 2) < 0.005 * L;
+    const strokeDash = isMid ? '' : 'stroke-dasharray="4 2"';
+    const strokeW = isMid ? '2.5' : '1.8';
+    const opacity = isMid ? '1.0' : '0.85';
+
+    let pts = [];
+    for (let i = 0; i <= numPts; i++) {
+      const tCur = tMin + (i / numPts) * (tMax - tMin);
+      const tNorm = tCur / T;
+      const uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-alphaBaseNorm * (Math.PI ** 2) * tNorm);
+      const yReal = Tb + deltaT * uNorm;
+      pts.push(`${i === 0 ? 'M' : 'L'} ${scaleX(tCur)} ${scaleY(yReal)}`);
+    }
+
+    const labelX = scaleX(tMax) - 4;
+    const lastY = Tb + deltaT * Math.sin(Math.PI * xNorm) * Math.exp(-alphaBaseNorm * (Math.PI ** 2) * (tMax / T));
+    const labelY = scaleY(lastY) - 5;
+    const labelSvg = uniqueX.length > 1
+      ? `<text x="${labelX}" y="${labelY}" text-anchor="end" fill="var(--primary-navy)" font-size="9" font-weight="600" opacity="0.85">x=${xVal.toFixed(2)}m</text>`
+      : '';
+
+    return `
+      <path d="${pts.join(' ')}" fill="none" stroke="var(--primary-navy)" stroke-width="${strokeW}" ${strokeDash} stroke-opacity="${opacity}"/>
+      ${labelSvg}
+    `;
+  }).join('');
 
   // Change time vertical line if Class C
   let tcLine = '';
@@ -3217,13 +3244,30 @@ function renderDiagnoseChart() {
     faultLegend.style.display = (res.assigned_class === 'F') ? 'flex' : 'none';
   }
 
-  // Points
+  // Stems and hollow circle markers at expected normal values for each reading
+  const stemsAndExpected = to.map((t, idx) => {
+    const yVal = yo[idx] !== undefined ? yo[idx] : 0.0;
+    const yExp = expectedY[idx];
+    const xP = scaleX(t);
+    const yReadP = scaleY(yVal);
+    const yExpP = scaleY(yExp);
+
+    return `
+      <line x1="${xP}" y1="${yReadP}" x2="${xP}" y2="${yExpP}" stroke="var(--primary-navy)" stroke-width="1.2" stroke-dasharray="2 2" stroke-opacity="0.45"/>
+      <circle cx="${xP}" cy="${yExpP}" r="3.5" fill="var(--bg-surface)" stroke="var(--primary-navy)" stroke-width="1.6">
+        <title>Normal expected at position ${xo[idx] !== undefined ? xo[idx].toFixed(3) : '0.050'} m, time ${Number(t).toFixed(1)} s: ${yExp.toFixed(2)} °C</title>
+      </circle>
+    `;
+  }).join('');
+
+  // Points: Operational readings
   const circles = to.map((t, idx) => {
     const isFault = (res.assigned_class === 'F' && res.faulty_sensor_idx === idx);
     const color = isFault ? '#e74c3c' : '#2980b9';
     const r = isFault ? 6.5 : 4.5;
     const strokeW = isFault ? 2.0 : 1.2;
     const yVal = yo[idx] !== undefined ? yo[idx] : 0.0;
+    const yExp = expectedY[idx];
     const xCoord = xo[idx] !== undefined ? xo[idx] : 0.05;
 
     let halo = '';
@@ -3234,14 +3278,15 @@ function renderDiagnoseChart() {
     return `
       ${halo}
       <circle cx="${scaleX(t)}" cy="${scaleY(yVal)}" r="${r}" fill="${color}" stroke="#fff" stroke-width="${strokeW}">
-        <title>Sensor #${idx}: Position: ${xCoord.toFixed(2)} m, Time: ${Number(t).toFixed(1)} s, Reading: ${Number(yVal).toFixed(2)} °C</title>
+        <title>Sensor #${idx + 1}: Position ${xCoord.toFixed(3)} m, Time ${Number(t).toFixed(1)} s, Reading: ${Number(yVal).toFixed(2)} °C (Normal expected: ${yExp.toFixed(2)} °C)</title>
       </circle>
     `;
   }).join('');
 
   svg.innerHTML = `
     <g class="chart-grid">${gridLines}</g>
-    ${basePath}
+    ${curvePaths}
+    ${stemsAndExpected}
     ${tcLine}
     <g class="chart-points">${circles}</g>
     <line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>

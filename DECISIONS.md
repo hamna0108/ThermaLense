@@ -229,6 +229,25 @@ This document records the foundational architectural decisions made across the D
 
 ---
 
+### Decision 12: Bar Profiles Reference Library (Storage, Security, and Single-Lab Operation)
+- **Options Tried:**
+  1. *Browser localStorage Only:* Storing references in client-side browser storage (thermalens-v13). Simple and zero backend state, but tied to an individual browser profile, fragile under browser cache clearing, and cannot be shared across laboratory workstations.
+  2. *Relational Database with User Authentication:* Deploying PostgreSQL/SQLite with user accounts, sessions, and passwords. Heavily over-engineered for plant laboratory workbench use; introduces database migrations, schema overhead, connection pooling, and credential administration.
+  3. *Server-Side Plain Files in `data/profiles/` (No Login, Single-Lab Workbench):* Storing profiles as paired plain files (`{id}.json` for metadata and setup constants, `{id}.csv` for sensor readings) on the local filesystem. Profile IDs are strictly server-generated UUIDv4 strings (display names are metadata only). Hard security constraints: max 50 profiles total, max 5,000 readings per profile, max 1 MB payload size, strict physical bounds ($x \in [0, L], t \in (0, T]$, finite numbers). Save-time validation checks reference runs against normal heat diffusion and autocorrelation, warning users on unclean baselines.
+- **Option Selected:** Server-Side Plain Files in `data/profiles/` (Option 3).
+- **Why:**
+  - *Single-Lab Operational Model:* Designed for physical plant technicians and laboratory operators on a dedicated lab workstation or private local intranet. The service intentionally operates without user authentication or login; it is **NOT designed or intended for untrusted multi-tenant public cloud hosting**.
+  - *Security by Design:* Path traversal attacks (e.g., `../../etc/passwd` or absolute path injection) are completely eliminated by rejecting any non-UUID string with a plain HTTP 422. Filesystem operations strictly concatenate `PROFILES_DIR / f"{uuid_str}.json"`. Denial of service is prevented by enforcing hard limits (50 profiles, 5,000 rows, 1 MB).
+  - *Save-Time Quality Guard:* When saving or importing, readings are run through the baseline sigma estimator and 3-model BIC fit (`estimate_sigma_from_baseline`, `fit_three_models_bic_detailed`). If non-conforming, it triggers an amber honesty warning: *"This doesn't look like a clean normal run. Save anyway?"* with measured normal heat spread and noise, preventing accidental contamination of reference libraries while allowing intentional bypass (`force=true`).
+  - *Limits of Demo Scenarios:*
+    - The standard demo scenarios (Healthy, Factor 2.5 Anomaly, Stuck Sensor, +5 °C Bias, Jump at 35 s) are extreme, clear-cut illustrative cases designed for operational demonstration, not benchmark sensitivity limits.
+    - Change-time error is exactly 0.00 s in clear-cut demos because the GLR candidate grid `np.arange(0.05, 0.75, 0.05)` has 5.0 s steps for $T=100$ s, and 35.0 s (0.35) coincides exactly with a discrete candidate point. It does not represent continuous timing accuracy, which is bounded by the discrete grid spacing ($\pm 2.5$ s).
+    - Under harder conditions (evaluated across 20 uncherry-picked random seeds): weak sensor offset (~3$\sigma$ = +1.5 °C) is detected only 35% of the time (7/20; 12/20 buried in normal noise); a subtle heat spread change (factor 1.3) triggers GLR temporal shift detection (19/20 as Class C, 1 as Class F) rather than pure stationary anomalous diffusion (Class A).
+- **Status:** **Decided by service architecture and physical operational requirements; frozen models and benchmark tables unchanged.**
+- **Evidence File:** `service/profiles.py`, `service/app.py`, `service/models.py`, `tests/test_profiles.py`, `tools/eval_demo_scenarios_20seeds.py`.
+
+---
+
 ### Limitations & Reproducibility Notes
 
 1. **FNO Boundary Masking & Inference State (Mode 3 Reproducibility):**

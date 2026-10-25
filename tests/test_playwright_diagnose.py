@@ -101,27 +101,13 @@ def test_playwright_diagnose_real_units_and_baseline_conversion(live_server):
         test_badge = page.locator("#diag-test-count").text_content()
         assert "10 readings ✓" in test_badge
 
-        # Intercept diagnose request
-        diagnose_responses = []
-        diagnose_requests = []
-
-        def handle_response(response):
-            if "/v1/diagnose" in response.url and response.request.method == "POST":
-                diagnose_responses.append(response.json())
-                try:
-                    diagnose_requests.append(response.request.post_data_json)
-                except Exception:
-                    pass
-
-        page.on("response", handle_response)
-
-        # Click "Check my test"
-        page.click("#diag-submit-btn")
+        # Intercept diagnose request and click "Check my test"
+        with page.expect_response(lambda r: "/v1/diagnose" in r.url and r.request.method == "POST") as resp_info:
+            page.click("#diag-submit-btn")
+        
+        resp = resp_info.value.json()
+        req = resp_info.value.request.post_data_json
         page.wait_for_selector("#diag-result-panel", state="visible")
-
-        assert len(diagnose_responses) > 0, "No /v1/diagnose response intercepted"
-        resp = diagnose_responses[0]
-        req = diagnose_requests[0]
 
         # Verify outgoing payload is in physical units
         assert req["bar_length_m"] == 0.1
@@ -211,37 +197,38 @@ def test_playwright_diagnose_saved_reference(live_server):
         page.click("#diag-use-example-btn")
         page.wait_for_timeout(300)
 
-        # Click "Save as my reference"
-        page.click("#diag-save-ref-btn")
-        page.wait_for_selector("#diag-save-ref-form", state="visible")
+        # Click "Save as bar profile"
+        save_btn = page.locator("#diag-save-profile-btn")
+        save_btn.click()
+        page.wait_for_selector("#diag-save-profile-form", state="visible")
 
         # Fill name
         ref_name = "Steel rod, lab A"
-        page.fill("#diag-save-ref-name-input", ref_name)
-        page.click("#diag-confirm-save-ref-btn")
-        page.wait_for_timeout(300)
+        page.fill("#diag-save-profile-name-input", ref_name)
+        page.click("#diag-confirm-save-profile-btn")
+        page.wait_for_timeout(400)
 
         # Verify selector now has the option
-        sel_text = page.locator("#diag-use-saved-ref-select").inner_text()
+        sel_text = page.locator("#diag-profile-select").inner_text()
         assert ref_name in sel_text
 
         # Reload the page
         page.reload()
         page.wait_for_selector("#view-diagnose", state="visible")
 
-        # Select saved reference
-        options = page.locator("#diag-use-saved-ref-select option").all()
+        # Select saved bar profile
+        options = page.locator("#diag-profile-select option").all()
         target_val = None
         for opt in options:
             if ref_name in opt.inner_text():
                 target_val = opt.get_attribute("value")
                 break
         assert target_val is not None
-        page.select_option("#diag-use-saved-ref-select", target_val)
-        page.wait_for_timeout(300)
+        page.select_option("#diag-profile-select", target_val)
+        page.wait_for_timeout(400)
 
         # Verify metadata is displayed
-        meta_text = page.locator("#diag-saved-ref-meta").text_content()
+        meta_text = page.locator("#diag-profile-meta-bar").text_content()
         assert ref_name in meta_text
         assert "20 readings" in meta_text
 
@@ -274,19 +261,35 @@ def test_playwright_diagnose_saved_reference(live_server):
 
         # Assert results card appears
         assert page.is_visible("#diag-traffic-banner")
-        assert len(console_errors) == 0
+
+        # Switch to Estimate tab and confirm the setup is filled
+        page.click("#nav-estimate")
+        page.wait_for_selector("#view-estimate.active", state="visible")
+        assert page.input_value("#est-bar-length") == "0.1"
+        assert page.input_value("#est-experiment-time") == "100"
+        assert page.input_value("#est-temp-edge") == "20"
+        assert page.input_value("#est-temp-peak") == "80"
+        assert page.input_value("#est-sigma-val") == "0.5"
+
+        # Switch back to Diagnose tab
+        page.click("#nav-diagnose")
+        page.wait_for_selector("#view-diagnose.active", state="visible")
 
         # Test Rename
-        page.click("#diag-rename-ref-btn")
-        page.wait_for_selector("#diag-rename-ref-form", state="visible")
-        page.fill("#diag-rename-ref-name-input", "Steel rod, lab B")
-        page.click("#diag-confirm-rename-ref-btn")
-        page.wait_for_timeout(200)
-        assert "Steel rod, lab B" in page.locator("#diag-saved-ref-meta").text_content()
+        page.click("#diag-profile-rename-btn")
+        page.wait_for_selector("#diag-profile-rename-form", state="visible")
+        page.fill("#diag-profile-rename-input", "Steel rod, lab B")
+        page.click("#diag-profile-confirm-rename-btn")
+        page.wait_for_timeout(300)
+        assert "Steel rod, lab B" in page.locator("#diag-profile-meta-bar").text_content()
 
         # Test Delete
-        page.click("#diag-delete-ref-btn")
-        page.wait_for_timeout(200)
-        assert "Steel rod, lab B" not in page.locator("#diag-use-saved-ref-select").inner_text()
+        page.on("dialog", lambda dialog: dialog.accept())
+        page.click("#diag-profile-delete-btn")
+        page.wait_for_timeout(300)
+        assert "Steel rod, lab B" not in page.locator("#diag-profile-select").inner_text()
+
+        # Assert zero console errors
+        assert len(console_errors) == 0
 
         browser.close()

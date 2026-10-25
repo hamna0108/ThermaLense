@@ -21,14 +21,14 @@ import logging
 import hashlib
 import subprocess
 from contextlib import asynccontextmanager
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 import numpy as np
 import torch
 from scipy.interpolate import CubicSpline, interp1d
 import scipy.optimize as opt
 from fastapi import FastAPI, Request, Response, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.exceptions import RequestValidationError
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -42,7 +42,15 @@ from service.models import (
     FieldRequest, FieldResponse,
     PoissonRequest, PoissonResponse, PoissonErrors, PoissonTiming,
     PoissonGaussianSource, PoissonSineSource,
-    HealthResponse, VersionResponse, ErrorDetail
+    HealthResponse, VersionResponse, ErrorDetail,
+    BarProfileReading, BarProfileSummary, BarProfileDetail,
+    BarProfileCreate, BarProfileUpdate, BarProfileDeleteResponse
+)
+from service.profiles import (
+    init_demo_profiles, list_all_profiles, get_profile_by_id,
+    save_new_profile, update_existing_profile, delete_profile_by_id,
+    create_profile_export_zip, import_profile_from_zip, parse_csv_readings,
+    validate_uuid_str, PROFILES_DIR
 )
 from service.metrics import GLOBAL_METRICS
 from service.security import parse_whitelisted_expression, SecurityError, ExpressionSecurityError
@@ -162,6 +170,10 @@ async def lifespan(app: FastAPI):
     APP_STATE["git_commit"] = git_commit
     APP_STATE["git_tags"] = git_tags
     APP_STATE["checkpoint_sha256s"] = compute_checkpoint_hashes()
+
+    # 7. Shipped Demo Bar Profiles
+    init_demo_profiles()
+    logger.info(json.dumps({"event": "profiles_init", "status": "ready"}))
     
     elapsed = round((time.time() - t0) * 1000.0, 2)
     logger.info(json.dumps({
@@ -266,19 +278,23 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     else:
         GLOBAL_METRICS.record_error()
         
-    error_code = "HTTP_ERROR"
-    message = str(exc.detail)
     if isinstance(exc.detail, dict):
-        error_code = exc.detail.get("error_code", error_code)
-        message = exc.detail.get("message", message)
+        content = dict(exc.detail)
+        content["request_id"] = req_id
+        if "error_code" not in content:
+            content["error_code"] = "HTTP_ERROR"
+        if "message" not in content:
+            content["message"] = str(exc.detail.get("warning", "Request error"))
+    else:
+        content = {
+            "error_code": "HTTP_ERROR",
+            "message": str(exc.detail),
+            "request_id": req_id
+        }
         
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "error_code": error_code,
-            "message": message,
-            "request_id": req_id
-        },
+        content=content,
         headers={"X-Request-ID": req_id}
     )
 
@@ -1160,6 +1176,180 @@ def post_poisson(req: PoissonRequest):
         ),
         high_frequency_source=high_freq
     )
+
+# -------------------------------------------------------------------------------------------------
+# Bar Profiles (Reference Library) Endpoints
+# -------------------------------------------------------------------------------------------------
+
+@app.get("/v1/profiles", response_model=List[BarProfileSummary])
+def get_profiles():
+    """List all stored reference bar profiles."""
+    return list_all_profiles()
+
+@app.get("/v1/profiles/{profile_id}", response_model=BarProfileDetail)
+def get_profile(profile_id: str):
+    """Retrieve full details and reference readings for a bar profile."""
+    return get_profile_by_id(profile_id)
+
+@app.post("/v1/profiles", response_model=BarProfileDetail, status_code=status.HTTP_201_CREATED)
+def post_profile(req: BarProfileCreate):
+    """Create and validate a new bar profile."""
+    readings = req.readings
+    if not readings and req.csv_readings:
+        readings = parse_csv_readings(req.csv_readings)
+    elif readings:
+        readings = [r.model_dump() for r in readings]
+    else:
+        raise HTTPException(status_code=422, detail="Profile must include reference readings (either 'readings' list or 'csv_readings' text).")
+
+    return save_new_profile(
+        name=req.name,
+        material_note=req.material_note or "",
+        bar_length_m=req.bar_length_m,
+        test_duration_s=req.test_duration_s,
+        boundary_temperature=req.boundary_temperature,
+        initial_peak_temperature=req.initial_peak_temperature,
+        sensor_accuracy=req.sensor_accuracy,
+        readings=readings,
+        force=req.force or False
+    )
+
+@app.put("/v1/profiles/{profile_id}", response_model=BarProfileDetail)
+def put_profile(profile_id: str, req: BarProfileUpdate):
+    """Update profile metadata and/or readings."""
+    readings = None
+    if req.readings is not None:
+        readings = [r.model_dump() for r in req.readings]
+    elif req.csv_readings is not None:
+        readings = parse_csv_readings(req.csv_readings)
+
+    return update_existing_profile(
+        profile_id=profile_id,
+        name=req.name,
+        material_note=req.material_note,
+        bar_length_m=req.bar_length_m,
+        test_duration_s=req.test_duration_s,
+        boundary_temperature=req.boundary_temperature,
+        initial_peak_temperature=req.initial_peak_temperature,
+        sensor_accuracy=req.sensor_accuracy,
+        readings=readings,
+        force=req.force or False
+    )
+
+@app.delete("/v1/profiles/{profile_id}", response_model=BarProfileDeleteResponse)
+def delete_profile(profile_id: str):
+    """Delete a profile from the library."""
+    return delete_profile_by_id(profile_id)
+
+@app.get("/v1/profiles/{profile_id}/export")
+def export_profile_zip(profile_id: str):
+    """Export a profile as a zip containing JSON metadata and CSV readings."""
+    buf, filename = create_profile_export_zip(profile_id)
+    return StreamingResponse(
+        buf,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+    )
+
+@app.get("/v1/profiles/{profile_id}/csv")
+def export_profile_csv(profile_id: str):
+    """Export raw CSV readings for a profile."""
+    valid_id = validate_uuid_str(profile_id)
+    csv_path = PROFILES_DIR / f"{valid_id}.csv"
+    if not csv_path.exists():
+        raise HTTPException(status_code=404, detail="Profile CSV not found.")
+    with open(csv_path, "r", encoding="utf-8") as f:
+        content = f.read()
+    return Response(
+        content=content,
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{valid_id}.csv"'}
+    )
+
+@app.get("/v1/profiles/{profile_id}/json")
+def export_profile_json(profile_id: str):
+    """Export JSON metadata for a profile."""
+    valid_id = validate_uuid_str(profile_id)
+    json_path = PROFILES_DIR / f"{valid_id}.json"
+    if not json_path.exists():
+        raise HTTPException(status_code=404, detail="Profile JSON not found.")
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return JSONResponse(
+        content=data,
+        headers={"Content-Disposition": f'attachment; filename="{valid_id}.json"'}
+    )
+
+@app.post("/v1/profiles/import", response_model=BarProfileDetail, status_code=status.HTTP_201_CREATED)
+async def import_profile(request: Request, force: bool = False):
+    """Import a profile from an uploaded .zip archive or .json + .csv pair."""
+    content_type = request.headers.get("content-type", "")
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        # 1. Search for .zip file
+        for key, val in form.items():
+            if hasattr(val, "read") and hasattr(val, "filename"):
+                if val.filename.lower().endswith(".zip"):
+                    zip_bytes = await val.read()
+                    return import_profile_from_zip(zip_bytes, force=force)
+        # 2. Search for json and csv pair
+        json_str = None
+        csv_str = None
+        for key, val in form.items():
+            if hasattr(val, "read") and hasattr(val, "filename"):
+                fn = val.filename.lower()
+                if fn.endswith(".json"):
+                    json_str = (await val.read()).decode("utf-8")
+                elif fn.endswith(".csv"):
+                    csv_str = (await val.read()).decode("utf-8")
+        if json_str and csv_str:
+            meta = json.loads(json_str)
+            readings = parse_csv_readings(csv_str)
+            return save_new_profile(
+                name=meta.get("name", "Imported Bar Profile"),
+                material_note=meta.get("material_note", ""),
+                bar_length_m=float(meta["bar_length_m"]),
+                test_duration_s=float(meta["test_duration_s"]),
+                boundary_temperature=float(meta["boundary_temperature"]),
+                initial_peak_temperature=float(meta["initial_peak_temperature"]),
+                sensor_accuracy=float(meta.get("sensor_accuracy", 0.5)),
+                readings=readings,
+                force=force
+            )
+        # Check if single zip uploaded without .zip extension
+        if "file" in form:
+            val = form["file"]
+            if hasattr(val, "read"):
+                b = await val.read()
+                if b.startswith(b"PK"):
+                    return import_profile_from_zip(b, force=force)
+
+        raise HTTPException(status_code=422, detail="Upload must contain a .zip file or both a .json and .csv file.")
+    elif "application/json" in content_type:
+        body = await request.json()
+        readings = body.get("readings")
+        if not readings and "csv_readings" in body:
+            readings = parse_csv_readings(body["csv_readings"])
+        elif not readings and "csv" in body:
+            readings = parse_csv_readings(body["csv"])
+        if not readings:
+            raise HTTPException(status_code=422, detail="Import payload must include readings.")
+        return save_new_profile(
+            name=body.get("name", "Imported Bar Profile"),
+            material_note=body.get("material_note", ""),
+            bar_length_m=float(body["bar_length_m"]),
+            test_duration_s=float(body["test_duration_s"]),
+            boundary_temperature=float(body["boundary_temperature"]),
+            initial_peak_temperature=float(body["initial_peak_temperature"]),
+            sensor_accuracy=float(body.get("sensor_accuracy", 0.5)),
+            readings=readings,
+            force=force or body.get("force", False)
+        )
+    else:
+        body = await request.body()
+        if body.startswith(b"PK"):
+            return import_profile_from_zip(body, force=force)
+        raise HTTPException(status_code=422, detail="Unsupported upload content type. Please upload a .zip file or (.json + .csv).")
 
 # -------------------------------------------------------------------------------------------------
 # Static Frontend Files Mount (served at /)

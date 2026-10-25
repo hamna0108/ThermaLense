@@ -1570,6 +1570,12 @@ tr[id*="alpha"] td {
   color: var(--accent-burgundy);
 }
 
+.traffic-light-line.blue, .traffic-light-banner.blue {
+  background-color: rgba(31, 58, 95, 0.08);
+  border-color: var(--primary-navy, #1f3a5f);
+  color: var(--primary-navy, #1f3a5f);
+}
+
 .traffic-light-dot, .traffic-light-icon {
   font-size: 1.1rem;
   line-height: 1;
@@ -1585,6 +1591,10 @@ tr[id*="alpha"] td {
 
 .traffic-light-line.red .traffic-light-icon, .traffic-light-line.red .traffic-light-dot {
   color: var(--accent-burgundy);
+}
+
+.traffic-light-line.blue .traffic-light-icon, .traffic-light-line.blue .traffic-light-dot {
+  color: var(--primary-navy, #1f3a5f);
 }
 
 .traffic-light-text, .traffic-light-title {

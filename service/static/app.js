@@ -1844,6 +1844,14 @@ function validateDiagnoseTable(tbody, msgEl, L, T, minNeeded) {
   return { valid: !err, error: err, count: filledCount };
 }
 
+function markProfileAsModified() {
+  STATE.profileModified = true;
+  const estModBadge = document.getElementById('est-profile-modified-badge');
+  const diagModBadge = document.getElementById('diag-profile-modified-badge');
+  if (estModBadge) estModBadge.style.display = 'inline-block';
+  if (diagModBadge) diagModBadge.style.display = 'inline-block';
+}
+
 function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, minNeeded, msgEl, prefix) {
   if (!tbody) return;
 
@@ -1862,6 +1870,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
       tbody.appendChild(tr);
       updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
       clearDiagnoseResultState();
+      if (prefix === 'diag-base') markProfileAsModified();
       const firstIn = tr.querySelector('.cell-input');
       if (firstIn) firstIn.focus();
     });
@@ -1877,6 +1886,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
       tr.remove();
       updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
       clearDiagnoseResultState();
+      if (prefix === 'diag-base') markProfileAsModified();
     }
   });
 
@@ -1893,6 +1903,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
         tbody.appendChild(newTr);
         updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
         clearDiagnoseResultState();
+        if (prefix === 'diag-base') markProfileAsModified();
         const firstIn = newTr.querySelector('.cell-input');
         if (firstIn) firstIn.focus();
       }
@@ -1904,6 +1915,7 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
     if (e.target.classList.contains('cell-input')) {
       updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
       clearDiagnoseResultState();
+      if (prefix === 'diag-base') markProfileAsModified();
     }
   });
 
@@ -2097,283 +2109,553 @@ function initDiagnoseWorkbench() {
   }
 
   // -------------------------------------------------------------
-  // Reusable Reference Runs (localStorage with try/catch)
+  // Bar Profiles (Reference Library)
   // -------------------------------------------------------------
-  const savedRefSelect = document.getElementById('diag-use-saved-ref-select');
-  const savedRefActions = document.getElementById('diag-saved-ref-actions');
-  const renameRefBtn = document.getElementById('diag-rename-ref-btn');
-  const deleteRefBtn = document.getElementById('diag-delete-ref-btn');
-  const savedRefMeta = document.getElementById('diag-saved-ref-meta');
-  const renameRefForm = document.getElementById('diag-rename-ref-form');
-  const renameNameInput = document.getElementById('diag-rename-ref-name-input');
-  const confirmRenameBtn = document.getElementById('diag-confirm-rename-ref-btn');
-  const cancelRenameBtn = document.getElementById('diag-cancel-rename-ref-btn');
+  const diagProfileSelect = document.getElementById('diag-profile-select') || document.getElementById('diag-use-saved-ref-select');
+  const estProfileSelect = document.getElementById('est-profile-select');
 
-  const saveRefBtn = document.getElementById('diag-save-ref-btn');
-  const saveRefStatus = document.getElementById('diag-save-ref-status');
-  const saveRefForm = document.getElementById('diag-save-ref-form');
-  const saveRefNameInput = document.getElementById('diag-save-ref-name-input');
-  const confirmSaveBtn = document.getElementById('diag-confirm-save-ref-btn');
-  const cancelSaveBtn = document.getElementById('diag-cancel-save-ref-btn');
-  const saveRefError = document.getElementById('diag-save-ref-error');
+  const diagRenameBtn = document.getElementById('diag-profile-rename-btn') || document.getElementById('diag-rename-ref-btn');
+  const diagDeleteBtn = document.getElementById('diag-profile-delete-btn') || document.getElementById('diag-delete-ref-btn');
+  const diagRenameForm = document.getElementById('diag-profile-rename-form') || document.getElementById('diag-rename-ref-form');
+  const diagRenameInput = document.getElementById('diag-profile-rename-input') || document.getElementById('diag-rename-ref-name-input');
+  const diagConfirmRenameBtn = document.getElementById('diag-profile-confirm-rename-btn') || document.getElementById('diag-confirm-rename-ref-btn');
+  const diagCancelRenameBtn = document.getElementById('diag-profile-cancel-rename-btn') || document.getElementById('diag-cancel-rename-ref-btn');
 
-  function getStoredReferences() {
+  const diagSaveProfileBtn = document.getElementById('diag-save-profile-btn') || document.getElementById('diag-save-ref-btn');
+  const diagSaveProfileForm = document.getElementById('diag-save-profile-form') || document.getElementById('diag-save-ref-form');
+  const diagSaveNameInput = document.getElementById('diag-save-profile-name-input') || document.getElementById('diag-save-ref-name-input');
+  const diagSaveNoteInput = document.getElementById('diag-save-profile-note-input');
+  const diagConfirmSaveBtn = document.getElementById('diag-confirm-save-profile-btn') || document.getElementById('diag-confirm-save-ref-btn');
+  const diagCancelSaveBtn = document.getElementById('diag-cancel-save-profile-btn') || document.getElementById('diag-cancel-save-ref-btn');
+  const diagSaveStatus = document.getElementById('diag-save-profile-status') || document.getElementById('diag-save-ref-status');
+  const diagSaveError = document.getElementById('diag-save-profile-error') || document.getElementById('diag-save-ref-error');
+
+  const diagExportBtn = document.getElementById('diag-profile-export-btn');
+  const estExportBtn = document.getElementById('est-profile-export-btn');
+  const diagImportBtn = document.getElementById('diag-profile-import-btn');
+  const estImportBtn = document.getElementById('est-profile-import-btn');
+  const diagFileInput = document.getElementById('diag-profile-file-input');
+  const estFileInput = document.getElementById('est-profile-file-input');
+
+  const diagUncleanBox = document.getElementById('diag-unclean-warn-box');
+  const diagUncleanStats = document.getElementById('diag-unclean-warn-stats');
+  const diagUncleanConfirmBtn = document.getElementById('diag-unclean-confirm-btn');
+  const diagUncleanCancelBtn = document.getElementById('diag-unclean-cancel-btn');
+
+  // Load profile list from backend
+  async function loadBarProfiles(selectedProfileId = null) {
     try {
-      const raw = localStorage.getItem('thermalens_saved_references');
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      console.warn('localStorage read error:', e);
-      return [];
-    }
-  }
+      const res = await fetch('/v1/profiles');
+      if (!res.ok) throw new Error('Failed to fetch bar profiles');
+      const profiles = await res.json();
+      STATE.allProfiles = profiles;
 
-  function setStoredReferences(refs) {
-    try {
-      localStorage.setItem('thermalens_saved_references', JSON.stringify(refs));
-      return true;
-    } catch (e) {
-      console.warn('localStorage write error:', e);
-      return false;
-    }
-  }
+      const demoProfiles = profiles.filter(p => p.is_demo);
+      const savedProfiles = profiles.filter(p => !p.is_demo);
 
-  function updateSavedRefDropdown(selectedId = null) {
-    if (!savedRefSelect) return;
-    const refs = getStoredReferences();
-    savedRefSelect.innerHTML = '<option value="">— Select a saved reference —</option>';
-    refs.forEach(r => {
-      const opt = document.createElement('option');
-      opt.value = r.id;
-      const count = r.readings ? r.readings.length : 0;
-      const d = r.savedAt ? new Date(r.savedAt).toLocaleDateString() : '';
-      opt.textContent = `${r.name} (${count} readings${d ? ', ' + d : ''})`;
-      if (selectedId && r.id === selectedId) opt.selected = true;
-      savedRefSelect.appendChild(opt);
-    });
+      const renderOptions = (sel) => {
+        if (!sel) return;
+        sel.innerHTML = '<option value="">— Select a bar profile —</option>';
+        if (demoProfiles.length > 0) {
+          const gDemo = document.createElement('optgroup');
+          gDemo.label = 'Demo Profiles';
+          demoProfiles.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.name} (${p.bar_length_m} m, ${p.row_count} readings)`;
+            gDemo.appendChild(opt);
+          });
+          sel.appendChild(gDemo);
+        }
+        if (savedProfiles.length > 0) {
+          const gSaved = document.createElement('optgroup');
+          gSaved.label = 'Your Saved Profiles';
+          savedProfiles.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.name} (${p.bar_length_m} m, ${p.row_count} readings)`;
+            gSaved.appendChild(opt);
+          });
+          sel.appendChild(gSaved);
+        }
+      };
 
-    displaySavedRefMeta(selectedId || savedRefSelect.value);
-  }
+      renderOptions(diagProfileSelect);
+      renderOptions(estProfileSelect);
 
-  function displaySavedRefMeta(refId) {
-    if (!refId) {
-      if (savedRefActions) savedRefActions.style.display = 'none';
-      if (savedRefMeta) savedRefMeta.style.display = 'none';
-      if (renameRefForm) renameRefForm.style.display = 'none';
-      STATE.activeSavedRefId = null;
-      return;
-    }
-
-    const refs = getStoredReferences();
-    const r = refs.find(x => x.id === refId);
-    if (!r) {
-      if (savedRefActions) savedRefActions.style.display = 'none';
-      if (savedRefMeta) savedRefMeta.style.display = 'none';
-      if (renameRefForm) renameRefForm.style.display = 'none';
-      STATE.activeSavedRefId = null;
-      return;
-    }
-
-    STATE.activeSavedRefId = r.id;
-    if (savedRefActions) savedRefActions.style.display = 'flex';
-    if (savedRefMeta) {
-      savedRefMeta.style.display = 'block';
-      const dStr = r.savedAt ? new Date(r.savedAt).toLocaleString() : 'Recently';
-      const nReadings = r.readings ? r.readings.length : 0;
-      let statsLine = 'Normal heat spread and noise: Not checked yet';
-      if (r.lastCheckStats) {
-        const aVal = r.lastCheckStats.alpha_baseline || '-';
-        const sVal = r.lastCheckStats.sigma || '-';
-        statsLine = `Estimated normal heat spread (&alpha;): <span class="mono">${aVal}</span> &bull; Noise: <span class="mono">${sVal}</span>`;
+      const targetId = selectedProfileId || (STATE.currentProfile ? STATE.currentProfile.id : null);
+      if (targetId && profiles.some(p => p.id === targetId)) {
+        if (diagProfileSelect) diagProfileSelect.value = targetId;
+        if (estProfileSelect) estProfileSelect.value = targetId;
+        await selectAndApplyProfile(targetId);
+      } else {
+        if (diagProfileSelect) diagProfileSelect.value = '';
+        if (estProfileSelect) estProfileSelect.value = '';
+        updateProfileMetadataUI(null);
       }
-      savedRefMeta.innerHTML = `
-        <div style="font-weight: 600; color: var(--text-heading);">${r.name}</div>
-        <div>Saved: ${dStr} &bull; ${nReadings} readings</div>
-        <div>${statsLine}</div>
-      `;
+      checkProfileSetupDifferencesAndSuggestions();
+    } catch (err) {
+      console.warn('Error loading bar profiles:', err);
     }
   }
 
-  if (savedRefSelect) {
-    savedRefSelect.addEventListener('change', () => {
-      const refId = savedRefSelect.value;
-      displaySavedRefMeta(refId);
-      if (!refId) return;
+  function updateProfileMetadataUI(profile) {
+    const estMeta = document.getElementById('est-profile-meta-bar');
+    const diagMeta = document.getElementById('diag-profile-meta-bar') || document.getElementById('diag-saved-ref-meta');
+    const estModBadge = document.getElementById('est-profile-modified-badge');
+    const diagModBadge = document.getElementById('diag-profile-modified-badge');
 
-      const refs = getStoredReferences();
-      const r = refs.find(x => x.id === refId);
-      if (!r) return;
+    if (!profile) {
+      if (estMeta) estMeta.style.display = 'none';
+      if (diagMeta) diagMeta.style.display = 'none';
+      if (estExportBtn) estExportBtn.style.display = 'none';
+      if (diagExportBtn) diagExportBtn.style.display = 'none';
+      if (diagRenameBtn) diagRenameBtn.style.display = 'none';
+      if (diagDeleteBtn) diagDeleteBtn.style.display = 'none';
+      if (estModBadge) estModBadge.style.display = 'none';
+      if (diagModBadge) diagModBadge.style.display = 'none';
+      return;
+    }
 
-      // Fill reference table
-      if (r.readings && r.readings.length > 0) {
+    const alphaStr = (profile.measured_alpha_base !== null && profile.measured_alpha_base !== undefined)
+      ? (typeof formatScientificReal === 'function' ? formatScientificReal(profile.measured_alpha_base, 3) : profile.measured_alpha_base) + ' m²/s'
+      : '-';
+    const sigStr = (profile.measured_sigma !== null && profile.measured_sigma !== undefined)
+      ? `±${profile.measured_sigma} °C`
+      : '±0.50 °C';
+
+    const html = `
+      <div style="font-weight: 600; color: var(--text-heading);">${profile.name} ${profile.is_demo ? '<span class="badge" style="font-size:0.7rem; background:rgba(31,58,95,0.1); color:var(--primary-navy); padding:0.1rem 0.35rem; border-radius:3px;">Demo</span>' : ''}</div>
+      <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+        ${profile.material_note ? profile.material_note + ' &bull; ' : ''}${profile.row_count} readings &bull; Normal heat spread (α): <span class="mono">${alphaStr}</span> &bull; Noise: <span class="mono">${sigStr}</span>
+      </div>
+    `;
+
+    if (estMeta) {
+      estMeta.innerHTML = html;
+      estMeta.style.display = 'block';
+    }
+    if (diagMeta) {
+      diagMeta.innerHTML = html;
+      diagMeta.style.display = 'block';
+    }
+
+    if (estExportBtn) estExportBtn.style.display = 'inline-block';
+    if (diagExportBtn) diagExportBtn.style.display = 'inline-block';
+
+    if (!profile.is_demo) {
+      if (diagRenameBtn) diagRenameBtn.style.display = 'inline-block';
+      if (diagDeleteBtn) diagDeleteBtn.style.display = 'inline-block';
+    } else {
+      if (diagRenameBtn) diagRenameBtn.style.display = 'none';
+      if (diagDeleteBtn) diagDeleteBtn.style.display = 'none';
+    }
+
+    if (STATE.profileModified) {
+      if (estModBadge) estModBadge.style.display = 'inline-block';
+      if (diagModBadge) diagModBadge.style.display = 'inline-block';
+    } else {
+      if (estModBadge) estModBadge.style.display = 'none';
+      if (diagModBadge) diagModBadge.style.display = 'none';
+    }
+  }
+
+  async function selectAndApplyProfile(profileId) {
+    if (!profileId) {
+      STATE.currentProfile = null;
+      STATE.profileModified = false;
+      if (diagProfileSelect) diagProfileSelect.value = '';
+      if (estProfileSelect) estProfileSelect.value = '';
+      updateProfileMetadataUI(null);
+      checkProfileSetupDifferencesAndSuggestions();
+      return;
+    }
+
+    try {
+      const res = await fetch(`/v1/profiles/${profileId}`);
+      if (!res.ok) throw new Error('Profile not found');
+      const profile = await res.json();
+      STATE.currentProfile = profile;
+      STATE.profileModified = false;
+
+      if (diagProfileSelect) diagProfileSelect.value = profileId;
+      if (estProfileSelect) estProfileSelect.value = profileId;
+
+      updateProfileMetadataUI(profile);
+
+      // 1. Fill setup fields
+      if (barLen) barLen.value = String(profile.bar_length_m);
+      if (expDur) expDur.value = String(profile.test_duration_s);
+      if (tempEdge) tempEdge.value = String(profile.boundary_temperature);
+      if (tempPeak) tempPeak.value = String(profile.initial_peak_temperature);
+      if (sigmaVal) sigmaVal.value = String(profile.sensor_accuracy || 0.5);
+
+      const estBar = document.getElementById('est-bar-length');
+      if (estBar) estBar.value = String(profile.bar_length_m);
+      const estDur = document.getElementById('est-experiment-time');
+      if (estDur) estDur.value = String(profile.test_duration_s);
+      const estEdge = document.getElementById('est-temp-edge');
+      if (estEdge) estEdge.value = String(profile.boundary_temperature);
+      const estPeak = document.getElementById('est-temp-peak');
+      if (estPeak) estPeak.value = String(profile.initial_peak_temperature);
+      const estSig = document.getElementById('est-sigma-val');
+      if (estSig) estSig.value = String(profile.sensor_accuracy || 0.5);
+
+      // 2. Fill Diagnose reference table
+      if (baseTbody && profile.readings && profile.readings.length > 0) {
         baseTbody.innerHTML = '';
-        r.readings.forEach((pt, idx) => {
+        profile.readings.forEach((r, idx) => {
           baseTbody.appendChild(createDiagnoseTableRow(
-            Number(pt.x).toFixed(2),
-            Number(pt.t).toFixed(1),
-            Number(pt.u).toFixed(2),
+            Number(r.position_m).toFixed(3),
+            Number(r.time_s).toFixed(1),
+            Number(r.temperature_c).toFixed(2),
             idx + 1,
             'diag-base'
           ));
         });
-        updateDiagnoseRowNumbers(baseTbody, baseBadge, 20);
+        updateDiagnoseRowNumbers(baseTbody, baseBadge, 20, 'diag-base');
+        if (baseMsg) {
+          baseMsg.textContent = '';
+          baseMsg.classList.remove('active');
+        }
       }
 
-      // Fill test-setup fields
-      if (r.setup) {
-        if (barLen && r.setup.bar_length_m !== undefined) barLen.value = r.setup.bar_length_m;
-        if (expDur && r.setup.test_duration_s !== undefined) expDur.value = r.setup.test_duration_s;
-        if (tempEdge && r.setup.boundary_temperature !== undefined) tempEdge.value = r.setup.boundary_temperature;
-        if (tempPeak && r.setup.initial_peak_temperature !== undefined) tempPeak.value = r.setup.initial_peak_temperature;
-        if (sigmaVal && r.setup.sigma !== undefined) sigmaVal.value = r.setup.sigma;
-        if (sigmaAuto && r.setup.sigma_auto !== undefined) {
-          sigmaAuto.checked = Boolean(r.setup.sigma_auto);
-          if (sigmaVal) {
-            sigmaVal.disabled = sigmaAuto.checked;
-            sigmaVal.style.opacity = sigmaAuto.checked ? '0.5' : '1.0';
+      checkProfileSetupDifferencesAndSuggestions();
+      if (typeof validateEstimateTable === 'function') validateEstimateTable();
+      clearDiagnoseResultState();
+      clearEstimateResultState();
+    } catch (err) {
+      console.error('Error selecting bar profile:', err);
+    }
+  }
+
+  // Profile select change handlers
+  if (diagProfileSelect) {
+    diagProfileSelect.addEventListener('change', (e) => {
+      selectAndApplyProfile(e.target.value);
+    });
+  }
+  if (estProfileSelect) {
+    estProfileSelect.addEventListener('change', (e) => {
+      selectAndApplyProfile(e.target.value);
+    });
+  }
+
+  // Check differences and matching suggestions
+  function checkProfileSetupDifferencesAndSuggestions() {
+    const L = parseFloat(document.getElementById('diag-bar-length')?.value || document.getElementById('est-bar-length')?.value || '0.1');
+    const T = parseFloat(document.getElementById('diag-experiment-time')?.value || document.getElementById('est-experiment-time')?.value || '100');
+    const Tb = parseFloat(document.getElementById('diag-temp-edge')?.value || document.getElementById('est-temp-edge')?.value || '20');
+    const Tp = parseFloat(document.getElementById('diag-temp-peak')?.value || document.getElementById('est-temp-peak')?.value || '80');
+
+    const estDiffWarn = document.getElementById('est-profile-diff-warn');
+    const estDiffMsg = document.getElementById('est-profile-diff-msg');
+    const diagDiffWarn = document.getElementById('diag-profile-diff-warn');
+    const diagDiffMsg = document.getElementById('diag-profile-diff-msg');
+
+    const estMatchSug = document.getElementById('est-profile-match-suggest');
+    const estMatchMsg = document.getElementById('est-profile-match-msg');
+    const estMatchBtn = document.getElementById('est-profile-apply-match-btn');
+    const diagMatchSug = document.getElementById('diag-profile-match-suggest');
+    const diagMatchMsg = document.getElementById('diag-profile-match-msg');
+    const diagMatchBtn = document.getElementById('diag-profile-apply-match-btn');
+
+    // Difference check vs selected profile
+    if (STATE.currentProfile) {
+      const p = STATE.currentProfile;
+      const diff = Math.abs(L - p.bar_length_m) > 1e-4 ||
+                   Math.abs(T - p.test_duration_s) > 1e-4 ||
+                   Math.abs(Tb - p.boundary_temperature) > 1e-4 ||
+                   Math.abs(Tp - p.initial_peak_temperature) > 1e-4;
+      if (diff) {
+        const msg = `Setup differs from selected profile '${p.name}'.`;
+        if (estDiffMsg) estDiffMsg.textContent = msg;
+        if (diagDiffMsg) diagDiffMsg.textContent = msg;
+        if (estDiffWarn) estDiffWarn.style.display = 'flex';
+        if (diagDiffWarn) diagDiffWarn.style.display = 'flex';
+      } else {
+        if (estDiffWarn) estDiffWarn.style.display = 'none';
+        if (diagDiffWarn) diagDiffWarn.style.display = 'none';
+      }
+    } else {
+      if (estDiffWarn) estDiffWarn.style.display = 'none';
+      if (diagDiffWarn) diagDiffWarn.style.display = 'none';
+    }
+
+    // Matching suggestion
+    let matchingProfile = null;
+    if (STATE.allProfiles && STATE.allProfiles.length > 0) {
+      matchingProfile = STATE.allProfiles.find(p =>
+        Math.abs(L - p.bar_length_m) < 1e-4 &&
+        Math.abs(T - p.test_duration_s) < 1e-4 &&
+        Math.abs(Tb - p.boundary_temperature) < 1e-4 &&
+        Math.abs(Tp - p.initial_peak_temperature) < 1e-4
+      );
+    }
+
+    if (matchingProfile && (!STATE.currentProfile || STATE.currentProfile.id !== matchingProfile.id)) {
+      const sugText = `Use '${matchingProfile.name}'?`;
+      if (estMatchMsg) estMatchMsg.textContent = sugText;
+      if (diagMatchMsg) diagMatchMsg.textContent = sugText;
+      if (estMatchSug) estMatchSug.style.display = 'flex';
+      if (diagMatchSug) diagMatchSug.style.display = 'flex';
+
+      const onApply = (e) => {
+        if (e) e.preventDefault();
+        selectAndApplyProfile(matchingProfile.id);
+      };
+      if (estMatchBtn) estMatchBtn.onclick = onApply;
+      if (diagMatchBtn) diagMatchBtn.onclick = onApply;
+    } else {
+      if (estMatchSug) estMatchSug.style.display = 'none';
+      if (diagMatchSug) diagMatchSug.style.display = 'none';
+    }
+  }
+
+  // Setup input listeners for difference & suggestion triggers
+  [barLen, expDur, tempEdge, tempPeak].forEach(input => {
+    if (input) {
+      input.addEventListener('input', () => {
+        checkProfileSetupDifferencesAndSuggestions();
+      });
+    }
+  });
+  const estBarInput = document.getElementById('est-bar-length');
+  const estDurInput = document.getElementById('est-experiment-time');
+  const estEdgeInput = document.getElementById('est-temp-edge');
+  const estPeakInput = document.getElementById('est-temp-peak');
+  [estBarInput, estDurInput, estEdgeInput, estPeakInput].forEach(input => {
+    if (input) {
+      input.addEventListener('input', () => {
+        checkProfileSetupDifferencesAndSuggestions();
+      });
+    }
+  });
+
+  // Save profile button
+  if (diagSaveProfileBtn) {
+    diagSaveProfileBtn.addEventListener('click', () => {
+      if (diagSaveProfileForm) {
+        diagSaveProfileForm.style.display = (diagSaveProfileForm.style.display === 'none' || !diagSaveProfileForm.style.display) ? 'block' : 'none';
+        if (diagSaveNameInput) {
+          if (STATE.currentProfile) {
+            diagSaveNameInput.value = STATE.profileModified ? `${STATE.currentProfile.name} (modified)` : `${STATE.currentProfile.name} (copy)`;
+          } else {
+            diagSaveNameInput.value = 'Steel rod, lab test';
+          }
+          diagSaveNameInput.focus();
+        }
+        if (diagSaveError) diagSaveError.textContent = '';
+        if (diagUncleanBox) diagUncleanBox.style.display = 'none';
+      }
+    });
+  }
+
+  if (diagCancelSaveBtn) {
+    diagCancelSaveBtn.addEventListener('click', () => {
+      if (diagSaveProfileForm) diagSaveProfileForm.style.display = 'none';
+      if (diagSaveError) diagSaveError.textContent = '';
+      if (diagUncleanBox) diagUncleanBox.style.display = 'none';
+    });
+  }
+
+  async function executeSaveProfile(force = false) {
+    const name = diagSaveNameInput ? diagSaveNameInput.value.trim() : '';
+    if (!name) {
+      if (diagSaveError) diagSaveError.textContent = 'Please enter a name for your bar profile.';
+      return;
+    }
+    const data = parseDiagnoseTableData(baseTbody);
+    if (data.x.length < 20) {
+      if (diagSaveError) diagSaveError.textContent = `A reference profile requires at least 20 readings (found ${data.x.length}).`;
+      return;
+    }
+
+    const readings = [];
+    for (let i = 0; i < data.x.length; i++) {
+      readings.push({
+        position_m: data.x[i],
+        time_s: data.t[i],
+        temperature_c: data.y[i]
+      });
+    }
+
+    const payload = {
+      name: name,
+      material_note: diagSaveNoteInput ? diagSaveNoteInput.value.trim() : '',
+      bar_length_m: parseFloat(barLen ? barLen.value : '0.1') || 0.1,
+      test_duration_s: parseFloat(expDur ? expDur.value : '100') || 100,
+      boundary_temperature: parseFloat(tempEdge ? tempEdge.value : '20') || 20,
+      initial_peak_temperature: parseFloat(tempPeak ? tempPeak.value : '80') || 80,
+      sensor_accuracy: parseFloat(sigmaVal ? sigmaVal.value : '0.5') || 0.5,
+      readings: readings,
+      force: force
+    };
+
+    try {
+      const res = await fetch('/v1/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 422 && json.error_code === 'UNCLEAN_REFERENCE') {
+          if (diagUncleanBox) diagUncleanBox.style.display = 'flex';
+          if (diagUncleanStats) {
+            const aStr = (typeof formatScientificReal === 'function') ? formatScientificReal(json.measured_alpha_base, 3) : json.measured_alpha_base;
+            diagUncleanStats.textContent = `Measured normal heat spread (α): ${aStr} m²/s, sensor noise: ±${json.measured_sigma} °C.`;
+          }
+          if (diagUncleanConfirmBtn) {
+            diagUncleanConfirmBtn.onclick = () => executeSaveProfile(true);
+          }
+          if (diagUncleanCancelBtn) {
+            diagUncleanCancelBtn.onclick = () => {
+              if (diagUncleanBox) diagUncleanBox.style.display = 'none';
+            };
+          }
+          return;
+        }
+        if (diagSaveError) diagSaveError.textContent = json.message || 'Failed to save bar profile.';
+        return;
+      }
+
+      // Success
+      if (diagSaveProfileForm) diagSaveProfileForm.style.display = 'none';
+      if (diagUncleanBox) diagUncleanBox.style.display = 'none';
+      if (diagSaveStatus) {
+        diagSaveStatus.textContent = 'Bar profile saved ✓';
+        setTimeout(() => { if (diagSaveStatus) diagSaveStatus.textContent = ''; }, 3000);
+      }
+      STATE.profileModified = false;
+      await loadBarProfiles(json.id);
+    } catch (err) {
+      if (diagSaveError) diagSaveError.textContent = err.message || 'Network error saving bar profile.';
+    }
+  }
+
+  if (diagConfirmSaveBtn) {
+    diagConfirmSaveBtn.addEventListener('click', () => {
+      executeSaveProfile(false);
+    });
+  }
+
+  // Rename profile
+  if (diagRenameBtn) {
+    diagRenameBtn.addEventListener('click', () => {
+      if (!STATE.currentProfile || STATE.currentProfile.is_demo) return;
+      if (diagRenameForm) {
+        diagRenameForm.style.display = 'block';
+        if (diagRenameInput) {
+          diagRenameInput.value = STATE.currentProfile.name;
+          diagRenameInput.focus();
+        }
+      }
+    });
+  }
+
+  if (diagCancelRenameBtn) {
+    diagCancelRenameBtn.addEventListener('click', () => {
+      if (diagRenameForm) diagRenameForm.style.display = 'none';
+    });
+  }
+
+  if (diagConfirmRenameBtn) {
+    diagConfirmRenameBtn.addEventListener('click', async () => {
+      if (!STATE.currentProfile || STATE.currentProfile.is_demo) return;
+      const newName = diagRenameInput ? diagRenameInput.value.trim() : '';
+      if (!newName) return;
+
+      try {
+        const res = await fetch(`/v1/profiles/${STATE.currentProfile.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: newName })
+        });
+        if (!res.ok) throw new Error('Failed to rename profile');
+        if (diagRenameForm) diagRenameForm.style.display = 'none';
+        await loadBarProfiles(STATE.currentProfile.id);
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
+
+  // Delete profile
+  if (diagDeleteBtn) {
+    diagDeleteBtn.addEventListener('click', async () => {
+      if (!STATE.currentProfile || STATE.currentProfile.is_demo) return;
+      if (!confirm(`Are you sure you want to delete profile '${STATE.currentProfile.name}'?`)) return;
+
+      try {
+        const res = await fetch(`/v1/profiles/${STATE.currentProfile.id}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Failed to delete profile');
+        await loadBarProfiles(null);
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  }
+
+  // Export handlers
+  const handleExport = () => {
+    if (!STATE.currentProfile) return;
+    window.location.href = `/v1/profiles/${STATE.currentProfile.id}/export`;
+  };
+  if (diagExportBtn) diagExportBtn.addEventListener('click', handleExport);
+  if (estExportBtn) estExportBtn.addEventListener('click', handleExport);
+
+  // Import handlers
+  const setupImport = (btn, fileInput) => {
+    if (!btn || !fileInput) return;
+    btn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      fileInput.value = '';
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        let res = await fetch('/v1/profiles/import', {
+          method: 'POST',
+          body: formData
+        });
+        let json = await res.json();
+
+        if (!res.ok && res.status === 422 && json.error_code === 'UNCLEAN_REFERENCE') {
+          const ok = confirm(`${json.message}\nMeasured heat spread: ${json.measured_alpha_base} m²/s, noise: ±${json.measured_sigma} °C\nImport anyway?`);
+          if (ok) {
+            res = await fetch('/v1/profiles/import?force=true', {
+              method: 'POST',
+              body: formData
+            });
+            json = await res.json();
+          } else {
+            return;
           }
         }
-        // Two-way sync to Estimate
-        const estBar = document.getElementById('est-bar-length');
-        if (estBar && barLen) estBar.value = barLen.value;
-        const estDur = document.getElementById('est-experiment-time');
-        if (estDur && expDur) estDur.value = expDur.value;
-        const estEdge = document.getElementById('est-temp-edge');
-        if (estEdge && tempEdge) estEdge.value = tempEdge.value;
-        const estPeak = document.getElementById('est-temp-peak');
-        if (estPeak && tempPeak) estPeak.value = tempPeak.value;
-        const estSig = document.getElementById('est-sigma-val');
-        if (estSig && sigmaVal) estSig.value = sigmaVal.value;
-      }
 
-      clearDiagnoseResultState();
-    });
-  }
-
-  // Save reference button
-  if (saveRefBtn) {
-    saveRefBtn.addEventListener('click', () => {
-      if (saveRefForm) {
-        saveRefForm.style.display = (saveRefForm.style.display === 'none' || !saveRefForm.style.display) ? 'block' : 'none';
-        if (saveRefNameInput) {
-          saveRefNameInput.value = '';
-          saveRefNameInput.focus();
+        if (res.ok) {
+          await loadBarProfiles(json.id);
+        } else {
+          alert(json.message || 'Failed to import bar profile.');
         }
-        if (saveRefError) saveRefError.textContent = '';
+      } catch (err) {
+        alert(err.message || 'Error uploading file.');
       }
     });
-  }
+  };
 
-  if (cancelSaveBtn) {
-    cancelSaveBtn.addEventListener('click', () => {
-      if (saveRefForm) saveRefForm.style.display = 'none';
-      if (saveRefError) saveRefError.textContent = '';
-    });
-  }
+  setupImport(diagImportBtn, diagFileInput);
+  setupImport(estImportBtn, estFileInput);
 
-  if (confirmSaveBtn) {
-    confirmSaveBtn.addEventListener('click', () => {
-      const name = saveRefNameInput ? saveRefNameInput.value.trim() : '';
-      if (!name) {
-        if (saveRefError) saveRefError.textContent = 'Please enter a name for your reference run.';
-        return;
-      }
-      const data = parseDiagnoseTableData(baseTbody);
-      if (data.x.length < 3) {
-        if (saveRefError) saveRefError.textContent = 'Reference run table must have at least 3 readings to save.';
-        return;
-      }
-      const readings = [];
-      for (let i = 0; i < data.x.length; i++) {
-        readings.push({ x: data.x[i], t: data.t[i], u: data.y[i] });
-      }
-
-      const newRef = {
-        id: 'ref_' + Date.now(),
-        name: name,
-        savedAt: new Date().toISOString(),
-        readings: readings,
-        setup: {
-          bar_length_m: parseFloat(barLen ? barLen.value : '0.1') || 0.1,
-          test_duration_s: parseFloat(expDur ? expDur.value : '100') || 100,
-          boundary_temperature: parseFloat(tempEdge ? tempEdge.value : '20') || 20,
-          initial_peak_temperature: parseFloat(tempPeak ? tempPeak.value : '80') || 80,
-          sigma: parseFloat(sigmaVal ? sigmaVal.value : '0.5') || 0.5,
-          sigma_auto: Boolean(sigmaAuto && sigmaAuto.checked)
-        },
-        lastCheckStats: (STATE.lastDiagnoseResult && STATE.lastDiagnoseResult.response && STATE.lastDiagnoseResult.response.evidence_stats) ? {
-          alpha_baseline: formatScientificReal(STATE.lastDiagnoseResult.response.evidence_stats.alpha_baseline, 3) + ' m²/s',
-          sigma: (STATE.lastDiagnoseResult.response.effective_sigma * Math.abs(parseFloat(tempPeak?.value || 80) - parseFloat(tempEdge?.value || 20))).toFixed(2) + ' °C'
-        } : null
-      };
-
-      const refs = getStoredReferences();
-      refs.push(newRef);
-      setStoredReferences(refs);
-
-      if (saveRefForm) saveRefForm.style.display = 'none';
-      if (saveRefStatus) {
-        saveRefStatus.textContent = 'Reference saved ✓';
-        setTimeout(() => { if (saveRefStatus) saveRefStatus.textContent = ''; }, 3000);
-      }
-      updateSavedRefDropdown(newRef.id);
-    });
-  }
-
-  // Rename reference
-  if (renameRefBtn) {
-    renameRefBtn.addEventListener('click', () => {
-      const refId = savedRefSelect ? savedRefSelect.value : null;
-      if (!refId) return;
-      const refs = getStoredReferences();
-      const r = refs.find(x => x.id === refId);
-      if (!r) return;
-      if (renameRefForm) {
-        renameRefForm.style.display = 'block';
-        if (renameNameInput) {
-          renameNameInput.value = r.name;
-          renameNameInput.focus();
-        }
-      }
-    });
-  }
-
-  if (cancelRenameBtn) {
-    cancelRenameBtn.addEventListener('click', () => {
-      if (renameRefForm) renameRefForm.style.display = 'none';
-    });
-  }
-
-  if (confirmRenameBtn) {
-    confirmRenameBtn.addEventListener('click', () => {
-      const refId = savedRefSelect ? savedRefSelect.value : null;
-      if (!refId) return;
-      const newName = renameNameInput ? renameNameInput.value.trim() : '';
-      if (!newName) return;
-      const refs = getStoredReferences();
-      const r = refs.find(x => x.id === refId);
-      if (r) {
-        r.name = newName;
-        setStoredReferences(refs);
-        if (renameRefForm) renameRefForm.style.display = 'none';
-        updateSavedRefDropdown(refId);
-      }
-    });
-  }
-
-  // Delete reference
-  if (deleteRefBtn) {
-    deleteRefBtn.addEventListener('click', () => {
-      const refId = savedRefSelect ? savedRefSelect.value : null;
-      if (!refId) return;
-      let refs = getStoredReferences();
-      refs = refs.filter(x => x.id !== refId);
-      setStoredReferences(refs);
-      updateSavedRefDropdown(null);
-    });
-  }
-
-  // Initialize saved reference dropdown on load
-  updateSavedRefDropdown(null);
+  // Load profiles on startup
+  loadBarProfiles(null);
 
   // Drawer open / close
   if (moreOptionsBtn && drawer && drawerOverlay) {

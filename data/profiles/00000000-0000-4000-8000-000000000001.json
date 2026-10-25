@@ -1,0 +1,16 @@
+{
+  "id": "00000000-0000-4000-8000-000000000001",
+  "name": "Demo: Standard Steel Bar (0.1 m)",
+  "material_note": "AISI 1018 cold-drawn carbon steel reference bar",
+  "bar_length_m": 0.1,
+  "test_duration_s": 100.0,
+  "boundary_temperature": 20.0,
+  "initial_peak_temperature": 80.0,
+  "sensor_accuracy": 0.5,
+  "created": "2026-10-24T18:00:00Z",
+  "updated": "2026-10-24T18:00:00Z",
+  "measured_alpha_base": 1e-05,
+  "measured_sigma": 0.48,
+  "row_count": 20,
+  "is_demo": true
+}

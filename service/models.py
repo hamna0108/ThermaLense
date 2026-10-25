@@ -397,3 +397,67 @@ class ErrorDetail(BaseModel):
     message: str
     request_id: Optional[str] = None
     details: Optional[Any] = None
+
+class BarProfileReading(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    position_m: float = Field(..., description="Sensor position along bar in metres")
+    time_s: float = Field(..., description="Timestamp in seconds")
+    temperature_c: float = Field(..., description="Temperature in °C")
+
+    @field_validator('position_m', 'time_s', 'temperature_c')
+    @classmethod
+    def check_finite(cls, v):
+        if not math.isfinite(v):
+            raise ValueError("Reading values must be finite")
+        return v
+
+class BarProfileSummary(BaseModel):
+    id: str
+    name: str
+    material_note: Optional[str] = ""
+    bar_length_m: float
+    test_duration_s: float
+    boundary_temperature: float
+    initial_peak_temperature: float
+    sensor_accuracy: Optional[float] = 0.5
+    created: str
+    updated: str
+    measured_alpha_base: Optional[float] = None
+    measured_sigma: Optional[float] = None
+    row_count: int
+    is_demo: bool = False
+
+class BarProfileDetail(BarProfileSummary):
+    readings: List[BarProfileReading]
+    warning: Optional[str] = None
+
+class BarProfileCreate(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    name: str = Field(..., min_length=1, max_length=100)
+    material_note: Optional[str] = Field("", max_length=500)
+    bar_length_m: float
+    test_duration_s: float
+    boundary_temperature: float
+    initial_peak_temperature: float
+    sensor_accuracy: Optional[float] = 0.5
+    readings: Optional[List[BarProfileReading]] = None
+    csv_readings: Optional[str] = None
+    force: Optional[bool] = False
+
+class BarProfileUpdate(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    material_note: Optional[str] = Field(None, max_length=500)
+    bar_length_m: Optional[float] = None
+    test_duration_s: Optional[float] = None
+    boundary_temperature: Optional[float] = None
+    initial_peak_temperature: Optional[float] = None
+    sensor_accuracy: Optional[float] = None
+    readings: Optional[List[BarProfileReading]] = None
+    csv_readings: Optional[str] = None
+    force: Optional[bool] = False
+
+class BarProfileDeleteResponse(BaseModel):
+    deleted: bool
+    id: str
+

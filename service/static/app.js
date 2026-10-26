@@ -4151,6 +4151,29 @@ function initPlacementWorkbench() {
       if (estTable) estTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   }
+
+  // Refine using Estimate fit
+  const placeRefineBtn = document.getElementById('place-refine-btn');
+  const placeRefineMsg = document.getElementById('place-refine-msg');
+  if (placeRefineBtn) {
+    placeRefineBtn.addEventListener('click', () => {
+      const estRes = STATE.lastEstimateResult && STATE.lastEstimateResult.response;
+      if (estRes && typeof estRes.alpha_hat === 'number' && !isNaN(estRes.alpha_hat) && estRes.alpha_hat > 0) {
+        const matInput = document.getElementById('place-material-guess');
+        if (matInput) {
+          matInput.value = estRes.alpha_hat.toExponential(3);
+        }
+        if (placeRefineMsg) {
+          placeRefineMsg.innerHTML = `<span style="color: var(--badge-green-color, #15803d); font-weight: 600;">✓ Refined using Estimate α = ${estRes.alpha_hat.toExponential(3)} m²/s</span>`;
+        }
+        executePlacement();
+      } else {
+        if (placeRefineMsg) {
+          placeRefineMsg.innerHTML = `<span style="color: var(--text-muted, #64748b);">No estimate found yet. Enter early readings into Estimate and run it first, or type your guess above.</span>`;
+        }
+      }
+    });
+  }
 }
 
 async function executePlacement() {
@@ -4175,6 +4198,8 @@ async function executePlacement() {
   const testDurationS = parseFloat(document.getElementById('place-experiment-time')?.value) || 100.0;
   const boundaryTemp = parseFloat(document.getElementById('place-temp-edge')?.value) || 20.0;
   const peakTemp = parseFloat(document.getElementById('place-temp-peak')?.value) || 80.0;
+  const matGuessRaw = parseFloat(document.getElementById('place-material-guess')?.value);
+  const matGuess = (!isNaN(matGuessRaw) && matGuessRaw > 0) ? matGuessRaw : 1e-5;
 
   stateContainer.innerHTML = '<div class="state-box loading"><span class="spinner"></span> Computing optimal two-stage schedule...</div>';
   resultPanel.style.display = 'none';
@@ -4188,7 +4213,8 @@ async function executePlacement() {
     bar_length_m: barLengthM,
     test_duration_s: testDurationS,
     boundary_temperature: boundaryTemp,
-    initial_peak_temperature: peakTemp
+    initial_peak_temperature: peakTemp,
+    material_guess_m2_s: matGuess
   };
 
   try {
@@ -4257,8 +4283,8 @@ function renderPlacementChart() {
 
   svg.innerHTML = '';
 
-  // Nominal physical diffusivity: alpha = 1.0e-4 m^2/s
-  const alphaNominal = 1.0e-4;
+  // Nominal physical diffusivity from material guess or default (1e-5 m^2/s)
+  const alphaNominal = (req && req.material_guess_m2_s && req.material_guess_m2_s > 0) ? req.material_guess_m2_s : 1.0e-5;
   const ampl = (Tp - Tb) * Math.sin(Math.PI * sensorX / L);
 
   const tempAt = (t) => {

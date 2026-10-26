@@ -327,6 +327,38 @@ def test_placement(client):
     assert data["t_stage1"][0] < data["t_stage1"][-1]
     assert data["timing_ms"] > 0
 
+def test_placement_material_guess(client):
+    # With physical units and slow alpha guess (1e-5) -> Stage 2 times cluster towards 100s
+    payload_slow = {
+        "N": 10,
+        "sigma": 0.5,
+        "sensor_x": 0.05,
+        "t_min": 1.0,
+        "t_max": 100.0,
+        "bar_length_m": 0.1,
+        "test_duration_s": 100.0,
+        "material_guess_m2_s": 1e-5
+    }
+    res_slow = client.post("/v1/placement", json=payload_slow)
+    assert res_slow.status_code == 200
+    d_slow = res_slow.json()
+    assert d_slow["material_guess_m2_s"] == 1e-5
+    assert len(d_slow["t_stage2_nominal_s"]) == 5
+    median_t2_slow = d_slow["t_stage2_nominal_s"][2]
+
+    # With fast alpha guess (1e-4) -> Stage 2 times cluster towards t* ~ 10s
+    payload_fast = dict(payload_slow, material_guess_m2_s=1e-4)
+    res_fast = client.post("/v1/placement", json=payload_fast)
+    assert res_fast.status_code == 200
+    d_fast = res_fast.json()
+    assert d_fast["material_guess_m2_s"] == 1e-4
+    median_t2_fast = d_fast["t_stage2_nominal_s"][2]
+
+    # Fast diffusivity must shift focused points to significantly earlier times
+    assert median_t2_fast < median_t2_slow
+    assert 5.0 <= median_t2_fast <= 25.0
+
+
 # -------------------------------------------------------------------------------------------------
 # POST /v1/field
 # -------------------------------------------------------------------------------------------------

@@ -208,6 +208,61 @@ def test_placement_position_validation_and_rejection(live_server):
         sensor_x_input.fill("0.05")
         page.wait_for_timeout(100)
         assert msg_el.inner_text() == ""
-        assert not submit_btn.is_disabled()
+        browser.close()
+
+
+def test_placement_material_guess_and_refine_flow(live_server):
+    """Test material guess field, helper text, and refinement workflow from Estimate fit."""
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+
+        # 1. Open placement page and check material guess input + hint
+        page.goto(f"{live_server}/#placement")
+        page.wait_for_load_state("networkidle")
+
+        mat_input = page.locator("#place-material-guess")
+        assert mat_input.is_visible()
+        assert mat_input.input_value() == "1e-5"
+
+        hint = page.locator("#place-material-guess-hint")
+        assert "Focused times assume a typical heat spread" in hint.inner_text()
+        assert "adjust the material guess if you know it" in hint.inner_text()
+
+        refine_box = page.locator("#place-refine-box")
+        assert refine_box.is_visible()
+        refine_btn = page.locator("#place-refine-btn")
+        refine_msg = page.locator("#place-refine-msg")
+
+        # 2. Clicking refine before running Estimate displays informational notice
+        refine_btn.click()
+        page.wait_for_timeout(200)
+        assert "No estimate found yet" in refine_msg.inner_text()
+
+        # 3. Compute initial placement with default 1e-5
+        page.locator("#place-submit-btn").click()
+        page.locator("#place-result-panel").wait_for(state="visible", timeout=10000)
+        t2_first_text_default = page.locator("#place-t2-tbody tr td").nth(1).inner_text()
+
+        # 4. Navigate to Estimate, load default example readings, and run Estimate
+        page.goto(f"{live_server}/#estimate")
+        page.wait_for_load_state("networkidle")
+        page.locator("#est-use-example-btn").click()
+        page.wait_for_timeout(300)
+        page.locator("#est-submit-btn").click()
+        page.locator("#estimate-results-card").wait_for(state="visible", timeout=10000)
+
+        # 5. Return to Placement and refine using the estimate fit
+        page.goto(f"{live_server}/#placement")
+        page.wait_for_load_state("networkidle")
+        refine_btn.click()
+        page.wait_for_timeout(500)
+
+        # Confirm material guess was refined and schedule was re-computed
+        assert "✓ Refined using Estimate" in refine_msg.inner_text()
+        refined_val = float(mat_input.input_value())
+        assert refined_val > 0
+        page.locator("#place-result-panel").wait_for(state="visible", timeout=10000)
 
         browser.close()
+

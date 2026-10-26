@@ -997,8 +997,16 @@ def post_placement(req: PlacementRequest):
 
     t_stage1 = np.logspace(np.log10(norm_tmin), np.log10(norm_tmax), N1).tolist()
     
-    # Nominal Stage 2 schedule assuming typical alpha=0.1
-    alpha_nom = 0.10
+    # Determine alpha_nom for Stage 2 schedule
+    if req.material_guess_m2_s is not None and req.material_guess_m2_s > 0:
+        if T is not None and L is not None and L > 0:
+            alpha_nom = float(req.material_guess_m2_s) * T / (L ** 2)
+        else:
+            alpha_nom = float(req.material_guess_m2_s)
+    else:
+        alpha_nom = 0.10
+
+    alpha_nom = max(1e-4, min(10.0, alpha_nom))
     t_fine = np.linspace(norm_tmin, norm_tmax, 2000)
     w = (t_fine ** 2) * np.exp(-2.0 * alpha_nom * (np.pi ** 2) * t_fine)
     cdf = np.cumsum(w)
@@ -1034,9 +1042,11 @@ def post_placement(req: PlacementRequest):
         t_stage2_nominal_s=t_stage2_nominal_s,
         bar_length_m=L,
         test_duration_s=T,
+        material_guess_m2_s=req.material_guess_m2_s,
         strategy_description=desc,
         timing_ms=timing_ms
     )
+
 
 @app.post("/v1/field", response_model=FieldResponse)
 def post_field(req: FieldRequest):

@@ -295,6 +295,7 @@ class PlacementRequest(BaseModel):
     test_duration_s: Optional[float] = Field(None, description="Physical test duration T in seconds (T > 0)")
     boundary_temperature: Optional[float] = Field(None, description="Boundary temperature at bar ends T_boundary")
     initial_peak_temperature: Optional[float] = Field(None, description="Initial peak temperature at t=0, x=L/2 T_peak")
+    material_guess_m2_s: Optional[float] = Field(None, gt=0, description="Optional material diffusivity guess (m^2/s) for Stage 2 focused times")
 
 class PlacementResponse(BaseModel):
     N: int
@@ -308,6 +309,8 @@ class PlacementResponse(BaseModel):
     t_stage2_nominal_s: Optional[List[float]] = None
     bar_length_m: Optional[float] = None
     test_duration_s: Optional[float] = None
+    material_guess_m2_s: Optional[float] = None
+
 
 class FieldRequest(BaseModel):
     alpha: float = Field(..., gt=0.0, description="Diffusivity parameter alpha")

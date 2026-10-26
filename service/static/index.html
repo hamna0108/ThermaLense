@@ -1130,6 +1130,27 @@
             <div id="place-sensor-x-msg" class="table-validation-msg" style="margin-top: 0.35rem;"></div>
           </div>
 
+          <div class="form-group">
+            <label for="place-material-guess" class="form-label" id="place-lbl-material-guess">Material guess (m&sup2;/s)</label>
+            <div class="input-suffix-wrap">
+              <input type="text" id="place-material-guess" class="form-control mono" value="1e-5" placeholder="e.g. 1e-5">
+              <span class="input-suffix">m&sup2;/s</span>
+            </div>
+            <span class="form-help" id="place-material-guess-hint">Focused times assume a typical heat spread; adjust the material guess if you know it.</span>
+          </div>
+
+          <!-- Optional refinement step using early readings fit -->
+          <div class="card" id="place-refine-box" style="margin-top: -0.25rem; margin-bottom: 1.25rem; background: var(--bg-surface-raised); border: 1px dashed var(--rule-hairline); padding: 0.75rem 1rem;">
+            <h3 style="margin-top: 0; font-size: 0.92rem;">Entered your first readings? Refine the focused times</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+              If you have entered your early readings into Estimate and computed a preliminary heat spread, you can sharpen your focused reading times using that estimate.
+            </p>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" id="place-refine-btn">Refine using Estimate fit</button>
+              <span id="place-refine-msg" class="text-muted" style="font-size: 0.82rem;"></span>
+            </div>
+          </div>
+
           <div class="grid-2">
             <div class="form-group">
               <label for="place-tmin" class="form-label" id="place-lbl-tmin">First reading no earlier than (s)</label>
@@ -1606,6 +1627,113 @@
             </thead>
             <tbody id="ev-tbody-placement"></tbody>
           </table>
+        </div>
+
+        <div style="margin-top: 1.5rem;">
+          <h3 style="font-size: 0.95rem; margin-bottom: 0.35rem;">Paired 200-Seed Sensitivity Benchmark: Material Guess &amp; Timing Accuracy</h3>
+          <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0.75rem;">
+            Paired evaluation over 200 identical noise seeds (N = 10, L = 0.1 m, T = 100 s, &sigma; = 0.5 &deg;C, x = 0.05 m). Comparing two-stage information-weighted placement vs. evenly spaced sampling across three initial guess conditions.
+          </p>
+          <div class="table-container">
+            <table class="booktabs" style="font-size: 0.85rem;">
+              <thead>
+                <tr>
+                  <th>True &alpha; Setup</th>
+                  <th>Assumed Material Guess</th>
+                  <th>Schedule Type</th>
+                  <th class="text-right">Median Error</th>
+                  <th class="text-right">Median 95% CI Width</th>
+                  <th class="text-right">Coverage</th>
+                  <th>Honest Assessment &amp; Trade-off</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td rowspan="6"><strong>Slow cooling (&alpha; = 1e-5 m&sup2;/s)</strong><br><span class="text-muted">&alpha;<sub>norm</sub> = 0.10</span></td>
+                  <td rowspan="2">Guess = Truth (&alpha; = 1e-5)</td>
+                  <td>Two-Stage Optimal</td>
+                  <td class="text-right mono">0.73%</td>
+                  <td class="text-right mono">3.81%</td>
+                  <td class="text-right mono">97.0%</td>
+                  <td rowspan="6">When cooling is slow, the bar retains thermal gradient throughout the 100 s window; both strategies perform within 0.1% error with nominal ~97% coverage.</td>
+                </tr>
+                <tr>
+                  <td>Evenly Spaced</td>
+                  <td class="text-right mono">0.66%</td>
+                  <td class="text-right mono">3.66%</td>
+                  <td class="text-right mono">97.5%</td>
+                </tr>
+                <tr>
+                  <td rowspan="2">3&times; Too Low (&alpha; = 3.3e-6)</td>
+                  <td>Two-Stage Optimal</td>
+                  <td class="text-right mono">0.68%</td>
+                  <td class="text-right mono">3.71%</td>
+                  <td class="text-right mono">97.0%</td>
+                </tr>
+                <tr>
+                  <td>Evenly Spaced</td>
+                  <td class="text-right mono">0.66%</td>
+                  <td class="text-right mono">3.66%</td>
+                  <td class="text-right mono">97.5%</td>
+                </tr>
+                <tr>
+                  <td rowspan="2">3&times; Too High (&alpha; = 3e-5)</td>
+                  <td>Two-Stage Optimal</td>
+                  <td class="text-right mono">0.85%</td>
+                  <td class="text-right mono">4.31%</td>
+                  <td class="text-right mono">97.0%</td>
+                </tr>
+                <tr>
+                  <td>Evenly Spaced</td>
+                  <td class="text-right mono">0.66%</td>
+                  <td class="text-right mono">3.66%</td>
+                  <td class="text-right mono">97.5%</td>
+                </tr>
+
+                <tr>
+                  <td rowspan="6"><strong>Fast cooling (&alpha; = 1e-4 m&sup2;/s)</strong><br><span class="text-muted">&alpha;<sub>norm</sub> = 1.00</span></td>
+                  <td rowspan="2">Guess = Truth (&alpha; = 1e-4)</td>
+                  <td>Two-Stage Optimal</td>
+                  <td class="text-right mono">1.28%</td>
+                  <td class="text-right mono">3.86%</td>
+                  <td class="text-right mono">70.0%</td>
+                  <td rowspan="6">When cooling is rapid, the rod reaches ambient boundaries by ~30 s. Two-stage placement sharpens CI width substantially (3.86&ndash;5.55% vs 6.99%). However, clustering all Stage 2 points tightly around an assumed t* without early-readings refinement risks over-confidence (70% coverage), whereas a conservative (3&times; lower) guess broadens sampling and preserves 90.5% coverage.</td>
+                </tr>
+                <tr>
+                  <td>Evenly Spaced</td>
+                  <td class="text-right mono">1.36%</td>
+                  <td class="text-right mono">6.99%</td>
+                  <td class="text-right mono">88.0%</td>
+                </tr>
+                <tr>
+                  <td rowspan="2">3&times; Too Low (&alpha; = 3.3e-5)</td>
+                  <td>Two-Stage Optimal</td>
+                  <td class="text-right mono">1.27%</td>
+                  <td class="text-right mono">5.55%</td>
+                  <td class="text-right mono">90.5%</td>
+                </tr>
+                <tr>
+                  <td>Evenly Spaced</td>
+                  <td class="text-right mono">1.36%</td>
+                  <td class="text-right mono">6.99%</td>
+                  <td class="text-right mono">88.0%</td>
+                </tr>
+                <tr>
+                  <td rowspan="2">3&times; Too High (&alpha; = 3e-4)</td>
+                  <td>Two-Stage Optimal</td>
+                  <td class="text-right mono">0.88%</td>
+                  <td class="text-right mono">4.12%</td>
+                  <td class="text-right mono">90.5%</td>
+                </tr>
+                <tr>
+                  <td>Evenly Spaced</td>
+                  <td class="text-right mono">1.36%</td>
+                  <td class="text-right mono">6.99%</td>
+                  <td class="text-right mono">88.0%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

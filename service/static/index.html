@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ThermaLens — Thermal PDE Inference &amp; Diagnostics Instrument</title>
   <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
-  <link rel="stylesheet" href="style.css?v=thermalens-v28">
+  <link rel="stylesheet" href="style.css?v=thermalens-v29">
 </head>
 <body>
 
@@ -1327,125 +1327,212 @@
         <p class="page-subtitle" id="field-page-subtitle">Pick a material and see how the temperature along a bar changes with time.</p>
         <details class="technical-details" style="margin-top: 0.35rem; margin-bottom: 0.75rem;">
           <summary class="technical-details-summary">Show details</summary>
-          <div class="technical-details-body" style="padding-top: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
-            Heat Diffusion Field Simulation u(x, t) · High-resolution 2D spatio-temporal forward solution of the heat equation ∂u/∂t = α ∂²u/∂x². Compare classical Crank-Nicolson numerical solves against Fourier Neural Operator (FNO) inference.
+          <div class="technical-details-body" style="padding-top: 0.35rem; font-size: 0.85rem; color: var(--text-muted); line-height: 1.6;">
+            <p style="margin-top: 0; margin-bottom: 0.35rem;"><strong>Mathematical model:</strong> Spatio-Temporal Solution Field u(x, t) for 1D heat diffusion &part;u/&part;t = &alpha; &part;&sup2;u/&part;x&sup2; with ends held at T<sub>edge</sub> and starting sinusoidal peak T<sub>peak</sub>.</p>
+            <p style="margin-bottom: 0.35rem;"><strong>Exact Fourier formula:</strong> u(x, t) = T<sub>edge</sub> + (T<sub>peak</sub> &minus; T<sub>edge</sub>) &middot; sin(&pi;x/L) &middot; exp(&minus;&alpha; &pi;&sup2; t / L&sup2;).</p>
+            <p style="margin-bottom: 0.35rem;"><strong>Converted normalised parameter:</strong> &alpha;<sub>norm</sub> = &alpha; &middot; T / L&sup2; = <span id="field-norm-alpha-val" class="mono font-bold">0.130000</span>.</p>
+            <p style="margin-bottom: 0;"><strong>Relative difference L₂:</strong> ||u<sub>AI</sub> &minus; u<sub>Solver</sub>||₂ / ||u<sub>Solver</sub>||₂. Figures 4 and 5 in technical report.</p>
           </div>
         </details>
       </div>
 
       <div class="grid-1-2">
-        <!-- Input Form -->
+        <!-- Settings Form -->
         <div class="card">
-          <h2 class="card-title" style="margin-top: 0;">Simulation Parameters</h2>
+          <h2 class="card-title" style="margin-top: 0;">Settings</h2>
           
-          <div class="form-group">
-            <label for="field-alpha" class="form-label">Diffusivity Parameter α</label>
-            <input type="number" id="field-alpha" class="form-control mono" value="0.10" min="0.001" max="10.0" step="0.01">
-            <span class="form-help">FNO verified for α ∈ [0.01, 1.0]. Outside this range, the numerical solver runs automatically.</span>
+          <!-- Shared Bar Setup -->
+          <h3 class="card-subtitle" style="font-size: 0.92rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);">About your test</h3>
+          <div class="real-units-grid" style="margin-bottom: 1.1rem;">
+            <div class="config-col">
+              <label for="field-bar-length" class="form-label" id="field-lbl-bar-length">Bar length (m)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="field-bar-length" name="bar_length_m" class="form-control mono" placeholder="e.g. 0.1" value="0.1" min="0.0001" step="0.01">
+                <span class="input-suffix">m</span>
+              </div>
+            </div>
+            <div class="config-col">
+              <label for="field-experiment-time" class="form-label" id="field-lbl-exp-duration">Test duration (s)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="field-experiment-time" name="test_duration_s" class="form-control mono" placeholder="e.g. 100" value="100" min="0.0001" step="0.1">
+                <span class="input-suffix">s</span>
+              </div>
+            </div>
+            <div class="config-col">
+              <label for="field-temp-edge" class="form-label" id="field-lbl-temp-edge">Ends of the bar are held at (&deg;C)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="field-temp-edge" name="boundary_temperature" class="form-control mono" placeholder="e.g. 20" value="20" step="0.5">
+                <span class="input-suffix">&deg;C</span>
+              </div>
+            </div>
+            <div class="config-col">
+              <label for="field-temp-peak" class="form-label" id="field-lbl-temp-peak">Hottest point at the start (&deg;C)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="field-temp-peak" name="initial_peak_temperature" class="form-control mono" placeholder="e.g. 80" value="80" step="0.5">
+                <span class="input-suffix">&deg;C</span>
+              </div>
+            </div>
           </div>
 
+          <!-- Material & How Fast Heat Spreads -->
           <div class="form-group">
-            <label class="form-label">Evaluation Method</label>
+            <label for="field-material-select" class="form-label">How fast heat spreads</label>
+            <select id="field-material-select" class="form-control" style="margin-bottom: 0.45rem;">
+              <option value="steel" data-alpha="0.000013" selected>Steel (typical: 1.3 &times; 10&minus;5 m&sup2;/s)</option>
+              <option value="copper" data-alpha="0.000111">Copper (typical: 1.11 &times; 10&minus;4 m&sup2;/s)</option>
+              <option value="aluminium" data-alpha="0.000084">Aluminium (typical: 8.4 &times; 10&minus;5 m&sup2;/s)</option>
+              <option value="glass" data-alpha="0.0000005">Glass (typical: 5.0 &times; 10&minus;7 m&sup2;/s)</option>
+              <option value="wood" data-alpha="0.00000013">Wood (typical: 1.3 &times; 10&minus;7 m&sup2;/s)</option>
+              <option value="custom">Custom material...</option>
+            </select>
+            <div class="input-suffix-wrap">
+              <input type="text" id="field-alpha" class="form-control mono" value="0.000013" placeholder="e.g. 0.000013">
+              <span class="input-suffix">m&sup2;/s</span>
+            </div>
+            <span class="form-help" id="field-alpha-help">Typical values: Copper ~1.1&times;10⁻⁴, Aluminium ~8.4&times;10⁻⁵, Steel ~1.3&times;10⁻⁵, Glass ~5&times;10⁻⁷, Wood ~1.3&times;10⁻⁷ m&sup2;/s.</span>
+            <p class="form-help" id="field-fno-validity-note" style="margin-top: 0.35rem; color: var(--text-muted); line-height: 1.4;">The AI model is only checked for typical heat-spread values; outside that range the standard calculation is used automatically.</p>
+          </div>
+
+          <!-- Evaluation Method -->
+          <div class="form-group" style="margin-top: 0.9rem;">
+            <label class="form-label">How to calculate it</label>
             <div class="btn-group" style="width: 100%;">
-              <button type="button" class="btn btn-secondary btn-sm" id="field-method-solver-btn">Solver (CN)</button>
-              <button type="button" class="btn btn-secondary btn-sm" id="field-method-fno-btn">FNO Operator</button>
-              <button type="button" class="btn btn-secondary btn-sm active" id="field-method-compare-btn">Compare Both</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="field-method-solver-btn">Standard calculation</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="field-method-fno-btn">AI model</button>
+              <button type="button" class="btn btn-secondary btn-sm active" id="field-method-compare-btn">Compare both</button>
             </div>
           </div>
 
-          <div class="grid-2">
-            <div class="form-group">
-              <label for="field-nx" class="form-label">Spatial Grid N_x</label>
-              <input type="number" id="field-nx" class="form-control mono" value="101" readonly>
-            </div>
-            <div class="form-group">
-              <label for="field-nt" class="form-label">Temporal Grid N_t</label>
-              <input type="number" id="field-nt" class="form-control mono" value="201" readonly>
-            </div>
-          </div>
-
+          <!-- Cross-Section Time -->
           <div class="form-group">
-            <label for="field-time-slider" class="form-label">Cross-Section Time t*</label>
+            <label for="field-time-slider" class="form-label">Look at one moment</label>
             <input type="range" id="field-time-slider" min="0" max="200" value="40" style="width: 100%;">
             <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted);">
-              <span>t = 0.00</span>
-              <span id="field-time-val" class="mono font-bold">t = 0.20</span>
-              <span>t = 1.00</span>
+              <span id="field-time-min">0.0 s</span>
+              <span id="field-time-val" class="mono font-bold">20.0 s</span>
+              <span id="field-time-max">100.0 s</span>
             </div>
           </div>
 
+          <!-- More Options -->
+          <details class="disclosure" id="field-more-options" style="margin-top: 0.75rem; margin-bottom: 0.75rem;">
+            <summary class="technical-details-summary">More options</summary>
+            <div class="technical-details-body" style="padding-top: 0.5rem;">
+              <div class="grid-2">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="field-nx" class="form-label">Detail along the bar</label>
+                  <input type="number" id="field-nx" class="form-control mono" value="101" readonly>
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label for="field-nt" class="form-label">Detail in time</label>
+                  <input type="number" id="field-nt" class="form-control mono" value="201" readonly>
+                </div>
+              </div>
+            </div>
+          </details>
+
           <div style="margin-top: 1rem;">
-            <button type="button" class="btn btn-primary" id="field-submit-btn">Compute Spatio-Temporal Field</button>
+            <button type="button" class="btn btn-primary" id="field-submit-btn">Show how heat spreads</button>
           </div>
         </div>
 
         <!-- Field Heatmap & Comparison Card -->
         <div class="card" id="field-results-card">
-          <h2 class="card-title" style="margin-top: 0;">Spatio-Temporal Solution Field u(x, t)</h2>
+          <h2 class="card-title" style="margin-top: 0;">Temperature along the bar over time</h2>
 
           <div id="field-state-container">
             <div class="state-box">
-              Click <strong>Compute Spatio-Temporal Field</strong> to generate heatmaps and cross-sectional profiles.
+              Click <strong>Show how heat spreads</strong> to see how temperature changes over time.
             </div>
           </div>
 
           <div id="field-result-panel" style="display: none;">
             <!-- Comparison Summary Strip -->
-            <div id="field-compare-summary" style="display: flex; gap: 1rem; align-items: center; justify-content: space-between; padding: 0.6rem 0.9rem; background: var(--bg-surface-raised); border: 1px solid var(--rule-hairline); border-radius: var(--radius-sm); margin-bottom: 1rem;">
-              <div>
-                <span class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">Method Used</span>
-                <div style="font-weight: 600;" id="field-method-badge">Compare</div>
+            <div id="field-compare-summary" style="display: flex; flex-direction: column; padding: 0.75rem 1rem; background: var(--bg-surface-raised); border: 1px solid var(--rule-hairline); border-radius: var(--radius-sm); margin-bottom: 1rem;">
+              <div style="display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+                <div>
+                  <span class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">Calculated with</span>
+                  <div style="font-weight: 600;" id="field-method-badge">Compare both</div>
+                </div>
+                <div id="field-rel-diff-box">
+                  <span class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">Difference between the two methods</span>
+                  <div class="mono" style="font-weight: 700; color: var(--primary-navy);" id="field-rel-diff-val">-</div>
+                </div>
+                <div>
+                  <span class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">Time taken</span>
+                  <div class="mono" style="font-size: 0.88rem;" id="field-timing-text">-</div>
+                </div>
               </div>
-              <div id="field-rel-diff-box">
-                <span class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">Relative Difference L₂</span>
-                <div class="mono" style="font-weight: 700; color: var(--primary-navy);" id="field-rel-diff-val">-</div>
-              </div>
-              <div>
-                <span class="text-muted" style="font-size: 0.78rem; text-transform: uppercase;">Timing</span>
-                <div class="mono" style="font-size: 0.88rem;" id="field-timing-text">-</div>
-              </div>
-            </div>
-
-            <!-- Heatmap Views -->
-            <div class="heatmap-container">
-              <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                <span style="font-size: 0.85rem; font-weight: 600;" id="field-heatmap-title">Thermal Field u(x, t) Heatmap</span>
-                <span class="hover-readout" id="field-hover-readout">Hover over heatmap for (x, t, u)</span>
-              </div>
-              <canvas id="field-canvas" class="heatmap-canvas" width="505" height="260"></canvas>
-              <div class="heatmap-colorbar-wrap">
-                <span>0.00</span>
-                <div class="heatmap-colorbar" id="field-colorbar"></div>
-                <span>1.00</span>
+              <div class="field-speed-note" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.45rem; line-height: 1.4; border-top: 1px solid var(--rule-subtle); padding-top: 0.4rem;">
+                The AI model is not faster for a single picture; its value is speed inside the estimation step.
               </div>
             </div>
 
-            <figure>
-              <figcaption>
-                <strong>Figure 4. Spatio-Temporal Heat Diffusion Heatmap.</strong> Horizontal axis represents space x ∈ [0, 1]; vertical axis represents time t ∈ [0, 1] (time flows downward). Colors mapped via sequential perceptually ordered thermal scale.
-              </figcaption>
-            </figure>
+            <!-- Heatmap Views with Axis Labels -->
+            <div class="heatmap-container" style="position: relative;">
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.25rem;">
+                <span style="font-size: 0.85rem; font-weight: 600;" id="field-heatmap-title">Temperature over space and time</span>
+                <span class="hover-readout" id="field-hover-readout">Hover over heatmap for position, time, and temperature</span>
+              </div>
+
+              <div class="heatmap-axes-wrapper" style="display: flex; align-items: stretch; gap: 0.4rem;">
+                <!-- Y-axis Label & Ticks (Time flows downward) -->
+                <div class="heatmap-y-axis" style="display: flex; flex-direction: row; align-items: center; min-width: 60px;">
+                  <div class="axis-title-vertical" style="writing-mode: vertical-rl; transform: rotate(180deg); font-size: 0.78rem; font-weight: 600; color: var(--text-main); text-align: center; margin-right: 4px;">Time (s)</div>
+                  <div id="field-y-ticks" style="display: flex; flex-direction: column; justify-content: space-between; height: 100%; font-size: 0.72rem; color: var(--text-muted); text-align: right; padding-right: 4px; border-right: 1px solid var(--rule-hairline);">
+                    <span>0 s</span>
+                    <span>25 s</span>
+                    <span>50 s</span>
+                    <span>75 s</span>
+                    <span>100 s</span>
+                  </div>
+                </div>
+
+                <!-- Main Canvas & X-axis -->
+                <div style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+                  <canvas id="field-canvas" class="heatmap-canvas" width="505" height="260" style="width: 100%; height: 260px; display: block; border: 1px solid var(--rule-hairline);"></canvas>
+                  
+                  <!-- X-axis Ticks & Label -->
+                  <div id="field-x-ticks" style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-muted); padding-top: 3px; border-top: 1px solid var(--rule-hairline);">
+                    <span>0.00 m</span>
+                    <span>0.02 m</span>
+                    <span>0.05 m</span>
+                    <span>0.08 m</span>
+                    <span>0.10 m</span>
+                  </div>
+                  <div class="axis-title-horizontal" style="text-align: center; font-size: 0.78rem; font-weight: 600; color: var(--text-main); margin-top: 3px;">Position along the bar (m)</div>
+                </div>
+              </div>
+
+              <!-- Colorbar with Cold and Hot in degrees C -->
+              <div class="heatmap-colorbar-wrap" style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span id="field-colorbar-cold" style="font-size: 0.82rem; font-weight: 500; color: var(--text-muted); min-width: 80px;">cold (20.0 &deg;C)</span>
+                <div class="heatmap-colorbar" id="field-colorbar" style="flex: 1; height: 12px; border-radius: 2px;"></div>
+                <span id="field-colorbar-hot" style="font-size: 0.82rem; font-weight: 500; color: var(--text-muted); text-align: right; min-width: 80px;">hot (80.0 &deg;C)</span>
+              </div>
+            </div>
 
             <!-- Cross-sectional Profile -->
-            <h3 style="margin-top: 1rem; font-size: 1.05rem;">Spatial Profile u(x, t*) vs Exact Analytic</h3>
-            <figure>
+            <h3 style="margin-top: 1.25rem; font-size: 1.05rem;" id="field-profile-title">Temperature along the bar at 20.0 s</h3>
+            <figure style="margin: 0;">
               <div class="chart-wrapper">
                 <svg id="field-profile-svg" class="chart-svg" viewBox="0 0 540 220" preserveAspectRatio="xMidYMid meet"></svg>
                 <div class="chart-legend" id="field-profile-legend">
-                  <div class="legend-item"><span class="legend-line" style="background-color: var(--primary-navy); height: 2px;"></span> Model Solution Profile u(x, t*)</div>
-                  <div class="legend-item"><span class="legend-line" style="border-top: 2px dashed #e67e22;"></span> Exact Analytic sin(πx) exp(−α π² t*)</div>
+                  <div class="legend-item"><span class="legend-line" style="background-color: var(--primary-navy); height: 2.5px;"></span> Computed</div>
+                  <div class="legend-item"><span class="legend-line" style="border-top: 2px dashed #e67e22;"></span> Exact formula</div>
                 </div>
               </div>
-              <figcaption>
-                <strong>Figure 5. Spatial Profile at Selected Time t*.</strong> Cross-section across x ∈ [0, 1] evaluated at t* alongside exact Fourier analysis solution.
+              <figcaption id="field-profile-caption" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.5;">
+                Temperature along the bar at the selected moment. The solid navy line shows the computed result; the dashed orange line shows the exact physical formula.
               </figcaption>
             </figure>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+            <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" id="field-download-csv-btn">Download data (CSV)</button>
               <button type="button" class="btn btn-secondary btn-sm" id="field-download-btn">Download Field Grid (JSON)</button>
             </div>
 
-            <details class="disclosure" id="field-json-disclosure">
+            <details class="disclosure" id="field-json-disclosure" style="margin-top: 0.75rem;">
               <summary>Request and Response Payloads (JSON)</summary>
               <pre id="field-json-dump"></pre>
             </details>
@@ -2305,6 +2392,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=thermalens-v28"></script>
+  <script src="app.js?v=thermalens-v29"></script>
 </body>
 </html>

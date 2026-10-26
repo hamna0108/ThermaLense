@@ -306,8 +306,11 @@ function handleTryExample(action) {
     setTimeout(() => {
       const compareBtn = document.getElementById('field-method-compare-btn');
       if (compareBtn) compareBtn.click();
-      const alphaInput = document.getElementById('field-alpha');
-      if (alphaInput) alphaInput.value = '0.10';
+      const matSelect = document.getElementById('field-material-select');
+      if (matSelect) {
+        matSelect.value = 'steel';
+        matSelect.dispatchEvent(new Event('change'));
+      }
       const submitBtn = document.getElementById('field-submit-btn');
       if (submitBtn) submitBtn.click();
     }, 60);
@@ -2355,11 +2358,11 @@ function initDiagnoseWorkbench() {
   setupDiagnoseTableEvents(baseTbody, baseAddBtn, baseCsvBtn, baseCsvUpload, baseBadge, 20, baseMsg, 'diag-base');
   setupDiagnoseTableEvents(testTbody, testAddBtn, testCsvBtn, testCsvUpload, testBadge, 3, testMsg, 'diag-test');
 
-  // Setup Two-way Shared Fields across Estimate, Diagnose, and Place Sensors tabs
-  syncSharedFields('est-bar-length', 'diag-bar-length', 'place-bar-length');
-  syncSharedFields('est-experiment-time', 'diag-experiment-time', 'place-experiment-time');
-  syncSharedFields('est-temp-edge', 'diag-temp-edge', 'place-temp-edge');
-  syncSharedFields('est-temp-peak', 'diag-temp-peak', 'place-temp-peak');
+  // Setup Two-way Shared Fields across Field, Estimate, Diagnose, and Place Sensors tabs
+  syncSharedFields('field-bar-length', 'est-bar-length', 'diag-bar-length', 'place-bar-length');
+  syncSharedFields('field-experiment-time', 'est-experiment-time', 'diag-experiment-time', 'place-experiment-time');
+  syncSharedFields('field-temp-edge', 'est-temp-edge', 'diag-temp-edge', 'place-temp-edge');
+  syncSharedFields('field-temp-peak', 'est-temp-peak', 'diag-temp-peak', 'place-temp-peak');
   syncSharedFields('est-sigma-val', 'diag-sigma-val', 'place-sigma');
 
   // Default values for Diagnose fields if empty
@@ -4424,67 +4427,246 @@ function initFieldWorkbench() {
   const slider = document.getElementById('field-time-slider');
   const submitBtn = document.getElementById('field-submit-btn');
   const downloadBtn = document.getElementById('field-download-btn');
+  const downloadCsvBtn = document.getElementById('field-download-csv-btn');
   const canvas = document.getElementById('field-canvas');
+  const matSelect = document.getElementById('field-material-select');
+  const alphaInput = document.getElementById('field-alpha');
+  const barLenInput = document.getElementById('field-bar-length');
+  const expDurInput = document.getElementById('field-experiment-time');
+  const tempEdgeInput = document.getElementById('field-temp-edge');
+  const tempPeakInput = document.getElementById('field-temp-peak');
 
   let activeMethod = 'compare';
 
-  solverBtn.addEventListener('click', () => {
-    activeMethod = 'solver';
-    solverBtn.classList.add('active');
-    fnoBtn.classList.remove('active');
-    compBtn.classList.remove('active');
-  });
+  if (solverBtn) {
+    solverBtn.addEventListener('click', () => {
+      activeMethod = 'solver';
+      solverBtn.classList.add('active');
+      fnoBtn?.classList.remove('active');
+      compBtn?.classList.remove('active');
+    });
+  }
 
-  fnoBtn.addEventListener('click', () => {
-    activeMethod = 'fno';
-    fnoBtn.classList.add('active');
-    solverBtn.classList.remove('active');
-    compBtn.classList.remove('active');
-  });
+  if (fnoBtn) {
+    fnoBtn.addEventListener('click', () => {
+      activeMethod = 'fno';
+      fnoBtn.classList.add('active');
+      solverBtn?.classList.remove('active');
+      compBtn?.classList.remove('active');
+    });
+  }
 
-  compBtn.addEventListener('click', () => {
-    activeMethod = 'compare';
-    compBtn.classList.add('active');
-    solverBtn.classList.remove('active');
-    fnoBtn.classList.remove('active');
-  });
+  if (compBtn) {
+    compBtn.addEventListener('click', () => {
+      activeMethod = 'compare';
+      compBtn.classList.add('active');
+      solverBtn?.classList.remove('active');
+      fnoBtn?.classList.remove('active');
+    });
+  }
 
-  slider.addEventListener('input', () => {
-    const tIdx = parseInt(slider.value);
-    const tVal = (tIdx / 200).toFixed(2);
-    document.getElementById('field-time-val').textContent = `t=${tVal}`;
-    renderFieldProfile(tIdx);
-  });
+  // Material dropdown handler
+  if (matSelect && alphaInput) {
+    matSelect.addEventListener('change', () => {
+      const selected = matSelect.options[matSelect.selectedIndex];
+      const alphaVal = selected.getAttribute('data-alpha');
+      if (alphaVal) {
+        alphaInput.value = alphaVal;
+      }
+      updateFieldNormAlphaPreview();
+    });
 
-  canvas.addEventListener('mousemove', handleFieldCanvasHover);
-  canvas.addEventListener('mouseleave', () => {
-    document.getElementById('field-hover-readout').textContent = 'Hover over heatmap for (x, t, u)';
-  });
+    alphaInput.addEventListener('input', () => {
+      const cur = alphaInput.value.trim();
+      let matched = false;
+      for (let i = 0; i < matSelect.options.length; i++) {
+        if (matSelect.options[i].getAttribute('data-alpha') === cur) {
+          matSelect.selectedIndex = i;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        matSelect.value = 'custom';
+      }
+      updateFieldNormAlphaPreview();
+    });
+  }
 
-  submitBtn.addEventListener('click', () => executeField(activeMethod));
-  downloadBtn.addEventListener('click', () => {
-    if (!STATE.lastFieldResult) return;
-    downloadJson(STATE.lastFieldResult, 'heat_field_grid.json');
-  });
+  function updateTimeLabels() {
+    const T = parseFloat(expDurInput?.value) || 100;
+    const tIdx = parseInt(slider?.value || 40);
+    const tSeconds = ((tIdx / 200) * T).toFixed(1);
+
+    const timeMinEl = document.getElementById('field-time-min');
+    const timeMaxEl = document.getElementById('field-time-max');
+    const timeValEl = document.getElementById('field-time-val');
+    const titleEl = document.getElementById('field-profile-title');
+
+    if (timeMinEl) timeMinEl.textContent = '0.0 s';
+    if (timeMaxEl) timeMaxEl.textContent = `${T.toFixed(1)} s`;
+    if (timeValEl) timeValEl.textContent = `${tSeconds} s`;
+    if (titleEl) titleEl.textContent = `Temperature along the bar at ${tSeconds} s`;
+    return tIdx;
+  }
+
+  if (slider) {
+    slider.addEventListener('input', () => {
+      const tIdx = updateTimeLabels();
+      renderFieldProfile(tIdx);
+    });
+  }
+
+  if (expDurInput) {
+    expDurInput.addEventListener('input', () => {
+      updateTimeLabels();
+      updateFieldNormAlphaPreview();
+      updateFieldAxisTicks();
+      if (STATE.lastFieldResult) {
+        renderFieldProfile(parseInt(slider?.value || 40));
+      }
+    });
+  }
+
+  if (barLenInput) {
+    barLenInput.addEventListener('input', () => {
+      updateFieldNormAlphaPreview();
+      updateFieldAxisTicks();
+    });
+  }
+
+  if (tempEdgeInput || tempPeakInput) {
+    [tempEdgeInput, tempPeakInput].forEach(inp => {
+      if (inp) inp.addEventListener('input', updateFieldColorbarLabels);
+    });
+  }
+
+  if (canvas) {
+    canvas.addEventListener('mousemove', handleFieldCanvasHover);
+    canvas.addEventListener('mouseleave', () => {
+      const readout = document.getElementById('field-hover-readout');
+      if (readout) readout.textContent = 'Hover over heatmap for position, time, and temperature';
+    });
+  }
+
+  if (submitBtn) {
+    submitBtn.addEventListener('click', () => executeField(activeMethod));
+  }
+
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      if (!STATE.lastFieldResult) return;
+      downloadJson(STATE.lastFieldResult, 'heat_over_time_grid.json');
+    });
+  }
+
+  if (downloadCsvBtn) {
+    downloadCsvBtn.addEventListener('click', handleFieldDownloadCsv);
+  }
 
   // Setup colorbar gradient
   const colorbar = document.getElementById('field-colorbar');
   if (colorbar) {
     colorbar.style.background = 'linear-gradient(to right, rgb(10,5,30), rgb(75,20,120), rgb(185,40,80), rgb(235,120,20), rgb(255,255,160))';
   }
+
+  updateFieldNormAlphaPreview();
+  updateTimeLabels();
+  updateFieldAxisTicks();
+  updateFieldColorbarLabels();
+}
+
+function updateFieldNormAlphaPreview() {
+  const L = parseFloat(document.getElementById('field-bar-length')?.value) || 0.1;
+  const T = parseFloat(document.getElementById('field-experiment-time')?.value) || 100;
+  const alpha = parseFloat(document.getElementById('field-alpha')?.value) || 0.000013;
+  const alphaNorm = (alpha * T) / (L * L);
+  const normValEl = document.getElementById('field-norm-alpha-val');
+  if (normValEl) {
+    normValEl.textContent = alphaNorm.toFixed(6);
+  }
+}
+
+function updateFieldAxisTicks() {
+  const L = parseFloat(document.getElementById('field-bar-length')?.value) || 0.1;
+  const T = parseFloat(document.getElementById('field-experiment-time')?.value) || 100;
+
+  const yTicksEl = document.getElementById('field-y-ticks');
+  if (yTicksEl) {
+    yTicksEl.innerHTML = `
+      <span>0 s</span>
+      <span>${(T * 0.25).toFixed(0)} s</span>
+      <span>${(T * 0.50).toFixed(0)} s</span>
+      <span>${(T * 0.75).toFixed(0)} s</span>
+      <span>${T.toFixed(0)} s</span>
+    `;
+  }
+
+  const xTicksEl = document.getElementById('field-x-ticks');
+  if (xTicksEl) {
+    xTicksEl.innerHTML = `
+      <span>0.00 m</span>
+      <span>${(L * 0.25).toFixed(2)} m</span>
+      <span>${(L * 0.50).toFixed(2)} m</span>
+      <span>${(L * 0.75).toFixed(2)} m</span>
+      <span>${L.toFixed(2)} m</span>
+    `;
+  }
+}
+
+function updateFieldColorbarLabels() {
+  const edgeT = parseFloat(document.getElementById('field-temp-edge')?.value) || 20.0;
+  const peakT = parseFloat(document.getElementById('field-temp-peak')?.value) || 80.0;
+  const coldEl = document.getElementById('field-colorbar-cold');
+  const hotEl = document.getElementById('field-colorbar-hot');
+  if (coldEl) coldEl.textContent = `cold (${edgeT.toFixed(1)} °C)`;
+  if (hotEl) hotEl.textContent = `hot (${peakT.toFixed(1)} °C)`;
+}
+
+function handleFieldDownloadCsv() {
+  const result = STATE.lastFieldResult;
+  if (!result || !result.response) return;
+  const resp = result.response;
+  const uGrid = resp.u_grid;
+  const xGrid = resp.x_grid;
+  const tGrid = resp.t_grid;
+
+  let csv = 'time_s,position_m,temperature_c\n';
+  for (let tIdx = 0; tIdx < tGrid.length; tIdx++) {
+    const t = tGrid[tIdx];
+    for (let xIdx = 0; xIdx < xGrid.length; xIdx++) {
+      const x = xGrid[xIdx];
+      const u = uGrid[tIdx][xIdx];
+      csv += `${t},${x},${u}\n`;
+    }
+  }
+  downloadCsv(csv, 'heat_over_time_data.csv');
 }
 
 async function executeField(methodChoice) {
   const stateContainer = document.getElementById('field-state-container');
   const resultPanel = document.getElementById('field-result-panel');
-  const alpha = parseFloat(document.getElementById('field-alpha').value) || 0.10;
-  const Nx = parseInt(document.getElementById('field-nx').value) || 101;
-  const Nt = parseInt(document.getElementById('field-nt').value) || 201;
+  const barLen = parseFloat(document.getElementById('field-bar-length')?.value) || 0.1;
+  const expDur = parseFloat(document.getElementById('field-experiment-time')?.value) || 100;
+  const tempEdge = parseFloat(document.getElementById('field-temp-edge')?.value) || 20.0;
+  const tempPeak = parseFloat(document.getElementById('field-temp-peak')?.value) || 80.0;
+  const alpha = parseFloat(document.getElementById('field-alpha')?.value) || 0.000013;
+  const Nx = parseInt(document.getElementById('field-nx')?.value) || 101;
+  const Nt = parseInt(document.getElementById('field-nt')?.value) || 201;
 
   stateContainer.innerHTML = '<div class="state-box loading"><span class="spinner"></span> Simulating thermal diffusion field...</div>';
   resultPanel.style.display = 'none';
 
-  const payload = { alpha, Nx, Nt, method: methodChoice };
+  const payload = {
+    alpha,
+    bar_length_m: barLen,
+    test_duration_s: expDur,
+    boundary_temperature: tempEdge,
+    initial_peak_temperature: tempPeak,
+    Nx,
+    Nt,
+    method: methodChoice
+  };
 
   try {
     const res = await fetch('/v1/field', {
@@ -4494,7 +4676,15 @@ async function executeField(methodChoice) {
     });
 
     const data = await res.json();
-    STATE.lastFieldResult = { request: payload, response: data, alpha };
+    STATE.lastFieldResult = {
+      request: payload,
+      response: data,
+      alpha,
+      barLengthM: barLen,
+      testDurationS: expDur,
+      boundaryTemp: tempEdge,
+      peakTemp: tempPeak
+    };
 
     if (!res.ok) {
       stateContainer.innerHTML = `<div class="state-box error"><strong>Simulation Error:</strong> ${data.message || JSON.stringify(data.detail)}</div>`;
@@ -4505,23 +4695,51 @@ async function executeField(methodChoice) {
     resultPanel.style.display = 'block';
 
     // Summary Strip
-    document.getElementById('field-method-badge').textContent = data.method_used.toUpperCase();
+    const badgeEl = document.getElementById('field-method-badge');
     const diffBox = document.getElementById('field-rel-diff-box');
     const timingText = document.getElementById('field-timing-text');
 
     if (data.method_used === 'compare' && data.relative_difference !== null) {
-      diffBox.style.display = 'block';
-      document.getElementById('field-rel-diff-val').textContent = (data.relative_difference * 100).toFixed(4) + '%';
-      timingText.textContent = `Solver: ${data.solver_timing_ms}ms | FNO: ${data.fno_timing_ms}ms`;
+      if (badgeEl) badgeEl.textContent = 'Compare both';
+      if (diffBox) {
+        diffBox.style.display = 'block';
+        document.getElementById('field-rel-diff-val').textContent = (data.relative_difference * 100).toFixed(4) + '%';
+      }
+      if (timingText) {
+        timingText.textContent = `Standard: ${data.solver_timing_ms} ms | AI: ${data.fno_timing_ms} ms`;
+      }
+    } else if (data.method_used === 'fno') {
+      if (badgeEl) badgeEl.textContent = 'AI model';
+      if (diffBox) diffBox.style.display = 'none';
+      if (timingText) timingText.textContent = `${data.timing_ms} ms`;
     } else {
-      diffBox.style.display = 'none';
-      timingText.textContent = `${data.timing_ms} ms`;
+      if (badgeEl) badgeEl.textContent = 'Standard calculation';
+      if (diffBox) diffBox.style.display = 'none';
+      if (timingText) timingText.textContent = `${data.timing_ms} ms`;
     }
+
+    // Normalised alpha in Show details
+    const normAlphaVal = (data.alpha_norm !== null && data.alpha_norm !== undefined)
+      ? data.alpha_norm
+      : (alpha * expDur / (barLen * barLen));
+    const normEl = document.getElementById('field-norm-alpha-val');
+    if (normEl) normEl.textContent = normAlphaVal.toFixed(6);
+
+    updateFieldAxisTicks();
+    updateFieldColorbarLabels();
 
     document.getElementById('field-json-dump').textContent = JSON.stringify({ request: payload, response: data }, null, 2);
 
     renderFieldHeatmap();
-    renderFieldProfile(parseInt(document.getElementById('field-time-slider').value) || 40);
+    const slider = document.getElementById('field-time-slider');
+    const tIdx = parseInt(slider ? slider.value : '40') || 40;
+    const tSeconds = ((tIdx / 200) * expDur).toFixed(1);
+    const titleEl = document.getElementById('field-profile-title');
+    if (titleEl) titleEl.textContent = `Temperature along the bar at ${tSeconds} s`;
+    const timeValEl = document.getElementById('field-time-val');
+    if (timeValEl) timeValEl.textContent = `${tSeconds} s`;
+
+    renderFieldProfile(tIdx);
 
   } catch (err) {
     stateContainer.innerHTML = `<div class="state-box error"><strong>Field Simulation Error:</strong> ${err.message}</div>`;
@@ -4533,10 +4751,15 @@ function renderFieldHeatmap() {
   if (!result || !result.response) return;
 
   const canvas = document.getElementById('field-canvas');
+  if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const uGrid = result.response.u_grid; // Nt rows, Nx cols
   const Nt = uGrid.length;
   const Nx = uGrid[0].length;
+
+  const edgeT = result.boundaryTemp ?? 20.0;
+  const peakT = result.peakTemp ?? 80.0;
+  const tRange = (peakT - edgeT) || 1.0;
 
   const w = canvas.width;
   const h = canvas.height;
@@ -4544,10 +4767,12 @@ function renderFieldHeatmap() {
 
   for (let py = 0; py < h; py++) {
     const tIdx = Math.floor((py / h) * Nt);
+    const row = uGrid[Math.min(Nt - 1, tIdx)];
     for (let px = 0; px < w; px++) {
       const xIdx = Math.floor((px / w) * Nx);
-      const val = uGrid[Math.min(Nt - 1, tIdx)][Math.min(Nx - 1, xIdx)];
-      const colStr = getThermalColor(val);
+      const val = row[Math.min(Nx - 1, xIdx)];
+      const normVal = Math.max(0, Math.min(1, (val - edgeT) / tRange));
+      const colStr = getThermalColor(normVal);
       const m = colStr.match(/\d+/g);
       const idx = (py * w + px) * 4;
       imgData.data[idx] = parseInt(m[0]);
@@ -4565,6 +4790,7 @@ function handleFieldCanvasHover(e) {
   if (!result || !result.response) return;
 
   const canvas = document.getElementById('field-canvas');
+  if (!canvas) return;
   const rect = canvas.getBoundingClientRect();
   const px = e.clientX - rect.left;
   const py = e.clientY - rect.top;
@@ -4572,15 +4798,23 @@ function handleFieldCanvasHover(e) {
   const normX = Math.max(0, Math.min(1, px / rect.width));
   const normT = Math.max(0, Math.min(1, py / rect.height));
 
+  const L = result.barLengthM ?? 0.1;
+  const T = result.testDurationS ?? 100.0;
+  const realX = (normX * L).toFixed(3);
+  const realT = (normT * T).toFixed(1);
+
   const uGrid = result.response.u_grid;
   const Nt = uGrid.length;
   const Nx = uGrid[0].length;
 
   const tIdx = Math.min(Nt - 1, Math.floor(normT * Nt));
   const xIdx = Math.min(Nx - 1, Math.floor(normX * Nx));
-  const uVal = uGrid[tIdx][xIdx];
+  const uVal = uGrid[tIdx][xIdx].toFixed(1);
 
-  document.getElementById('field-hover-readout').textContent = `x=${normX.toFixed(3)}, t=${normT.toFixed(3)}s → u=${uVal.toFixed(4)}`;
+  const readout = document.getElementById('field-hover-readout');
+  if (readout) {
+    readout.textContent = `Position: ${realX} m, Time: ${realT} s → ${uVal} °C`;
+  }
 }
 
 function renderFieldProfile(tIdx) {
@@ -4588,49 +4822,71 @@ function renderFieldProfile(tIdx) {
   if (!result || !result.response) return;
 
   const svg = document.getElementById('field-profile-svg');
+  if (!svg) return;
   const uGrid = result.response.u_grid;
   const Nt = uGrid.length;
   const safeTIdx = Math.min(Nt - 1, Math.max(0, tIdx));
   const uSlice = uGrid[safeTIdx];
   const Nx = uSlice.length;
-  const alpha = result.alpha || 0.10;
-  const tVal = safeTIdx / (Nt - 1);
+
+  const L = result.barLengthM ?? 0.1;
+  const T = result.testDurationS ?? 100.0;
+  const edgeT = result.boundaryTemp ?? 20.0;
+  const peakT = result.peakTemp ?? 80.0;
+  const alpha = result.alpha ?? 0.000013;
+
+  const tFraction = safeTIdx / (Nt - 1);
+  const realT = tFraction * T;
 
   const width = 540;
   const height = 220;
-  const pad = { top: 15, right: 25, bottom: 35, left: 50 };
+  const pad = { top: 20, right: 25, bottom: 40, left: 60 };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
 
   svg.innerHTML = '';
 
-  const scaleX = x => pad.left + x * plotW;
-  const scaleY = y => pad.top + plotH - (y / 1.0) * plotH;
+  const scaleX = xNorm => pad.left + xNorm * plotW;
+  const minTemp = Math.min(edgeT, peakT);
+  const maxTemp = Math.max(edgeT, peakT);
+  const ySpan = (maxTemp - minTemp) || 1.0;
+  const scaleY = temp => pad.top + plotH - ((temp - minTemp) / ySpan) * plotH;
 
-  // Grid
+  // X Grid lines (Metres)
   let gridLines = '';
   for (let s = 0; s <= 4; s++) {
-    const xG = s / 4;
-    const xP = scaleX(xG);
-    gridLines += `<line x1="${xP}" y1="${pad.top}" x2="${xP}" y2="${pad.top + plotH}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
-    gridLines += `<text x="${xP}" y="${pad.top + plotH + 18}" text-anchor="middle" fill="var(--text-muted)" font-size="10">${xG.toFixed(2)}</text>`;
+    const frac = s / 4;
+    const xPos = scaleX(frac);
+    const xValM = (frac * L).toFixed(2);
+    gridLines += `<line x1="${xPos}" y1="${pad.top}" x2="${xPos}" y2="${pad.top + plotH}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
+    gridLines += `<text x="${xPos}" y="${pad.top + plotH + 16}" text-anchor="middle" fill="var(--text-muted)" font-size="10">${xValM} m</text>`;
   }
 
-  // Model Slice Curve
+  // Y Grid lines (Degrees C)
+  for (let s = 0; s <= 4; s++) {
+    const frac = s / 4;
+    const tValC = minTemp + frac * ySpan;
+    const yPos = scaleY(tValC);
+    gridLines += `<line x1="${pad.left}" y1="${yPos}" x2="${pad.left + plotW}" y2="${yPos}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
+    gridLines += `<text x="${pad.left - 6}" y="${yPos + 3}" text-anchor="end" fill="var(--text-muted)" font-size="10">${tValC.toFixed(0)} °C</text>`;
+  }
+
+  // Computed Model Curve
   let modelD = [];
   for (let i = 0; i < Nx; i++) {
-    const x = i / (Nx - 1);
-    const y = uSlice[i];
-    modelD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(x)} ${scaleY(y)}`);
+    const xNorm = i / (Nx - 1);
+    const temp = uSlice[i];
+    modelD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(xNorm).toFixed(1)} ${scaleY(temp).toFixed(1)}`);
   }
   const modelPath = `<path d="${modelD.join(' ')}" fill="none" stroke="var(--primary-navy)" stroke-width="2.5"/>`;
 
-  // Analytic Exact Curve: sin(pi x) * exp(-alpha * pi^2 * t)
+  // Exact Fourier Formula Curve
   let exactD = [];
+  const decay = Math.exp(-alpha * Math.PI * Math.PI * realT / (L * L));
   for (let i = 0; i <= 100; i++) {
-    const x = i / 100;
-    const yEx = Math.sin(Math.PI * x) * Math.exp(-alpha * Math.PI * Math.PI * tVal);
-    exactD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(x)} ${scaleY(yEx)}`);
+    const xNorm = i / 100;
+    const exactTemp = edgeT + (peakT - edgeT) * Math.sin(Math.PI * xNorm) * decay;
+    exactD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(xNorm).toFixed(1)} ${scaleY(exactTemp).toFixed(1)}`);
   }
   const exactPath = `<path d="${exactD.join(' ')}" fill="none" stroke="#e67e22" stroke-width="2" stroke-dasharray="4 4"/>`;
 
@@ -4640,8 +4896,8 @@ function renderFieldProfile(tIdx) {
     ${exactPath}
     <line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
     <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
-    <text x="${pad.left + plotW / 2}" y="${height - 5}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Spatial Coordinate x</text>
-    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="16" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">u(x, t*=${tVal.toFixed(2)}s)</text>
+    <text x="${pad.left + plotW / 2}" y="${height - 5}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Position along the bar (m)</text>
+    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="16" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Temperature (°C)</text>
   `;
 }
 
@@ -5098,6 +5354,18 @@ function renderConfusionMatrixSvg() {
 
 function downloadJson(obj, filename = 'result.json') {
   const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function downloadCsv(content, filename = 'data.csv') {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

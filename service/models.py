@@ -313,7 +313,11 @@ class PlacementResponse(BaseModel):
 
 
 class FieldRequest(BaseModel):
-    alpha: float = Field(..., gt=0.0, description="Diffusivity parameter alpha")
+    alpha: float = Field(..., gt=0.0, description="Diffusivity parameter (m^2/s if bar_length_m is given, or normalised if omitted)")
+    bar_length_m: Optional[float] = Field(None, gt=0.0, description="Physical bar length L in metres")
+    test_duration_s: Optional[float] = Field(None, gt=0.0, description="Test duration T in seconds")
+    boundary_temperature: Optional[float] = Field(None, description="Ends temperature in deg C")
+    initial_peak_temperature: Optional[float] = Field(None, description="Starting peak temperature in deg C")
     physics: Optional[Dict[str, Any]] = None
     Nx: Optional[int] = Field(101, ge=11, le=501)
     Nt: Optional[int] = Field(201, ge=11, le=1001)
@@ -336,6 +340,11 @@ class FieldResponse(BaseModel):
     solver_timing_ms: Optional[float] = None
     relative_difference: Optional[float] = None
     compare_grid: Optional[List[List[float]]] = None
+    alpha_norm: Optional[float] = None
+    bar_length_m: Optional[float] = None
+    test_duration_s: Optional[float] = None
+    boundary_temperature: Optional[float] = None
+    initial_peak_temperature: Optional[float] = None
 
 class PoissonGaussianSource(BaseModel):
     type: str = "gaussian"

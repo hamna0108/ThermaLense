@@ -1052,22 +1052,37 @@ def post_placement(req: PlacementRequest):
 def post_field(req: FieldRequest):
     """Generate 2D spatial-temporal heat diffusion field u(x, t) on grid."""
     t0 = time.perf_counter()
-    alpha = req.alpha
+    raw_alpha = req.alpha
     Nx = req.Nx
     Nt = req.Nt
     method_req = (req.method or "auto").lower()
-    
-    # FNO is verified for alpha in [0.01, 1.0] under standard initial-boundary physics
+
+    # Physical parameters normalisation
+    is_physical = req.bar_length_m is not None and req.test_duration_s is not None
+    if is_physical:
+        L = float(req.bar_length_m)
+        T = float(req.test_duration_s)
+        T_edge = float(req.boundary_temperature if req.boundary_temperature is not None else 20.0)
+        T_peak = float(req.initial_peak_temperature if req.initial_peak_temperature is not None else 80.0)
+        alpha_norm = float(raw_alpha * T / (L ** 2))
+    else:
+        L = 1.0
+        T = 1.0
+        T_edge = 0.0
+        T_peak = 1.0
+        alpha_norm = float(raw_alpha)
+
+    # FNO is verified for alpha_norm in [0.01, 1.0] under standard initial-boundary physics
     can_use_fno = bool(
-        0.01 <= alpha <= 1.0 and
+        0.01 <= alpha_norm <= 1.0 and
         req.physics is None and
         "fno_heat" in APP_STATE and
         Nx == 101 and Nt == 201
     )
-    
-    x_grid = np.linspace(0, 1, Nx).tolist()
-    t_grid = np.linspace(0, 1, Nt).tolist()
-    
+
+    x_grid = [round(float(x), 5) for x in np.linspace(0, L, Nx)]
+    t_grid = [round(float(t), 5) for t in np.linspace(0, T, Nt)]
+
     def run_fno():
         fno_model = APP_STATE["fno_heat"]
         mean_la = APP_STATE["heat_log_alpha_mean"]
@@ -1075,7 +1090,7 @@ def post_field(req: FieldRequest):
         t_mesh, x_mesh = np.meshgrid(np.linspace(0, 1, Nt), np.linspace(0, 1, Nx), indexing='ij')
         t_tensor = torch.tensor(2 * t_mesh - 1, dtype=torch.float32)
         x_tensor = torch.tensor(2 * x_mesh - 1, dtype=torch.float32)
-        norm_alpha = (np.log10(alpha) - mean_la) / std_la
+        norm_alpha = (np.log10(alpha_norm) - mean_la) / std_la
         alpha_tensor = torch.full_like(t_tensor, norm_alpha)
         grid_input = torch.stack([t_tensor, x_tensor, alpha_tensor], dim=0).unsqueeze(0)
         with torch.no_grad():
@@ -1083,14 +1098,19 @@ def post_field(req: FieldRequest):
         return u_out
 
     def run_solver():
-        _, _, u_num = solve_heat_1d_general(Nx=Nx, Nt=Nt, alpha=alpha)
+        _, _, u_num = solve_heat_1d_general(Nx=Nx, Nt=Nt, alpha=alpha_norm)
         return u_num
+
+    def to_real_units(u_norm):
+        if is_physical:
+            return T_edge + (T_peak - T_edge) * u_norm
+        return u_norm
 
     if method_req == "compare":
         t_sol_0 = time.perf_counter()
         u_solver = run_solver()
         sol_ms = round((time.perf_counter() - t_sol_0) * 1000.0, 2)
-        
+
         if can_use_fno or ("fno_heat" in APP_STATE and Nx == 101 and Nt == 201):
             t_fno_0 = time.perf_counter()
             u_fno = run_fno()
@@ -1103,8 +1123,11 @@ def post_field(req: FieldRequest):
         rel_diff = float(np.linalg.norm(u_fno - u_solver) / norm_sol)
         total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
 
+        u_solver_real = to_real_units(u_solver)
+        u_fno_real = to_real_units(u_fno)
+
         return FieldResponse(
-            u_grid=[[round(float(v), 5) for v in row] for row in u_solver],
+            u_grid=[[round(float(v), 5) for v in row] for row in u_solver_real],
             x_grid=x_grid,
             t_grid=t_grid,
             method_used="compare",
@@ -1112,64 +1135,99 @@ def post_field(req: FieldRequest):
             solver_timing_ms=sol_ms,
             fno_timing_ms=fno_ms,
             relative_difference=round(rel_diff, 6),
-            compare_grid=[[round(float(v), 5) for v in row] for row in u_fno]
+            compare_grid=[[round(float(v), 5) for v in row] for row in u_fno_real],
+            alpha_norm=round(alpha_norm, 6) if is_physical else None,
+            bar_length_m=L if is_physical else None,
+            test_duration_s=T if is_physical else None,
+            boundary_temperature=T_edge if is_physical else None,
+            initial_peak_temperature=T_peak if is_physical else None
         )
     elif method_req in ["solver", "numerical_solver"]:
         u_solver = run_solver()
         total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+        u_solver_real = to_real_units(u_solver)
         return FieldResponse(
-            u_grid=[[round(float(v), 5) for v in row] for row in u_solver],
+            u_grid=[[round(float(v), 5) for v in row] for row in u_solver_real],
             x_grid=x_grid,
             t_grid=t_grid,
             method_used="numerical_solver",
             timing_ms=total_ms,
-            solver_timing_ms=total_ms
+            solver_timing_ms=total_ms,
+            alpha_norm=round(alpha_norm, 6) if is_physical else None,
+            bar_length_m=L if is_physical else None,
+            test_duration_s=T if is_physical else None,
+            boundary_temperature=T_edge if is_physical else None,
+            initial_peak_temperature=T_peak if is_physical else None
         )
     elif method_req == "fno":
         if can_use_fno or ("fno_heat" in APP_STATE and Nx == 101 and Nt == 201):
             u_fno = run_fno()
             total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            u_fno_real = to_real_units(u_fno)
             return FieldResponse(
-                u_grid=[[round(float(v), 5) for v in row] for row in u_fno],
+                u_grid=[[round(float(v), 5) for v in row] for row in u_fno_real],
                 x_grid=x_grid,
                 t_grid=t_grid,
                 method_used="fno",
                 timing_ms=total_ms,
-                fno_timing_ms=total_ms
+                fno_timing_ms=total_ms,
+                alpha_norm=round(alpha_norm, 6) if is_physical else None,
+                bar_length_m=L if is_physical else None,
+                test_duration_s=T if is_physical else None,
+                boundary_temperature=T_edge if is_physical else None,
+                initial_peak_temperature=T_peak if is_physical else None
             )
         else:
             u_solver = run_solver()
             total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            u_solver_real = to_real_units(u_solver)
             return FieldResponse(
-                u_grid=[[round(float(v), 5) for v in row] for row in u_solver],
+                u_grid=[[round(float(v), 5) for v in row] for row in u_solver_real],
                 x_grid=x_grid,
                 t_grid=t_grid,
                 method_used="numerical_solver",
                 timing_ms=total_ms,
-                solver_timing_ms=total_ms
+                solver_timing_ms=total_ms,
+                alpha_norm=round(alpha_norm, 6) if is_physical else None,
+                bar_length_m=L if is_physical else None,
+                test_duration_s=T if is_physical else None,
+                boundary_temperature=T_edge if is_physical else None,
+                initial_peak_temperature=T_peak if is_physical else None
             )
     else:  # auto
         if can_use_fno:
             u_fno = run_fno()
             total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            u_fno_real = to_real_units(u_fno)
             return FieldResponse(
-                u_grid=[[round(float(v), 5) for v in row] for row in u_fno],
+                u_grid=[[round(float(v), 5) for v in row] for row in u_fno_real],
                 x_grid=x_grid,
                 t_grid=t_grid,
                 method_used="fno",
                 timing_ms=total_ms,
-                fno_timing_ms=total_ms
+                fno_timing_ms=total_ms,
+                alpha_norm=round(alpha_norm, 6) if is_physical else None,
+                bar_length_m=L if is_physical else None,
+                test_duration_s=T if is_physical else None,
+                boundary_temperature=T_edge if is_physical else None,
+                initial_peak_temperature=T_peak if is_physical else None
             )
         else:
             u_solver = run_solver()
             total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
+            u_solver_real = to_real_units(u_solver)
             return FieldResponse(
-                u_grid=[[round(float(v), 5) for v in row] for row in u_solver],
+                u_grid=[[round(float(v), 5) for v in row] for row in u_solver_real],
                 x_grid=x_grid,
                 t_grid=t_grid,
                 method_used="numerical_solver",
                 timing_ms=total_ms,
-                solver_timing_ms=total_ms
+                solver_timing_ms=total_ms,
+                alpha_norm=round(alpha_norm, 6) if is_physical else None,
+                bar_length_m=L if is_physical else None,
+                test_duration_s=T if is_physical else None,
+                boundary_temperature=T_edge if is_physical else None,
+                initial_peak_temperature=T_peak if is_physical else None
             )
 
 @app.post("/v1/poisson", response_model=PoissonResponse)

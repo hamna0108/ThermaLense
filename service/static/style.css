@@ -37,14 +37,19 @@
   --radius-md: 4px;
   --transition-fast: 150ms ease-out;
 
-  /* Shared Type Scale Tokens */
-  --fs-h1: 1.95rem; /* ~31.2px (30-32px desktop) */
-  --fs-h2: 1.35rem; /* ~21.6px */
-  --fs-h3: 1.1rem;
-  --fs-body: 0.95rem;
-  --fs-label: 0.85rem;
-  --fs-help: 0.82rem;
-  --fs-small: 0.78rem;
+  /* Shared Type Scale Tokens (Base 16px, rem units) */
+  --fs-brand: 2.25rem;                                /* 36px - clearly larger than H1 */
+  --fs-eyebrow: 0.75rem;                              /* 12px uppercase */
+  --fs-h1: clamp(1.625rem, 1.3rem + 0.8vw, 1.875rem); /* 26-30px */
+  --fs-subtitle: 0.96875rem;                          /* 15.5px (15-16px) */
+  --fs-details: 0.875rem;                             /* 14px */
+  --fs-h2: 1.25rem;                                   /* 20px section headings */
+  --fs-card-title: 1.1rem;                            /* 17.6px (17-18px) card headings */
+  --fs-h3: 1.05rem;                                   /* ~16.8px */
+  --fs-body: 0.9375rem;                               /* 15px */
+  --fs-label: 0.8125rem;                              /* 13px */
+  --fs-help: 0.8rem;                                  /* 12.8px */
+  --fs-small: 0.75rem;                                /* 12px */
 }
 
 [data-theme="dark"] {
@@ -108,25 +113,32 @@ h1, h2, h3, h4 {
   font-family: var(--font-serif);
   font-weight: 600;
   color: var(--text-main);
-  line-height: 1.25;
   letter-spacing: -0.01em;
 }
 
 h1 {
   font-size: var(--fs-h1);
-  margin-bottom: 0.5rem;
+  line-height: 1.2;
+  margin: 4px 0 8px 0;
 }
 
-h2, .section-heading, .card-title, .step-title {
+h2, .section-heading {
   font-size: var(--fs-h2);
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--rule-hairline);
+  padding-bottom: 0.25rem;
+  line-height: 1.25;
+}
+
+.card-title, .step-title, .card > h2:first-child, .card > .card-title:first-child {
+  font-family: var(--font-serif);
+  font-size: var(--fs-card-title);
+  margin-top: 0;
+  margin-bottom: 0.65rem;
   border-bottom: 1px solid var(--rule-hairline);
   padding-bottom: 0.35rem;
-}
-
-.card > h2:first-child, .card > .card-title:first-child {
-  margin-top: 0;
+  line-height: 1.3;
 }
 
 h3 {
@@ -206,19 +218,20 @@ code {
 
 .brand-title {
   font-family: var(--font-serif);
-  font-size: 1.25rem;
+  font-size: var(--fs-brand);
   font-weight: 700;
   color: var(--primary-navy);
   letter-spacing: 0.04em;
   font-variant: small-caps;
   text-decoration: none;
+  line-height: 1.1;
 }
 
 .brand-subtitle {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  text-transform: none;
+  letter-spacing: 0.02em;
 }
 
 .header-status-area {
@@ -238,7 +251,7 @@ code {
   border: 1px solid var(--rule-hairline);
   background-color: var(--bg-subtle);
   color: var(--text-muted);
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .health-badge.healthy {
@@ -392,41 +405,42 @@ code {
 .page-eyebrow {
   display: block;
   font-family: var(--font-sans);
-  font-size: 0.72rem;
+  font-size: var(--fs-eyebrow); /* 12px */
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
-  margin-bottom: 0.35rem;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
 }
 
-/* Page Subtitles */
-.page-subtitle {
-  font-size: 1rem;
+/* Page Subtitles & Descriptions */
+.page-subtitle, .page-desc {
+  font-size: var(--fs-subtitle); /* 15-16px */
   font-weight: 400;
   color: var(--text-muted);
-  margin-top: 0.2rem;
-  margin-bottom: 0.5rem;
-  line-height: 1.5;
+  max-width: 70ch;
+  margin: 0 0 8px 0;
+  line-height: 1.45;
 }
 
-[data-theme="dark"] .page-subtitle {
+[data-theme="dark"] .page-subtitle,
+[data-theme="dark"] .page-desc {
   color: var(--text-muted);
 }
 
 /* Technical Details Dropdowns */
 .technical-details {
-  margin-top: 0.35rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.85rem;
+  margin: 0 0 8px 0;
 }
 
-.technical-details-summary {
+.technical-details-summary, .technical-details summary {
   cursor: pointer;
   color: var(--text-muted);
   font-weight: 500;
-  font-size: 0.85rem;
+  font-size: var(--fs-details); /* 14px */
   user-select: none;
+  line-height: 1.4;
 }
 
 .technical-details-summary:hover {
@@ -438,10 +452,10 @@ code {
 }
 
 .technical-details-body {
-  padding-top: 0.35rem;
-  font-size: 0.85rem;
+  padding-top: 0.25rem;
+  font-size: var(--fs-details); /* 14px */
   color: var(--text-muted);
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 /* Mobile menu button */
@@ -455,7 +469,7 @@ code {
   max-width: var(--max-width);
   width: 100%;
   margin: 0 auto;
-  padding: 1.5rem 1.2rem 3rem 1.2rem;
+  padding: 0.9rem 1.2rem 2.5rem 1.2rem;
 }
 
 /* Page Containers */
@@ -475,14 +489,9 @@ code {
 
 /* Page Header & Intro */
 .page-intro {
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--rule-hairline);
-  padding-bottom: 1rem;
-}
-
-.page-desc {
-  color: var(--text-muted);
-  font-size: 1.02rem;
+  margin-bottom: 0.9rem;
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 /* Cards & Surfaces */
@@ -1840,7 +1849,7 @@ tr[id*="alpha"] td {
     width: 100%;
   }
   .brand-title {
-    font-size: 1.15rem;
+    font-size: 1.85rem;
   }
   .brand-subtitle {
     font-size: 0.72rem;
@@ -1871,11 +1880,11 @@ tr[id*="alpha"] td {
     background: var(--bg-surface);
   }
 
-  h1 {
-    font-size: 1.625rem; /* 26px mobile */
+  h2, .section-heading {
+    font-size: 1.15rem;
   }
-  h2, .section-heading, .card-title, .step-title {
-    font-size: 1.2rem;
+  .card-title, .step-title {
+    font-size: 1.05rem;
   }
 
   .nav-inner {

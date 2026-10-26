@@ -185,7 +185,7 @@ async function checkServiceHealth() {
     if (res.ok) {
       const data = await res.json();
       badge.className = 'health-badge healthy';
-      text.textContent = 'HEALTHY';
+      text.textContent = 'Service online';
       badge.title = `Service: ${data.service} v${data.version}`;
     } else {
       badge.className = 'health-badge down';

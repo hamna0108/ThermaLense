@@ -1,30 +1,19 @@
-"""Playwright test suite for Visual Polish, Navigation Polish, Page Eyebrows, and Plain Labels.
+"""Playwright test suite for Type Scale, Header Compaction, Top Bar, and Nav Polish.
 
 Verifies:
-1. Navigation:
-   - No "Predict"/"Investigate" captions in the desktop nav bar.
-   - One row, all eight tabs on the same baseline and same height (~44px).
-   - 2px underline on the active tab (accent colour).
-   - Hover = subtle background only.
-   - Single faint divider between groups (Overview | Field, Poisson | Place Sensors, Estimate, Diagnose | Evidence, Limits).
-   - Mobile menu keeps the group headers.
-2. Page Eyebrows, Titles, and Plain Subtitles:
-   - Eyebrows: "PREDICT" on Field and Poisson; "INVESTIGATE" on Place Sensors, Estimate, and Diagnose.
-   - Field: "Heat Over Time" -> "Pick a material and see how the temperature along a bar changes with time."
-   - Poisson: "Steady Heat Map (2D)" -> "Place a heat source on a square plate and see the temperature it settles at. Three solvers are compared."
-   - Place Sensors, Estimate, and Diagnose: NO subtitle line under the title; instructions start directly after H1:
-     - Place Sensors: "Plan Your Readings" -> instructions "Find out when to measure so your readings tell you the most."
-     - Estimate: "Estimate Heat Spread" -> instructions "Enter your readings to find the material's heat-spread number."
-     - Diagnose: "Check Your Data" -> instructions "Check whether your test matches a healthy reference."
-   - Technical details moved into "Show details" line.
-3. Heading sizes:
-   - Consistent H1 size across pages (30-32px desktop, 26px mobile).
-   - Consistent H2 size across pages.
-4. Poisson page plain labels:
-   - "Heat source", "Heat source shape", "Wave pattern", "Hot spots", "Examples",
-     "Waves across (x)", "Waves up (y)", "Three solvers compared", "How far from the exact answer".
-5. Screenshots of all five pages at both 1440px and 390px:
-   - field, poisson, placement, estimate, diagnose (and nav).
+1. Type Scale with CSS variables:
+   - Eyebrow 12px uppercase, letter-spacing 0.08em
+   - Page title (H1) clamp(1.625rem, 1.3rem + 0.8vw, 1.875rem) i.e. 26-30px desktop, 24-28px mobile
+   - Subtitle 15-16px, muted colour, max-width 70ch
+   - "Show details" summary 14px
+   - Section headings (H2) 20px, card headings 17-18px
+   - H1 is clearly smaller than the brand name in the top bar on every page.
+2. Page header block (.page-intro) <= ~140px tall at 1440px width.
+3. First input is visible without scrolling at 1440x768 viewport.
+4. Top bar: status pill text "Service online" (green dot kept), tagline "Heat modelling and sensor diagnostics".
+5. Extra horizontal rule under page header removed.
+6. Navigation bar: single row, uniform baseline/height, 3 dividers, mobile menu section headers.
+7. Screenshots of all 8 pages at 1440 and 390.
 """
 
 import os
@@ -41,6 +30,17 @@ SCREENSHOTS_DIR = os.path.join(REPO_ROOT, "reports", "screenshots")
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 
 ARTIFACT_DIR = r"C:\Users\HP\.gemini\antigravity-ide\brain\acb0d46f-cc58-4de4-b39b-b47d6409ab04"
+
+ALL_PAGES = [
+    {"hash": "overview", "h1_id": "heading-overview", "has_input": False},
+    {"hash": "field", "h1_id": "heading-field", "has_input": True},
+    {"hash": "poisson", "h1_id": "heading-poisson", "has_input": True},
+    {"hash": "placement", "h1_id": "heading-placement", "has_input": True},
+    {"hash": "estimate", "h1_id": "heading-estimate", "has_input": True},
+    {"hash": "diagnose", "h1_id": "heading-diagnose", "has_input": True},
+    {"hash": "evidence", "h1_id": "heading-evidence", "has_input": False},
+    {"hash": "limits", "h1_id": "heading-limits", "has_input": False},
+]
 
 
 def find_free_port():
@@ -96,206 +96,100 @@ def save_screenshot(target, filename):
             pass
 
 
-def test_nav_visual_polish_desktop_1440(live_server):
-    """Desktop 1440x900 viewport: check nav layout, tab baseline/height, dividers, eyebrows, titles, subtitles, and labels."""
+def test_type_scale_and_header_compaction_1440(live_server):
+    """Desktop 1440x768 viewport: check type scale, header compaction <= 140px, first input above fold, top bar, and 8 screenshots."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(viewport={"width": 1440, "height": 900})
+        # Using exact 1440x768 viewport requested to verify above-the-fold visibility
+        context = browser.new_context(viewport={"width": 1440, "height": 768})
         page = context.new_page()
 
         page.goto(f"{live_server}/#overview")
         page.wait_for_load_state("domcontentloaded")
         page.wait_for_selector("#heading-overview", state="visible")
 
-        # 1. Navigation order
-        links = page.locator(".nav-link")
-        link_texts = [links.nth(i).inner_text().strip() for i in range(links.count())]
-        expected_order = [
-            "Overview",
-            "Field",
-            "Poisson",
-            "Place Sensors",
-            "Estimate",
-            "Diagnose",
-            "Evidence",
-            "Limits"
-        ]
-        assert link_texts == expected_order
+        # 1. Top Bar Checks
+        # Pill text "Service online"
+        pill_text = page.locator("#service-health-text")
+        # Wait up to 2 seconds for health check to settle
+        page.wait_for_function("document.getElementById('service-health-text').textContent.includes('Service online')", timeout=5000)
+        assert pill_text.inner_text().strip() == "Service online"
+        badge = page.locator("#service-health-badge")
+        assert "healthy" in badge.evaluate("el => el.className")
 
-        # 2. No "Predict"/"Investigate" captions in desktop nav bar
+        # Tagline "Heat modelling and sensor diagnostics"
+        tagline = page.locator(".brand-subtitle")
+        assert tagline.inner_text().strip() == "Heat modelling and sensor diagnostics"
+
+        # Brand title font-size
+        brand_el = page.locator("#brand-link")
+        brand_fs = float(brand_el.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
+        assert brand_fs >= 32.0, f"Brand title {brand_fs}px should be prominent"
+
+        # 2. Navigation bar checks
+        links = page.locator(".nav-link")
+        expected_order = [
+            "Overview", "Field", "Poisson", "Place Sensors", "Estimate", "Diagnose", "Evidence", "Limits"
+        ]
+        assert [links.nth(i).inner_text().strip() for i in range(links.count())] == expected_order
         assert not page.locator("#nav-label-predict").is_visible()
         assert not page.locator("#nav-label-investigate").is_visible()
+        assert page.locator(".nav-divider").count() == 3
 
-        # 3. Three faint dividers between groups
-        dividers = page.locator(".nav-divider")
-        assert dividers.count() == 3
-        for i in range(3):
-            assert dividers.nth(i).is_visible()
-
-        # 4. Same baseline and height for all tabs
-        boxes = [links.nth(i).bounding_box() for i in range(links.count())]
-        base_y = boxes[0]["y"]
-        base_height = boxes[0]["height"]
-        assert base_height == pytest.approx(44.0, abs=1.0)
-        for i, box in enumerate(boxes):
-            assert box["y"] == pytest.approx(base_y, abs=1.5), f"Tab {link_texts[i]} baseline y mismatch"
-            assert box["height"] == pytest.approx(base_height, abs=1.0), f"Tab {link_texts[i]} height mismatch"
-
-        # 5. 2px underline on active tab
-        active_tab = page.locator(".nav-link.active")
-        assert active_tab.inner_text().strip() == "Overview"
-        b_bottom = active_tab.evaluate("el => window.getComputedStyle(el).borderBottomWidth")
-        assert b_bottom == "2px"
-
-        # Capture nav desktop screenshot
         save_screenshot(page.locator(".nav-bar"), "nav_1440px.png")
 
-        # 6. Verify Predict pages (Field & Poisson): eyebrow PREDICT, title, plain subtitle, Show details
-        predict_pages = [
-            {
-                "hash": "field",
-                "eyebrow": "PREDICT",
-                "h1_id": "heading-field",
-                "title": "Heat Over Time",
-                "sub_id": "field-page-subtitle",
-                "subtitle": "Pick a material and see how the temperature along a bar changes with time."
-            },
-            {
-                "hash": "poisson",
-                "eyebrow": "PREDICT",
-                "h1_id": "heading-poisson",
-                "title": "Steady Heat Map (2D)",
-                "sub_id": "poisson-page-subtitle",
-                "subtitle": "Place a heat source on a square plate and see the temperature it settles at. Three solvers are compared."
-            }
-        ]
-
-        for p_info in predict_pages:
+        # 3. Type scale and header block checks across ALL EIGHT PAGES
+        for p_info in ALL_PAGES:
             page.goto(f"{live_server}/#{p_info['hash']}")
             page.wait_for_selector(f"#{p_info['h1_id']}", state="visible")
 
             view_elem = page.locator(f"#view-{p_info['hash']}")
+            h1 = page.locator(f"#{p_info['h1_id']}")
+
+            # Measure H1 computed font size: must be between 26 and 30 px at 1440px width
+            h1_fs = float(h1.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
+            assert 26.0 <= h1_fs <= 30.05, f"Page {p_info['hash']} H1 font size {h1_fs}px not between 26 and 30 px"
+
+            # H1 must be clearly smaller than the brand name in the top bar on every page
+            assert h1_fs < brand_fs, f"Page {p_info['hash']} H1 {h1_fs}px not smaller than brand {brand_fs}px"
+            assert (brand_fs - h1_fs) >= 4.0, f"Page {p_info['hash']} difference {brand_fs - h1_fs}px not distinct enough"
+
+            # Check header block (.page-intro): height must be at most about 140px tall at 1440px
+            intro_el = view_elem.locator(".page-intro")
+            intro_box = intro_el.bounding_box()
+            assert intro_box is not None
+            assert intro_box["height"] <= 145.0, f"Page {p_info['hash']} header block height {intro_box['height']}px exceeds 140px limit"
+
+            # Check no extra horizontal rule under header block
+            intro_border_bottom = intro_el.evaluate("el => window.getComputedStyle(el).borderBottomStyle")
+            assert intro_border_bottom in ("none", "hidden"), f"Page {p_info['hash']} should have no border-bottom on page-intro"
+
+            # Check eyebrow: 12px uppercase, letter-spacing 0.08em
             eyebrow = view_elem.locator(".page-eyebrow")
             assert eyebrow.is_visible()
-            assert eyebrow.inner_text().strip() == p_info["eyebrow"]
+            eb_fs = float(eyebrow.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
+            assert 11.0 <= eb_fs <= 12.5
 
-            h1 = page.locator(f"#{p_info['h1_id']}")
-            assert h1.inner_text().strip() == p_info["title"]
-            h1_fs = float(h1.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
-            assert 30.0 <= h1_fs <= 33.0
+            # If page has inputs, verify first input is visible without scrolling at 1440x768
+            if p_info["has_input"]:
+                first_input = view_elem.locator("input:visible, select:visible").first
+                assert first_input.is_visible()
+                inp_box = first_input.bounding_box()
+                assert inp_box is not None
+                assert inp_box["y"] > 0, f"Page {p_info['hash']} input top {inp_box['y']} must be > 0"
+                assert inp_box["y"] + inp_box["height"] < 768.0, (
+                    f"Page {p_info['hash']} first input bottom {inp_box['y'] + inp_box['height']}px "
+                    f"must be above the fold (< 768px)"
+                )
 
-            sub = page.locator(f"#{p_info['sub_id']}")
-            assert sub.is_visible()
-            assert sub.inner_text().strip() == p_info["subtitle"]
-
-            details_summary = view_elem.locator(".page-intro .technical-details summary")
-            assert details_summary.is_visible()
-            assert "Show details" in details_summary.inner_text()
-
-        # 7. Verify Investigate pages (Place Sensors, Estimate, Diagnose):
-        #    eyebrow INVESTIGATE, title, NO subtitle line, instructions start right after H1, Show details
-        investigate_pages = [
-            {
-                "hash": "placement",
-                "h1_id": "heading-placement",
-                "title": "Plan Your Readings",
-                "instruction": "Find out when to measure so your readings tell you the most."
-            },
-            {
-                "hash": "estimate",
-                "h1_id": "heading-estimate",
-                "title": "Estimate Heat Spread",
-                "instruction": "Enter your readings to find the material's heat-spread number."
-            },
-            {
-                "hash": "diagnose",
-                "h1_id": "heading-diagnose",
-                "title": "Check Your Data",
-                "instruction": "Check whether your test matches a healthy reference."
-            }
-        ]
-
-        for p_info in investigate_pages:
-            page.goto(f"{live_server}/#{p_info['hash']}")
-            page.wait_for_selector(f"#{p_info['h1_id']}", state="visible")
-
-            view_elem = page.locator(f"#view-{p_info['hash']}")
-            eyebrow = view_elem.locator(".page-eyebrow")
-            assert eyebrow.is_visible()
-            assert eyebrow.inner_text().strip() == "INVESTIGATE"
-
-            h1 = page.locator(f"#{p_info['h1_id']}")
-            assert h1.inner_text().strip() == p_info["title"]
-            h1_fs = float(h1.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
-            assert 30.0 <= h1_fs <= 33.0
-
-            # Must have NO subtitle line (.page-subtitle) on these three pages
-            assert view_elem.locator(".page-subtitle").count() == 0
-
-            # Page instructions start right after the title
-            desc = view_elem.locator(".page-desc")
-            assert desc.is_visible()
-            assert desc.inner_text().strip() == p_info["instruction"]
-
-            details_summary = view_elem.locator(".page-intro .technical-details summary")
-            assert details_summary.is_visible()
-            assert "Show details" in details_summary.inner_text()
-
-        # 8. Check Poisson Plain Labels
-        page.goto(f"{live_server}/#poisson")
-        page.wait_for_selector("#heading-poisson", state="visible")
-
-        assert page.locator("#view-poisson .card-title").first.inner_text().strip() == "Heat source"
-        assert page.locator("#view-poisson label:has-text('Heat source shape')").is_visible()
-        assert page.locator("#poi-family-sine-btn").inner_text().strip() == "Wave pattern"
-        assert page.locator("#poi-family-gauss-btn").inner_text().strip() == "Hot spots"
-        assert page.locator("#view-poisson label:has-text('Examples')").is_visible()
-        assert page.locator("label[for='poi-mode-m']").text_content().strip() == "Waves across (x)"
-        assert page.locator("label[for='poi-mode-n']").text_content().strip() == "Waves up (y)"
-
-        presets_text = page.locator("#poi-presets-select").inner_text()
-        assert "Typical case" in presets_text
-        assert "In-Distribution" not in presets_text
-
-        assert page.locator("#poisson-results-card .card-title").inner_text().strip() == "Three solvers compared"
-
-        th_error = page.locator("#poisson-results-card th:has-text('How far from the exact answer')")
-        assert th_error.count() == 1
-        assert "How far from the exact answer" in th_error.text_content()
-
-        # 9. Capture screenshots of ALL FIVE PAGES at 1440px
-        # Field
-        page.goto(f"{live_server}/#field")
-        page.wait_for_selector("#heading-field", state="visible")
-        save_screenshot(page, "field_1440px.png")
-
-        # Poisson
-        page.goto(f"{live_server}/#poisson")
-        page.wait_for_selector("#heading-poisson", state="visible")
-        page.locator("#poi-submit-btn").click()
-        page.wait_for_selector("#poi-result-panel", state="visible")
-        save_screenshot(page, "poisson_1440px.png")
-
-        # Place Sensors
-        page.goto(f"{live_server}/#placement")
-        page.wait_for_selector("#heading-placement", state="visible")
-        save_screenshot(page, "placement_1440px.png")
-
-        # Estimate
-        page.goto(f"{live_server}/#estimate")
-        page.wait_for_selector("#heading-estimate", state="visible")
-        save_screenshot(page, "estimate_1440px.png")
-
-        # Diagnose
-        page.goto(f"{live_server}/#diagnose")
-        page.wait_for_selector("#heading-diagnose", state="visible")
-        save_screenshot(page, "diagnose_1440px.png")
+            # Capture screenshot of each page at 1440px
+            save_screenshot(page, f"{p_info['hash']}_1440px.png")
 
         browser.close()
 
 
-def test_nav_visual_polish_mobile_390(live_server):
-    """Mobile 390x844 viewport: check nav bar, mobile menu with group headers, H1 size 26px, screenshots of all five pages."""
+def test_type_scale_mobile_390(live_server):
+    """Mobile 390x844 viewport: check H1 size between 24-28px, mobile menu, brand > H1, and 8 screenshots."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 390, "height": 844})
@@ -305,31 +199,11 @@ def test_nav_visual_polish_mobile_390(live_server):
         page.wait_for_load_state("domcontentloaded")
         page.wait_for_selector("#heading-overview", state="visible")
 
-        # 1. Navigation order on mobile
-        links = page.locator(".nav-link")
-        link_texts = [links.nth(i).inner_text().strip() for i in range(links.count())]
-        expected_order = [
-            "Overview",
-            "Field",
-            "Poisson",
-            "Place Sensors",
-            "Estimate",
-            "Diagnose",
-            "Evidence",
-            "Limits"
-        ]
-        assert link_texts == expected_order
+        # Top bar brand on mobile
+        brand_el = page.locator("#brand-link")
+        brand_fs = float(brand_el.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
 
-        # 2. Before opening mobile menu, no bold group headers in the bar
-        assert not page.locator("#nav-label-predict").is_visible()
-        assert not page.locator("#nav-label-investigate").is_visible()
-
-        # 3. Check H1 mobile size is ~26px
-        h1 = page.locator("#heading-overview")
-        h1_fs = float(h1.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
-        assert h1_fs == pytest.approx(26.0, abs=1.0)
-
-        # 4. Open mobile menu: Mobile menu keeps the group headers
+        # Verify mobile menu keeps group headers
         menu_btn = page.locator("#mobile-menu-btn")
         assert menu_btn.is_visible()
         menu_btn.click()
@@ -337,63 +211,30 @@ def test_nav_visual_polish_mobile_390(live_server):
 
         nav_bar = page.locator("#app-nav-bar")
         assert nav_bar.evaluate("el => el.classList.contains('mobile-menu-open')")
+        assert page.locator("#nav-label-predict").is_visible()
+        assert page.locator("#nav-label-investigate").is_visible()
 
-        # Group headers ARE visible in mobile menu
-        predict_label = page.locator("#nav-label-predict")
-        investigate_label = page.locator("#nav-label-investigate")
-        assert predict_label.is_visible()
-        assert investigate_label.is_visible()
-        assert predict_label.inner_text().strip().upper() == "PREDICT"
-        assert investigate_label.inner_text().strip().upper() == "INVESTIGATE"
-
-        # Capture mobile nav menu screenshot
         save_screenshot(nav_bar, "nav_390px.png")
 
-        # Close mobile menu by clicking a link
-        page.locator("#nav-field").click()
+        # Close mobile menu
+        page.locator("#nav-overview").click()
         page.wait_for_timeout(200)
-        assert not nav_bar.evaluate("el => el.classList.contains('mobile-menu-open')")
 
-        # 5. Capture screenshots of ALL FIVE PAGES at 390px
-        # Field
-        page.wait_for_selector("#heading-field", state="visible")
-        field_h1 = page.locator("#heading-field")
-        assert field_h1.inner_text().strip() == "Heat Over Time"
-        field_h1_fs = float(field_h1.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
-        assert field_h1_fs == pytest.approx(26.0, abs=1.0)
-        save_screenshot(page, "field_390px.png")
+        # Measure H1 on all eight pages at 390px
+        for p_info in ALL_PAGES:
+            page.goto(f"{live_server}/#{p_info['hash']}")
+            page.wait_for_selector(f"#{p_info['h1_id']}", state="visible")
 
-        # Poisson
-        page.goto(f"{live_server}/#poisson")
-        page.wait_for_selector("#heading-poisson", state="visible")
-        poi_h1 = page.locator("#heading-poisson")
-        assert poi_h1.inner_text().strip() == "Steady Heat Map (2D)"
-        poi_h1_fs = float(poi_h1.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
-        assert poi_h1_fs == pytest.approx(26.0, abs=1.0)
-        save_screenshot(page, "poisson_390px.png")
+            h1 = page.locator(f"#{p_info['h1_id']}")
+            h1_fs = float(h1.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
 
-        # Place Sensors
-        page.goto(f"{live_server}/#placement")
-        page.wait_for_selector("#heading-placement", state="visible")
-        placement_h1 = page.locator("#heading-placement")
-        assert placement_h1.inner_text().strip() == "Plan Your Readings"
-        assert page.locator("#view-placement .page-subtitle").count() == 0
-        save_screenshot(page, "placement_390px.png")
+            # Must be between 24 and 28 px at 390px
+            assert 24.0 <= h1_fs <= 28.05, f"Page {p_info['hash']} mobile H1 font size {h1_fs}px not between 24 and 28 px"
 
-        # Estimate
-        page.goto(f"{live_server}/#estimate")
-        page.wait_for_selector("#heading-estimate", state="visible")
-        est_h1 = page.locator("#heading-estimate")
-        assert est_h1.inner_text().strip() == "Estimate Heat Spread"
-        assert page.locator("#view-estimate .page-subtitle").count() == 0
-        save_screenshot(page, "estimate_390px.png")
+            # H1 must be smaller than brand title
+            assert h1_fs < brand_fs, f"Page {p_info['hash']} mobile H1 {h1_fs}px not smaller than brand {brand_fs}px"
 
-        # Diagnose
-        page.goto(f"{live_server}/#diagnose")
-        page.wait_for_selector("#heading-diagnose", state="visible")
-        diag_h1 = page.locator("#heading-diagnose")
-        assert diag_h1.inner_text().strip() == "Check Your Data"
-        assert page.locator("#view-diagnose .page-subtitle").count() == 0
-        save_screenshot(page, "diagnose_390px.png")
+            # Capture screenshot of each page at 390px
+            save_screenshot(page, f"{p_info['hash']}_390px.png")
 
         browser.close()

@@ -251,15 +251,15 @@ function handleTryExample(action) {
     window.location.hash = '#placement';
     setTimeout(() => {
       const nInput = document.getElementById('place-n');
-      if (nInput) nInput.value = '20';
+      if (nInput) nInput.value = '10';
       const sigmaInput = document.getElementById('place-sigma');
-      if (sigmaInput) sigmaInput.value = '0.01';
+      if (sigmaInput) sigmaInput.value = '0.5';
       const xInput = document.getElementById('place-sensor-x');
-      if (xInput) xInput.value = '0.50';
+      if (xInput) xInput.value = '0.05';
       const tmin = document.getElementById('place-tmin');
-      if (tmin) tmin.value = '0.01';
+      if (tmin) tmin.value = '1.0';
       const tmax = document.getElementById('place-tmax');
-      if (tmax) tmax.value = '1.0';
+      if (tmax) tmax.value = '100.0';
       const submitBtn = document.getElementById('place-submit-btn');
       if (submitBtn) submitBtn.click();
     }, 60);
@@ -2244,24 +2244,22 @@ function clearDiagnoseResultState() {
   if (diagCrossBanner) diagCrossBanner.style.display = 'none';
 }
 
+function syncSharedFields(...ids) {
+  const elements = ids.map(id => document.getElementById(id)).filter(Boolean);
+  elements.forEach(src => {
+    src.addEventListener('input', () => {
+      elements.forEach(dest => {
+        if (dest !== src && dest.value !== src.value) {
+          dest.value = src.value;
+          dest.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      });
+    });
+  });
+}
+
 function syncSharedField(id1, id2) {
-  const el1 = document.getElementById(id1);
-  const el2 = document.getElementById(id2);
-  if (!el1 || !el2) return;
-
-  el1.addEventListener('input', () => {
-    if (el2.value !== el1.value) {
-      el2.value = el1.value;
-      el2.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-  });
-
-  el2.addEventListener('input', () => {
-    if (el1.value !== el2.value) {
-      el1.value = el2.value;
-      el1.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-  });
+  syncSharedFields(id1, id2);
 }
 
 function initDiagnoseWorkbench() {
@@ -2297,12 +2295,12 @@ function initDiagnoseWorkbench() {
   setupDiagnoseTableEvents(baseTbody, baseAddBtn, baseCsvBtn, baseCsvUpload, baseBadge, 20, baseMsg, 'diag-base');
   setupDiagnoseTableEvents(testTbody, testAddBtn, testCsvBtn, testCsvUpload, testBadge, 3, testMsg, 'diag-test');
 
-  // Setup Two-way Shared Fields with Estimate tab
-  syncSharedField('est-bar-length', 'diag-bar-length');
-  syncSharedField('est-experiment-time', 'diag-experiment-time');
-  syncSharedField('est-temp-edge', 'diag-temp-edge');
-  syncSharedField('est-temp-peak', 'diag-temp-peak');
-  syncSharedField('est-sigma-val', 'diag-sigma-val');
+  // Setup Two-way Shared Fields across Estimate, Diagnose, and Place Sensors tabs
+  syncSharedFields('est-bar-length', 'diag-bar-length', 'place-bar-length');
+  syncSharedFields('est-experiment-time', 'diag-experiment-time', 'place-experiment-time');
+  syncSharedFields('est-temp-edge', 'diag-temp-edge', 'place-temp-edge');
+  syncSharedFields('est-temp-peak', 'diag-temp-peak', 'place-temp-peak');
+  syncSharedFields('est-sigma-val', 'diag-sigma-val', 'place-sigma');
 
   // Default values for Diagnose fields if empty
   const barLen = document.getElementById('diag-bar-length');
@@ -3967,10 +3965,106 @@ function attachCrossCheckActionHandlers(container) {
 // 5. Page 4: Sensor Placement Workbench
 // -------------------------------------------------------------------------------------------------
 
+
+function validatePlacementPosition() {
+  const xInput = document.getElementById('place-sensor-x');
+  const barLenInput = document.getElementById('place-bar-length');
+  const msgEl = document.getElementById('place-sensor-x-msg');
+  const submitBtn = document.getElementById('place-submit-btn');
+  if (!xInput || !barLenInput) return { valid: true };
+
+  const L = parseFloat(barLenInput.value) || 0.1;
+  const x = parseFloat(xInput.value);
+
+  if (isNaN(L) || L <= 0) {
+    if (msgEl) {
+      msgEl.textContent = 'Bar length must be greater than zero.';
+      msgEl.className = 'table-validation-msg error';
+      msgEl.style.color = 'var(--accent-red, #dc2626)';
+    }
+    return { valid: false };
+  }
+
+  // Reject a position at 0 or at the bar length with a plain message
+  if (isNaN(x) || x <= 0 || x >= L) {
+    const errorText = `Sensor position cannot be at or outside the ends of the bar (0 m or ${L} m). The ends are held at constant temperature and provide no signal.`;
+    if (msgEl) {
+      msgEl.textContent = errorText;
+      msgEl.className = 'table-validation-msg error';
+      msgEl.style.color = 'var(--accent-red, #dc2626)';
+    }
+    xInput.classList.add('is-invalid');
+    if (submitBtn) submitBtn.disabled = true;
+    return { valid: false, error: errorText };
+  }
+
+  // Warn if position is within 10% of an end (i.e. x < 0.10 * L or x > 0.90 * L)
+  const left10 = 0.10 * L;
+  const right10 = 0.90 * L;
+  if (x < left10 || x > right10) {
+    const midX = (L / 2).toFixed(3).replace(/\.?0+$/, '');
+    const warnText = `Notice: This position is within 10% of an end (${x} m). Heat changes here are dampened by the constant boundary temperature, so readings will be much less informative than near the middle (${midX} m).`;
+    if (msgEl) {
+      msgEl.textContent = warnText;
+      msgEl.className = 'table-validation-msg warn';
+      msgEl.style.color = 'var(--accent-amber, #d97706)';
+    }
+    xInput.classList.remove('is-invalid');
+    if (submitBtn) submitBtn.disabled = false;
+    return { valid: true, warning: warnText };
+  }
+
+  // Clear message and styling when position is well-placed
+  if (msgEl) {
+    msgEl.textContent = '';
+    msgEl.className = 'table-validation-msg';
+  }
+  xInput.classList.remove('is-invalid');
+  if (submitBtn) submitBtn.disabled = false;
+  return { valid: true };
+}
+
 function initPlacementWorkbench() {
   const submitBtn = document.getElementById('place-submit-btn');
   const downloadBtn = document.getElementById('place-download-btn');
   const placeUseTimesBtn = document.getElementById('place-use-times-btn');
+
+  const barLenInput = document.getElementById('place-bar-length');
+  const expDurInput = document.getElementById('place-experiment-time');
+  const xInput = document.getElementById('place-sensor-x');
+  const tmaxInput = document.getElementById('place-tmax');
+
+  // When user manually types in sensor position, remember they customized it
+  if (xInput) {
+    xInput.addEventListener('input', (e) => {
+      if (e.isTrusted) {
+        STATE.placeSensorXCustomized = true;
+      }
+      validatePlacementPosition();
+    });
+  }
+
+  // When bar length changes, if user hasn't customized position, center it at L / 2
+  if (barLenInput) {
+    barLenInput.addEventListener('input', () => {
+      const L = parseFloat(barLenInput.value) || 0.1;
+      if (!STATE.placeSensorXCustomized && xInput) {
+        xInput.value = (L / 2).toFixed(3).replace(/\.?0+$/, '');
+      }
+      validatePlacementPosition();
+    });
+  }
+
+  // When experiment duration changes, sync default tmax
+  if (expDurInput && tmaxInput) {
+    expDurInput.addEventListener('input', () => {
+      const T = parseFloat(expDurInput.value) || 100.0;
+      tmaxInput.value = T.toFixed(1).replace(/\.?0+$/, '');
+    });
+  }
+
+  // Initial validation check
+  validatePlacementPosition();
 
   if (submitBtn) submitBtn.addEventListener('click', executePlacement);
   if (downloadBtn) {
@@ -3980,37 +4074,49 @@ function initPlacementWorkbench() {
     });
   }
 
-  // Hand-off: "Use these times in my readings"
+  // Hand-off: "Use these times in Estimate"
   if (placeUseTimesBtn) {
     placeUseTimesBtn.addEventListener('click', () => {
       if (!STATE.lastPlacementResult || !STATE.lastPlacementResult.response) return;
-      const data = STATE.lastPlacementResult.response;
-      const t1 = data.t_stage1 || [];
-      const t2 = data.t_stage2_nominal || [];
-      const timesNorm = [...t1, ...t2];
-      if (timesNorm.length === 0) return;
+      const req = STATE.lastPlacementResult.request;
+      const res = STATE.lastPlacementResult.response;
 
-      const T = parseFloat(document.getElementById('est-experiment-time').value) || 100.0;
-      const currentReadings = extractSharedReadings('est');
-      const maxRows = Math.max(currentReadings.length, timesNorm.length);
-      const updatedReadings = [];
+      const t1 = res.t_stage1_s || (res.t_stage1 ? res.t_stage1.map(t => t * (req.test_duration_s || 100)) : []);
+      const t2 = res.t_stage2_nominal_s || (res.t_stage2_nominal ? res.t_stage2_nominal.map(t => t * (req.test_duration_s || 100)) : []);
+      const times = [...t1, ...t2];
+      if (times.length === 0) return;
 
-      for (let i = 0; i < maxRows; i++) {
-        const cur = currentReadings[i] || { x: '', t: '', u: '' };
-        if (i < timesNorm.length) {
-          const tSec = Math.round(timesNorm[i] * T * 100) / 100;
-          updatedReadings.push({
-            x: cur.x,
-            t: tSec.toString(),
-            u: cur.u
-          });
-        } else {
-          updatedReadings.push({ ...cur });
-        }
-      }
+      const sensorX = req.sensor_x !== undefined ? req.sensor_x : (parseFloat(document.getElementById('place-sensor-x')?.value) || 0.05);
+
+      // 1. Fill shared setup into Estimate
+      const estBar = document.getElementById('est-bar-length');
+      const estDur = document.getElementById('est-experiment-time');
+      const estEdge = document.getElementById('est-temp-edge');
+      const estPeak = document.getElementById('est-temp-peak');
+      const estSigma = document.getElementById('est-sigma-val');
+
+      const placeBar = document.getElementById('place-bar-length');
+      const placeDur = document.getElementById('place-experiment-time');
+      const placeEdge = document.getElementById('place-temp-edge');
+      const placePeak = document.getElementById('place-temp-peak');
+      const placeSig = document.getElementById('place-sigma');
+
+      if (estBar) { estBar.value = String(req.bar_length_m || (placeBar ? placeBar.value : '0.1')); estBar.dispatchEvent(new Event('input', { bubbles: true })); }
+      if (estDur) { estDur.value = String(req.test_duration_s || (placeDur ? placeDur.value : '100')); estDur.dispatchEvent(new Event('input', { bubbles: true })); }
+      if (estEdge) { estEdge.value = String(req.boundary_temperature !== undefined ? req.boundary_temperature : (placeEdge ? placeEdge.value : '20')); estEdge.dispatchEvent(new Event('input', { bubbles: true })); }
+      if (estPeak) { estPeak.value = String(req.initial_peak_temperature !== undefined ? req.initial_peak_temperature : (placePeak ? placePeak.value : '80')); estPeak.dispatchEvent(new Event('input', { bubbles: true })); }
+      if (estSigma) { estSigma.value = String(req.sigma !== undefined ? req.sigma : (placeSig ? placeSig.value : '0.5')); estSigma.dispatchEvent(new Event('input', { bubbles: true })); }
+
+      // 2. Fill scheduled times into Estimate readings table
+      const updatedReadings = times.map(tSec => ({
+        x: typeof sensorX === 'number' ? sensorX.toString() : String(sensorX),
+        t: (typeof tSec === 'number' ? tSec.toFixed(2) : String(tSec)),
+        u: ''
+      }));
 
       setSharedReadings(updatedReadings, true);
 
+      // 3. Navigate to Estimate tab and scroll table into view
       window.location.hash = '#estimate';
       const estTable = document.getElementById('est-readings-table');
       if (estTable) estTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -4021,16 +4127,40 @@ function initPlacementWorkbench() {
 async function executePlacement() {
   const stateContainer = document.getElementById('place-state-container');
   const resultPanel = document.getElementById('place-result-panel');
-  const N = parseInt(document.getElementById('place-n').value) || 20;
-  const sigma = parseFloat(document.getElementById('place-sigma').value) || 0.01;
-  const sensorX = parseFloat(document.getElementById('place-sensor-x').value) || 0.50;
-  const tMin = parseFloat(document.getElementById('place-tmin').value) || 0.01;
-  const tMax = parseFloat(document.getElementById('place-tmax').value) || 1.0;
+
+  const val = validatePlacementPosition();
+  if (!val.valid) {
+    if (stateContainer) {
+      stateContainer.innerHTML = `<div class="state-box error"><strong>Cannot compute schedule:</strong> ${val.error || 'Please correct the sensor position.'}</div>`;
+    }
+    return;
+  }
+
+  const N = parseInt(document.getElementById('place-n').value) || 10;
+  const sigma = parseFloat(document.getElementById('place-sigma').value) || 0.5;
+  const sensorX = parseFloat(document.getElementById('place-sensor-x').value) || 0.05;
+  const tMin = parseFloat(document.getElementById('place-tmin').value) || 1.0;
+  const tMax = parseFloat(document.getElementById('place-tmax').value) || 100.0;
+
+  const barLengthM = parseFloat(document.getElementById('place-bar-length')?.value) || 0.1;
+  const testDurationS = parseFloat(document.getElementById('place-experiment-time')?.value) || 100.0;
+  const boundaryTemp = parseFloat(document.getElementById('place-temp-edge')?.value) || 20.0;
+  const peakTemp = parseFloat(document.getElementById('place-temp-peak')?.value) || 80.0;
 
   stateContainer.innerHTML = '<div class="state-box loading"><span class="spinner"></span> Computing optimal two-stage schedule...</div>';
   resultPanel.style.display = 'none';
 
-  const payload = { N, sigma, sensor_x: sensorX, t_min: tMin, t_max: tMax };
+  const payload = {
+    N,
+    sigma,
+    sensor_x: sensorX,
+    t_min: tMin,
+    t_max: tMax,
+    bar_length_m: barLengthM,
+    test_duration_s: testDurationS,
+    boundary_temperature: boundaryTemp,
+    initial_peak_temperature: peakTemp
+  };
 
   try {
     const res = await fetch('/v1/placement', {
@@ -4053,12 +4183,14 @@ async function executePlacement() {
     document.getElementById('place-strategy-text').textContent = data.strategy_description;
     document.getElementById('place-timing').textContent = data.timing_ms.toFixed(2);
 
-    // Populate tables
+    // Populate tables in physical seconds
     const t1Tbody = document.getElementById('place-t1-tbody');
-    t1Tbody.innerHTML = data.t_stage1.map((t, i) => `<tr><td class="mono">#${i+1}</td><td class="mono">${t.toFixed(5)}</td></tr>`).join('');
+    const t1Times = data.t_stage1_s || data.t_stage1.map(t => t * testDurationS);
+    t1Tbody.innerHTML = t1Times.map((t, i) => `<tr><td class="mono">#${i+1}</td><td class="mono">${t.toFixed(2)} s</td></tr>`).join('');
 
     const t2Tbody = document.getElementById('place-t2-tbody');
-    t2Tbody.innerHTML = data.t_stage2_nominal.map((t, i) => `<tr><td class="mono">#${data.t_stage1.length + i + 1}</td><td class="mono">${t.toFixed(5)}</td></tr>`).join('');
+    const t2Times = data.t_stage2_nominal_s || data.t_stage2_nominal.map(t => t * testDurationS);
+    t2Tbody.innerHTML = t2Times.map((t, i) => `<tr><td class="mono">#${t1Times.length + i + 1}</td><td class="mono">${t.toFixed(2)} s</td></tr>`).join('');
 
     document.getElementById('place-json-dump').textContent = JSON.stringify({ request: payload, response: data }, null, 2);
 
@@ -4074,82 +4206,131 @@ function renderPlacementChart() {
   if (!result || !result.response) return;
 
   const svg = document.getElementById('place-chart-svg');
+  if (!svg) return;
+
+  const req = result.request;
   const res = result.response;
+
+  const L = req.bar_length_m || 0.1;
+  const T = req.test_duration_s || 100.0;
+  const Tb = req.boundary_temperature !== undefined ? req.boundary_temperature : 20.0;
+  const Tp = req.initial_peak_temperature !== undefined ? req.initial_peak_temperature : 80.0;
+  const sensorX = req.sensor_x || (L / 2);
+
+  const t1Times = res.t_stage1_s || (res.t_stage1 ? res.t_stage1.map(t => t * T) : []);
+  const t2Times = res.t_stage2_nominal_s || (res.t_stage2_nominal ? res.t_stage2_nominal.map(t => t * T) : []);
+
   const width = 700;
-  const height = 200;
-  const pad = { top: 30, right: 35, bottom: 45, left: 45 };
+  const height = 240;
+  const pad = { top: 25, right: 35, bottom: 45, left: 55 };
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
 
   svg.innerHTML = '';
 
-  const tMin = result.request.t_min || 0.01;
-  const tMax = result.request.t_max || 1.0;
-  const logMin = Math.log10(tMin);
-  const logMax = Math.log10(tMax);
+  // Nominal physical diffusivity: alpha = 1.0e-4 m^2/s
+  const alphaNominal = 1.0e-4;
+  const ampl = (Tp - Tb) * Math.sin(Math.PI * sensorX / L);
 
-  const scaleLogX = t => pad.left + ((Math.log10(t) - logMin) / (logMax - logMin)) * plotW;
+  const tempAt = (t) => {
+    return Tb + ampl * Math.exp(-alphaNominal * Math.PI * Math.PI * t / (L * L));
+  };
 
-  // Log Grid
+  const minTemp = Math.min(Tb, Tp);
+  const maxTemp = Math.max(Tb, Tp);
+  const tempRange = maxTemp - minTemp || 1.0;
+  const yMin = minTemp - 2.0;
+  const yMax = maxTemp + 2.0;
+
+  const scaleX = (t) => pad.left + (Math.max(0, Math.min(T, t)) / T) * plotW;
+  const scaleY = (u) => pad.top + plotH - ((u - yMin) / (yMax - yMin)) * plotH;
+
+  // Grid lines
   let gridLines = '';
-  const decades = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0];
-  decades.forEach(d => {
-    if (d >= tMin && d <= tMax) {
-      const xP = scaleLogX(d);
-      gridLines += `<line x1="${xP}" y1="${pad.top}" x2="${xP}" y2="${pad.top + plotH}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
-      gridLines += `<text x="${xP}" y="${pad.top + plotH + 18}" text-anchor="middle" fill="var(--text-muted)" font-size="10">${d}</text>`;
-    }
+
+  // X ticks (Time in seconds)
+  const xStep = T <= 20 ? 2 : (T <= 60 ? 10 : (T <= 150 ? 20 : 50));
+  for (let t = 0; t <= T; t += xStep) {
+    const xp = scaleX(t);
+    gridLines += `<line x1="${xp}" y1="${pad.top}" x2="${xp}" y2="${pad.top + plotH}" stroke="var(--rule-subtle, #e2e8f0)" stroke-dasharray="2 3"/>`;
+    gridLines += `<text x="${xp}" y="${pad.top + plotH + 18}" text-anchor="middle" fill="var(--text-muted, #64748b)" font-size="10">${t} s</text>`;
+  }
+
+  // Y ticks (Temperature in deg C)
+  const yTicks = [Tb, Tb + (Tp - Tb) * 0.25, Tb + (Tp - Tb) * 0.5, Tb + (Tp - Tb) * 0.75, Tp].sort((a, b) => a - b);
+  yTicks.forEach(val => {
+    const yp = scaleY(val);
+    gridLines += `<line x1="${pad.left}" y1="${yp}" x2="${pad.left + plotW}" y2="${yp}" stroke="var(--rule-subtle, #e2e8f0)" stroke-dasharray="2 3"/>`;
+    gridLines += `<text x="${pad.left - 8}" y="${yp + 4}" text-anchor="end" fill="var(--text-muted, #64748b)" font-size="10">${val.toFixed(0)} °C</text>`;
   });
 
-  // Axis baseline
-  const axisY = pad.top + plotH / 2;
+  // Expected Cooling Curve Path
+  const numCurvePts = 120;
+  let pathD = '';
+  for (let i = 0; i <= numCurvePts; i++) {
+    const t = (i / numCurvePts) * T;
+    const u = tempAt(t);
+    const xp = scaleX(t);
+    const yp = scaleY(u);
+    pathD += (i === 0 ? `M ${xp.toFixed(1)} ${yp.toFixed(1)}` : ` L ${xp.toFixed(1)} ${yp.toFixed(1)}`);
+  }
+  const coolingCurve = `<path d="${pathD}" fill="none" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>`;
 
-  // Stage 1 Points (blue dots on top lane)
-  const yLane1 = axisY - 25;
-  const stage1Dots = res.t_stage1.map(t => {
-    const cx = scaleLogX(t);
+  // Early readings marks (Stage 1 - Blue)
+  const stage1Marks = t1Times.map((t, idx) => {
+    const u = tempAt(t);
+    const cx = scaleX(t);
+    const cy = scaleY(u);
     return `
-      <circle cx="${cx}" cy="${yLane1}" r="5" fill="#2980b9" stroke="#fff" stroke-width="1.2">
-        <title>Stage 1: ${t.toFixed(5)}s</title>
+      <line x1="${cx}" y1="${pad.top + plotH}" x2="${cx}" y2="${cy}" stroke="#2563eb" stroke-dasharray="2 2" stroke-width="1.2" stroke-opacity="0.6"/>
+      <circle cx="${cx}" cy="${cy}" r="5.5" fill="#2563eb" stroke="#ffffff" stroke-width="1.5">
+        <title>Early reading #${idx + 1}: ${t.toFixed(2)} s (${u.toFixed(1)} °C)</title>
       </circle>
-      <line x1="${cx}" y1="${yLane1 + 5}" x2="${cx}" y2="${axisY}" stroke="#2980b9" stroke-width="1" stroke-opacity="0.4"/>
     `;
   }).join('');
 
-  // Stage 2 Points (orange dots on bottom lane)
-  const yLane2 = axisY + 25;
-  const stage2Dots = res.t_stage2_nominal.map(t => {
-    const cx = scaleLogX(t);
+  // Focused readings marks (Stage 2 - Amber)
+  const stage2Marks = t2Times.map((t, idx) => {
+    const u = tempAt(t);
+    const cx = scaleX(t);
+    const cy = scaleY(u);
     return `
-      <circle cx="${cx}" cy="${yLane2}" r="5" fill="#e67e22" stroke="#fff" stroke-width="1.2">
-        <title>Stage 2: ${t.toFixed(5)}s</title>
+      <line x1="${cx}" y1="${pad.top + plotH}" x2="${cx}" y2="${cy}" stroke="#d97706" stroke-dasharray="2 2" stroke-width="1.2" stroke-opacity="0.6"/>
+      <circle cx="${cx}" cy="${cy}" r="5.5" fill="#d97706" stroke="#ffffff" stroke-width="1.5">
+        <title>Focused reading #${t1Times.length + idx + 1}: ${t.toFixed(2)} s (${u.toFixed(1)} °C)</title>
       </circle>
-      <line x1="${cx}" y1="${axisY}" x2="${cx}" y2="${yLane2 - 5}" stroke="#e67e22" stroke-width="1" stroke-opacity="0.4"/>
     `;
   }).join('');
 
-  // Peak sensitivity line
-  const tStar = 1.0 / (Math.PI * Math.PI * 0.10); // ~1.01s
+  // Peak sensitivity line t* = L^2 / (pi^2 * alpha)
+  const tStar = (L * L) / (Math.PI * Math.PI * alphaNominal);
   let tStarLine = '';
-  if (tStar <= tMax * 1.05) {
-    const cxStar = scaleLogX(Math.min(tMax, tStar));
+  if (tStar <= T * 1.05) {
+    const cxStar = scaleX(Math.min(T, tStar));
     tStarLine = `
-      <line x1="${cxStar}" y1="${pad.top}" x2="${cxStar}" y2="${pad.top + plotH}" stroke="#c0392b" stroke-width="2" stroke-dasharray="4 3"/>
-      <text x="${cxStar - 5}" y="${pad.top - 8}" text-anchor="end" fill="#c0392b" font-size="10" font-weight="600">t* = 1 / (&pi;&sup2;&alpha;) &approx; 1.01s</text>
+      <line x1="${cxStar}" y1="${pad.top}" x2="${cxStar}" y2="${pad.top + plotH}" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4 3"/>
+      <text x="${cxStar + 4}" y="${pad.top + 12}" fill="#dc2626" font-size="9.5" font-weight="600">t* peak sensitivity (${tStar.toFixed(1)} s)</text>
     `;
   }
 
+  // Axes lines
+  const axes = `
+    <line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="var(--text-main, #334155)" stroke-width="1.5"/>
+    <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + plotH}" stroke="var(--text-main, #334155)" stroke-width="1.5"/>
+    <text x="${pad.left + plotW / 2}" y="${height - 6}" text-anchor="middle" fill="var(--text-main, #0f172a)" font-size="11" font-weight="600">Time (s)</text>
+    <text x="${pad.left - 35}" y="${pad.top + plotH / 2}" text-anchor="middle" fill="var(--text-main, #0f172a)" font-size="11" font-weight="600" transform="rotate(-90, ${pad.left - 35}, ${pad.top + plotH / 2})">Temperature (°C)</text>
+  `;
+
   svg.innerHTML = `
     <g class="chart-grid">${gridLines}</g>
-    <line x1="${pad.left}" y1="${axisY}" x2="${pad.left + plotW}" y2="${axisY}" stroke="var(--rule-hairline)" stroke-width="2"/>
-    <text x="${pad.left - 5}" y="${yLane1 + 4}" text-anchor="end" fill="#2980b9" font-size="10" font-weight="600">Stage 1</text>
-    <text x="${pad.left - 5}" y="${yLane2 + 4}" text-anchor="end" fill="#e67e22" font-size="10" font-weight="600">Stage 2</text>
-    ${stage1Dots}
-    ${stage2Dots}
+    ${axes}
+    ${coolingCurve}
     ${tStarLine}
-    <text x="${pad.left + plotW / 2}" y="${height - 6}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Logarithmic Time Scale (s)</text>
+    ${stage1Marks}
+    ${stage2Marks}
   `;
 }
+
 
 // -------------------------------------------------------------------------------------------------
 // 6. Page 5: Field (Forward Problem)

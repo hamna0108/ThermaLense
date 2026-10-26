@@ -926,36 +926,115 @@ def post_diagnose(req: DiagnoseRequest):
 
 @app.post("/v1/placement", response_model=PlacementResponse)
 def post_placement(req: PlacementRequest):
-    """Deployable Two-Stage Adaptive Placement schedule."""
+    """Deployable Two-Stage Adaptive Placement schedule with real unit normalization."""
     t0 = time.perf_counter()
     N = req.N
     N1 = max(1, N // 2)
     N2 = N - N1
-    
-    t_stage1 = np.logspace(np.log10(req.t_min), np.log10(req.t_max), N1).tolist()
+
+    L = req.bar_length_m
+    T = req.test_duration_s
+    T_b = req.boundary_temperature
+    T_p = req.initial_peak_temperature
+
+    # Validate space-time coupling if physical parameters provided
+    if (L is not None and T is None) or (L is None and T is not None):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": "VALIDATION_ERROR",
+                "message": "Both bar_length_m and test_duration_s must be provided together for physical space-time normalisation."
+            }
+        )
+    if L is not None and (not math.isfinite(L) or L <= 0):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error_code": "VALIDATION_ERROR", "message": "bar_length_m must be a positive finite number."}
+        )
+    if T is not None and (not math.isfinite(T) or T <= 0):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"error_code": "VALIDATION_ERROR", "message": "test_duration_s must be a positive finite number."}
+        )
+
+    # Position validation: reject at 0 or L
+    raw_x = req.sensor_x if req.sensor_x is not None else (L / 2.0 if L is not None else 0.5)
+    if L is not None:
+        if raw_x <= 0 or raw_x >= L:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": f"Sensor position cannot be at the very end of the bar (0 m or {L} m). It must be strictly inside (0, {L}) m."}
+            )
+        norm_x = raw_x / L
+    else:
+        if raw_x <= 0 or raw_x >= 1.0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "Sensor position must be strictly between 0 and 1."}
+            )
+        norm_x = raw_x
+
+    # Time bounds validation & normalization
+    raw_tmin = req.t_min if req.t_min is not None else (1.0 if T is not None else 0.01)
+    raw_tmax = req.t_max if req.t_max is not None else (T if T is not None else 1.0)
+
+    if T is not None:
+        if raw_tmin <= 0 or raw_tmax <= 0 or raw_tmin >= raw_tmax or raw_tmax > T + 1e-9:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": f"Times must satisfy 0 < t_min < t_max <= {T} s."}
+            )
+        norm_tmin = max(1e-4, raw_tmin / T)
+        norm_tmax = min(10.0, raw_tmax / T)
+    else:
+        if raw_tmin <= 0 or raw_tmax <= 0 or raw_tmin >= raw_tmax:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "Times must satisfy 0 < t_min < t_max."}
+            )
+        norm_tmin = raw_tmin
+        norm_tmax = raw_tmax
+
+    t_stage1 = np.logspace(np.log10(norm_tmin), np.log10(norm_tmax), N1).tolist()
     
     # Nominal Stage 2 schedule assuming typical alpha=0.1
     alpha_nom = 0.10
-    t_fine = np.linspace(req.t_min, req.t_max, 2000)
+    t_fine = np.linspace(norm_tmin, norm_tmax, 2000)
     w = (t_fine ** 2) * np.exp(-2.0 * alpha_nom * (np.pi ** 2) * t_fine)
     cdf = np.cumsum(w)
     cdf = (cdf - cdf[0]) / (cdf[-1] - cdf[0] + 1e-15)
     u_q = (np.arange(N2) + 0.5) / max(1, N2)
-    inv_cdf = interp1d(cdf, t_fine, bounds_error=False, fill_value=(req.t_min, req.t_max))
+    inv_cdf = interp1d(cdf, t_fine, bounds_error=False, fill_value=(norm_tmin, norm_tmax))
     t_stage2_nom = inv_cdf(u_q).tolist()
     
+    if T is not None:
+        t_stage1_s = [round(t * T, 2) for t in t_stage1]
+        t_stage2_nominal_s = [round(t * T, 2) for t in t_stage2_nom]
+    else:
+        t_stage1_s = [round(t, 5) for t in t_stage1]
+        t_stage2_nominal_s = [round(t, 5) for t in t_stage2_nom]
+
     timing_ms = round((time.perf_counter() - t0) * 1000.0, 2)
     
+    desc = (
+        f"Two-stage adaptive placement at x={raw_x} m: Stage 1 ({N1} points) explores log-spaced time domain. "
+        f"Stage 2 ({N2} points) dynamically concentrates around t* = 1 / (pi^2 * alpha_hat_1)."
+    ) if L is not None else (
+        f"Two-stage adaptive placement at x={raw_x}: Stage 1 ({N1} points) explores log-spaced time domain. "
+        f"Stage 2 ({N2} points) dynamically concentrates around t* = 1 / (pi^2 * alpha_hat_1)."
+    )
+
     return PlacementResponse(
         N=N,
         sigma=req.sigma,
-        sensor_x=req.sensor_x,
+        sensor_x=round(raw_x, 4),
         t_stage1=[round(t, 5) for t in t_stage1],
         t_stage2_nominal=[round(t, 5) for t in t_stage2_nom],
-        strategy_description=(
-            f"Two-stage adaptive placement at x={req.sensor_x}: Stage 1 ({N1} points) explores log-spaced time domain. "
-            f"Stage 2 ({N2} points) dynamically concentrates around t* = 1 / (pi^2 * alpha_hat_1)."
-        ),
+        t_stage1_s=t_stage1_s,
+        t_stage2_nominal_s=t_stage2_nominal_s,
+        bar_length_m=L,
+        test_duration_s=T,
+        strategy_description=desc,
         timing_ms=timing_ms
     )
 

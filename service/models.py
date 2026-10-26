@@ -284,11 +284,17 @@ class DiagnoseResponse(BaseModel):
     units: Optional[str] = "dimensionless"
 
 class PlacementRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
     N: int = Field(..., ge=2, le=500, description="Total number of sensor observation points")
     sigma: float = Field(..., gt=0.0, description="Assumed measurement noise standard deviation")
-    t_min: Optional[float] = Field(0.01, ge=1e-4, le=1.0)
-    t_max: Optional[float] = Field(1.0, ge=0.01, le=10.0)
-    sensor_x: Optional[float] = Field(0.5, ge=0.0, le=1.0)
+    t_min: Optional[float] = Field(None, description="First observation time (s or normalized)")
+    t_max: Optional[float] = Field(None, description="Last observation time (s or normalized)")
+    sensor_x: Optional[float] = Field(None, description="Sensor spatial location (m or normalized)")
+    # Physical units normalization parameters
+    bar_length_m: Optional[float] = Field(None, description="Physical bar length L in metres (L > 0)")
+    test_duration_s: Optional[float] = Field(None, description="Physical test duration T in seconds (T > 0)")
+    boundary_temperature: Optional[float] = Field(None, description="Boundary temperature at bar ends T_boundary")
+    initial_peak_temperature: Optional[float] = Field(None, description="Initial peak temperature at t=0, x=L/2 T_peak")
 
 class PlacementResponse(BaseModel):
     N: int
@@ -298,6 +304,10 @@ class PlacementResponse(BaseModel):
     t_stage2_nominal: List[float]
     strategy_description: str
     timing_ms: float
+    t_stage1_s: Optional[List[float]] = None
+    t_stage2_nominal_s: Optional[List[float]] = None
+    bar_length_m: Optional[float] = None
+    test_duration_s: Optional[float] = None
 
 class FieldRequest(BaseModel):
     alpha: float = Field(..., gt=0.0, description="Diffusivity parameter alpha")

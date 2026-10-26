@@ -1066,95 +1066,142 @@
          ==================================================================== -->
     <section id="view-placement" class="page-view" aria-labelledby="heading-placement">
       <div class="page-intro">
-        <h1 id="heading-placement">Two-Stage Adaptive Sensor Placement</h1>
-        <p class="page-desc">Information-theoretic sensor placement scheduling. Stage 1 log-explores the temporal domain; Stage 2 concentrates dynamically around the optimal Fisher sensitivity point t* = 1 / (π² α̂₁).</p>
+        <h1 id="heading-placement">Plan Sensor Readings</h1>
+        <p class="page-desc">Find the optimal times and position to measure temperature so your heat spread estimate is as accurate as possible.</p>
       </div>
 
       <div class="grid-1-2">
         <!-- Configuration Card -->
         <div class="card">
-          <h2 class="card-title" style="margin-top: 0;">Schedule Parameters</h2>
+          <!-- Shared Bar Setup -->
+          <h2 class="card-title" style="margin-top: 0;">About your test</h2>
+          <div class="real-units-grid" style="margin-bottom: 1.25rem;">
+            <div class="config-col">
+              <label for="place-bar-length" class="form-label" id="place-lbl-bar-length">Bar length (m)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="place-bar-length" name="bar_length_m" class="form-control mono" placeholder="e.g. 0.1" value="0.1" min="0.0001" step="0.01">
+                <span class="input-suffix">m</span>
+              </div>
+            </div>
+            <div class="config-col">
+              <label for="place-experiment-time" class="form-label" id="place-lbl-exp-duration">Test duration (s)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="place-experiment-time" name="test_duration_s" class="form-control mono" placeholder="e.g. 100" value="100" min="0.0001" step="0.1">
+                <span class="input-suffix">s</span>
+              </div>
+            </div>
+            <div class="config-col">
+              <label for="place-temp-edge" class="form-label" id="place-lbl-temp-edge">Ends of the bar are held at (&deg;C)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="place-temp-edge" name="boundary_temperature" class="form-control mono" placeholder="e.g. 20" value="20" step="0.5">
+                <span class="input-suffix">&deg;C</span>
+              </div>
+            </div>
+            <div class="config-col">
+              <label for="place-temp-peak" class="form-label" id="place-lbl-temp-peak">Hottest point at the start (&deg;C)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="place-temp-peak" name="initial_peak_temperature" class="form-control mono" placeholder="e.g. 80" value="80" step="0.5">
+                <span class="input-suffix">&deg;C</span>
+              </div>
+            </div>
+          </div>
+
+          <h2 class="card-title" style="margin-top: 1rem; border-top: 1px solid var(--rule-subtle); padding-top: 1rem;">Reading Schedule Parameters</h2>
           
           <div class="form-group">
-            <label for="place-n" class="form-label">Total Sensor Budget N</label>
-            <input type="number" id="place-n" class="form-control mono" value="20" min="2" max="500" step="2">
-            <span class="form-help">Split equally: N₁ = ⌊N/2⌋ in Stage 1, N₂ = N − N₁ in Stage 2.</span>
+            <label for="place-n" class="form-label" id="place-lbl-n">How many readings can you take?</label>
+            <input type="number" id="place-n" class="form-control mono" value="10" min="3" max="500" step="1">
+            <span class="form-help">Enter at least 3 readings. Default is 10.</span>
           </div>
 
           <div class="form-group">
-            <label for="place-sigma" class="form-label">Assumed Noise σ</label>
-            <input type="number" id="place-sigma" class="form-control mono" value="0.01" step="0.005" min="0.0001">
+            <label for="place-sigma" class="form-label" id="place-lbl-sigma">Thermometer accuracy (&plusmn; &deg;C)</label>
+            <input type="number" id="place-sigma" class="form-control mono" value="0.5" step="0.1" min="0.0001">
+            <span class="form-help">Typical measurement accuracy of your temperature sensor.</span>
           </div>
 
           <div class="form-group">
-            <label for="place-sensor-x" class="form-label">Spatial Sensor Location x</label>
-            <input type="number" id="place-sensor-x" class="form-control mono" value="0.50" min="0.0" max="1.0" step="0.05">
-            <span class="form-help">Standard midpoint location x = 0.5 maximizes signal sin(πx) = 1.</span>
+            <label for="place-sensor-x" class="form-label" id="place-lbl-sensor-x">Sensor position (m from the left end)</label>
+            <div class="input-suffix-wrap">
+              <input type="number" id="place-sensor-x" class="form-control mono" value="0.05" min="0.0001" step="0.005">
+              <span class="input-suffix">m</span>
+            </div>
+            <span class="form-help" id="place-sensor-x-hint">The middle of the bar gives the strongest signal. Near the ends the temperature never changes, so those readings tell us nothing.</span>
+            <div id="place-sensor-x-msg" class="table-validation-msg" style="margin-top: 0.35rem;"></div>
           </div>
 
           <div class="grid-2">
             <div class="form-group">
-              <label for="place-tmin" class="form-label">t_min</label>
-              <input type="number" id="place-tmin" class="form-control mono" value="0.01" step="0.01" min="0.0001">
+              <label for="place-tmin" class="form-label" id="place-lbl-tmin">First reading no earlier than (s)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="place-tmin" class="form-control mono" value="1.0" step="0.5" min="0.001">
+                <span class="input-suffix">s</span>
+              </div>
             </div>
             <div class="form-group">
-              <label for="place-tmax" class="form-label">t_max</label>
-              <input type="number" id="place-tmax" class="form-control mono" value="1.0" step="0.1" min="0.1">
+              <label for="place-tmax" class="form-label" id="place-lbl-tmax">Last reading by (s)</label>
+              <div class="input-suffix-wrap">
+                <input type="number" id="place-tmax" class="form-control mono" value="100.0" step="1.0" min="0.1">
+                <span class="input-suffix">s</span>
+              </div>
             </div>
           </div>
 
           <div style="margin-top: 1rem;">
-            <button type="button" class="btn btn-primary" id="place-submit-btn">Compute Placement Schedule</button>
+            <button type="button" class="btn btn-primary" id="place-submit-btn">Compute Sampling Schedule</button>
           </div>
         </div>
 
         <!-- Schedule Results Card -->
         <div class="card" id="placement-results-card">
-          <h2 class="card-title" style="margin-top: 0;">Adaptive Sampling Schedule</h2>
+          <h2 class="card-title" style="margin-top: 0;">Recommended Sampling Schedule</h2>
 
           <div id="place-state-container">
             <div class="state-box">
-              Click <strong>Compute Placement Schedule</strong> to generate the deployable two-stage timeline.
+              Click <strong>Compute Sampling Schedule</strong> to generate the recommended measurement times.
             </div>
           </div>
 
           <div id="place-result-panel" style="display: none;">
-            <p id="place-strategy-text" style="font-size: 0.92rem; color: var(--text-main); margin-bottom: 1rem; border-left: 3px solid var(--primary-navy); padding-left: 0.75rem; background: var(--bg-surface-raised); padding: 0.6rem 0.8rem;"></p>
+            <!-- Plain words explanation -->
+            <div class="place-how-it-works" style="margin-bottom: 1rem; line-height: 1.55; font-size: 0.93rem; color: var(--text-main); background: var(--bg-surface-raised); border-left: 3px solid var(--primary-navy); padding: 0.75rem 1rem; border-radius: var(--radius-sm);">
+              <strong>How this works:</strong> Measuring heat spread accurately depends heavily on when you take readings. Instead of guessing or spacing them evenly, we divide your sensor readings into two phases: first, a few <em>early readings</em> spread across the test quickly establish a rough cooling rate. Then, based on that rough estimate, the remaining <em>focused readings</em> are concentrated right at the moment when the bar is cooling fastest and temperature changes are most sensitive to diffusivity. This two-stage approach sharpens your final estimate and produces narrower confidence intervals with the same total number of readings.
+            </div>
 
-            <!-- Timeline Visualization on Logarithmic Axis -->
+            <!-- Expected Cooling Curve Visualization with Scheduled Time Marks -->
             <figure>
               <div class="chart-wrapper">
-                <svg id="place-chart-svg" class="chart-svg" viewBox="0 0 700 200" preserveAspectRatio="xMidYMid meet"></svg>
+                <svg id="place-chart-svg" class="chart-svg" viewBox="0 0 700 240" preserveAspectRatio="xMidYMid meet"></svg>
                 <div class="chart-legend" id="place-chart-legend">
-                  <div class="legend-item"><span class="legend-swatch" style="background-color: #2980b9;"></span> Stage 1 Points (Log-Spaced Exploratory)</div>
-                  <div class="legend-item"><span class="legend-swatch" style="background-color: #e67e22;"></span> Stage 2 Nominal Points (Fisher Concentration)</div>
-                  <div class="legend-item"><span class="legend-line" style="border-top: 2px dashed #c0392b;"></span> Peak Fisher Sensitivity t*(α=0.10) ≈ 1.01</div>
+                  <div class="legend-item"><span class="legend-swatch" style="background-color: #2563eb;"></span> Early readings (learn roughly)</div>
+                  <div class="legend-item"><span class="legend-swatch" style="background-color: #d97706;"></span> Focused readings (sharpen the answer)</div>
+                  <div class="legend-item"><span class="legend-line" style="border-top: 2.5px solid #0f172a;"></span> Expected cooling curve at sensor</div>
                 </div>
               </div>
               <figcaption>
-                <strong>Figure 3. Two-Stage Temporal Sensor Distribution.</strong> Logarithmic temporal axis from t_min to t_max showing Stage 1 exploration points and Stage 2 information-weighted concentration.
+                <strong>Expected Cooling Curve & Scheduled Reading Times.</strong> The smooth curve shows anticipated temperature decay at your sensor position. Blue marks indicate early exploratory readings; amber marks indicate information-weighted focused readings.
               </figcaption>
             </figure>
 
-            <!-- Coordinate Tables -->
+            <!-- Coordinate Tables in Seconds -->
             <div class="grid-2" style="margin-top: 1rem;">
               <div>
-                <h3 style="margin-top: 0; font-size: 0.95rem;">Stage 1 Coordinates (t₁ … t_N₁)</h3>
-                <div class="table-container" style="max-height: 200px; overflow-y: auto;">
+                <h3 style="margin-top: 0; font-size: 0.95rem; color: #1d4ed8;">Early readings (learn roughly)</h3>
+                <div class="table-container" style="max-height: 240px; overflow-y: auto;">
                   <table class="booktabs">
                     <thead>
-                      <tr><th>Index</th><th>Time t (s)</th></tr>
+                      <tr><th>Reading #</th><th>Time (s)</th></tr>
                     </thead>
                     <tbody id="place-t1-tbody"></tbody>
                   </table>
                 </div>
               </div>
               <div>
-                <h3 style="margin-top: 0; font-size: 0.95rem;">Stage 2 Nominal Coordinates (t_N₁+1 … t_N)</h3>
-                <div class="table-container" style="max-height: 200px; overflow-y: auto;">
+                <h3 style="margin-top: 0; font-size: 0.95rem; color: #b45309;">Focused readings (sharpen the answer)</h3>
+                <div class="table-container" style="max-height: 240px; overflow-y: auto;">
                   <table class="booktabs">
                     <thead>
-                      <tr><th>Index</th><th>Time t (s)</th></tr>
+                      <tr><th>Reading #</th><th>Time (s)</th></tr>
                     </thead>
                     <tbody id="place-t2-tbody"></tbody>
                   </table>
@@ -1164,15 +1211,22 @@
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;">
               <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                <button type="button" class="btn btn-primary btn-sm" id="place-use-times-btn">Use these times in my readings</button>
+                <button type="button" class="btn btn-primary btn-sm" id="place-use-times-btn">Use these times in Estimate</button>
                 <button type="button" class="btn btn-secondary btn-sm" id="place-download-btn">Download Result (JSON)</button>
               </div>
               <span class="text-muted" style="font-size: 0.8rem;">Solved in <span id="place-timing" class="mono">-</span> ms</span>
             </div>
 
-            <details class="disclosure" id="place-json-disclosure">
-              <summary>Request and Response Payloads (JSON)</summary>
-              <pre id="place-json-dump"></pre>
+            <!-- Show details: collapsed technical section -->
+            <details class="technical-details" id="place-details-disclosure" style="margin-top: 1rem;">
+              <summary class="technical-details-summary">Show details</summary>
+              <div class="technical-details-body" style="padding-top: 0.75rem; font-size: 0.88rem; line-height: 1.5;">
+                <p style="margin-bottom: 0.5rem;"><strong>Split equally N₁ / N₂:</strong> The total reading budget N is divided into N₁ = ⌊N/2⌋ readings in Stage 1 and N₂ = N − N₁ readings in Stage 2.</p>
+                <p style="margin-bottom: 0.5rem;"><strong>Stage 1 (Exploration):</strong> Points are placed on a logarithmic grid between t_min and t_max to uniformly resolve unknown temporal scales across orders of magnitude.</p>
+                <p style="margin-bottom: 0.5rem;"><strong>Stage 2 (Concentration):</strong> Points sample the Fisher information sensitivity density w(t) = t² exp(−2 α π² t / L²), dynamically concentrating observations around the peak sensitivity point t* = L² / (π² α̂₁).</p>
+                <p id="place-strategy-text" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem; margin-bottom: 0.5rem;"></p>
+                <pre id="place-json-dump" style="margin-top: 0.5rem; font-size: 0.8rem; max-height: 200px; overflow-y: auto;"></pre>
+              </div>
             </details>
           </div>
         </div>

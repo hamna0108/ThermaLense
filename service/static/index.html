@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ThermaLens — Thermal PDE Inference &amp; Diagnostics Instrument</title>
   <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
-  <link rel="stylesheet" href="style.css?v=thermalens-v22">
+  <link rel="stylesheet" href="style.css?v=thermalens-v23">
 </head>
 <body>
 
@@ -34,11 +34,13 @@
   <!-- Navigation Bar (Hash Routing) -->
   <nav class="nav-bar" id="app-nav-bar" aria-label="Workbench navigation">
     <div class="nav-inner" id="nav-inner">
-      <div class="nav-standalone">
+      <div class="nav-group-section nav-section-overview">
         <a href="#overview" class="nav-link active" id="nav-overview">Overview</a>
       </div>
 
-      <div class="nav-group" id="nav-group-predict">
+      <div class="nav-divider" aria-hidden="true"></div>
+
+      <div class="nav-group-section nav-section-predict" id="nav-group-predict">
         <div class="nav-group-header">
           <span class="nav-group-label" id="nav-label-predict">Predict</span>
         </div>
@@ -48,7 +50,9 @@
         </div>
       </div>
 
-      <div class="nav-group" id="nav-group-investigate">
+      <div class="nav-divider" aria-hidden="true"></div>
+
+      <div class="nav-group-section nav-section-investigate" id="nav-group-investigate">
         <div class="nav-group-header">
           <span class="nav-group-label" id="nav-label-investigate">Investigate</span>
         </div>
@@ -59,7 +63,9 @@
         </div>
       </div>
 
-      <div class="nav-standalone nav-standalone-trailing">
+      <div class="nav-divider" aria-hidden="true"></div>
+
+      <div class="nav-group-section nav-section-archive">
         <a href="#evidence" class="nav-link" id="nav-evidence">Evidence</a>
         <a href="#limits" class="nav-link" id="nav-limits">Limits</a>
       </div>
@@ -327,9 +333,15 @@
          ==================================================================== -->
     <section id="view-estimate" class="page-view" aria-labelledby="heading-estimate">
       <div class="page-intro">
-        <h1 id="heading-estimate">How fast does heat spread in my material?</h1>
-        <p class="page-subtitle" id="estimate-page-subtitle">Investigate: start from measurements and work backwards.</p>
-        <p class="page-desc">Enter your sensor readings and get the material's thermal diffusivity, with a range you can trust.</p>
+        <span class="page-eyebrow">INVESTIGATE</span>
+        <h1 id="heading-estimate">Estimate Heat Spread</h1>
+        <p class="page-subtitle" id="estimate-page-subtitle">Enter your readings to find the material's heat-spread number.</p>
+        <details class="technical-details" style="margin-top: 0.35rem; margin-bottom: 0.75rem;">
+          <summary class="technical-details-summary">Show details</summary>
+          <div class="technical-details-body" style="padding-top: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
+            Physical parameter estimation · Inversion for thermal diffusivity α with 95% profile likelihood confidence intervals.
+          </div>
+        </details>
       </div>
 
       <div class="estimate-single-col">
@@ -717,9 +729,15 @@
          ==================================================================== -->
     <section id="view-diagnose" class="page-view" aria-labelledby="heading-diagnose">
       <div class="page-intro">
-        <h1 id="heading-diagnose">Is my test behaving normally?</h1>
-        <p class="page-subtitle" id="diagnose-page-subtitle">Investigate: start from measurements and work backwards.</p>
-        <p class="page-desc">Compare your sensor readings against a normal reference run to check if the test is behaving as expected, or if a sensor is faulty.</p>
+        <span class="page-eyebrow">INVESTIGATE</span>
+        <h1 id="heading-diagnose">Check Your Data</h1>
+        <p class="page-subtitle" id="diagnose-page-subtitle">Check whether your test matches a healthy reference.</p>
+        <details class="technical-details" style="margin-top: 0.35rem; margin-bottom: 0.75rem;">
+          <summary class="technical-details-summary">Show details</summary>
+          <div class="technical-details-body" style="padding-top: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
+            Multi-hypothesis sensor anomaly diagnostics · Generalised Likelihood Ratio Test (GLRT) vs stuck/corrupted readings and change points.
+          </div>
+        </details>
       </div>
 
       <div class="diagnose-single-col">
@@ -1092,9 +1110,15 @@
          ==================================================================== -->
     <section id="view-placement" class="page-view" aria-labelledby="heading-placement">
       <div class="page-intro">
-        <h1 id="heading-placement">Plan Sensor Readings</h1>
-        <p class="page-subtitle" id="placement-page-subtitle">Investigate: start from measurements and work backwards.</p>
-        <p class="page-desc">Find the optimal times and position to measure temperature so your heat spread estimate is as accurate as possible.</p>
+        <span class="page-eyebrow">INVESTIGATE</span>
+        <h1 id="heading-placement">Plan Your Readings</h1>
+        <p class="page-subtitle" id="placement-page-subtitle">Find out when to measure so your readings tell you the most.</p>
+        <details class="technical-details" style="margin-top: 0.35rem; margin-bottom: 0.75rem;">
+          <summary class="technical-details-summary">Show details</summary>
+          <div class="technical-details-body" style="padding-top: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
+            Two-stage adaptive sensor placement · Fisher information matrix D-optimal sampling schedule.
+          </div>
+        </details>
       </div>
 
       <div class="grid-1-2">
@@ -1286,9 +1310,15 @@
          ==================================================================== -->
     <section id="view-field" class="page-view" aria-labelledby="heading-field">
       <div class="page-intro">
-        <h1 id="heading-field">Heat Diffusion Field Simulation u(x, t)</h1>
-        <p class="page-subtitle" id="field-page-subtitle">Predict: if we know the material or source, what will the temperature be?</p>
-        <p class="page-desc">High-resolution 2D spatio-temporal forward solution of the heat equation ∂u/∂t = α ∂²u/∂x². Compare classical Crank-Nicolson numerical solves against Fourier Neural Operator (FNO) inference.</p>
+        <span class="page-eyebrow">PREDICT</span>
+        <h1 id="heading-field">Heat Over Time</h1>
+        <p class="page-subtitle" id="field-page-subtitle">Pick a material and see how the temperature along a bar changes with time.</p>
+        <details class="technical-details" style="margin-top: 0.35rem; margin-bottom: 0.75rem;">
+          <summary class="technical-details-summary">Show details</summary>
+          <div class="technical-details-body" style="padding-top: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
+            Heat Diffusion Field Simulation u(x, t) · High-resolution 2D spatio-temporal forward solution of the heat equation ∂u/∂t = α ∂²u/∂x². Compare classical Crank-Nicolson numerical solves against Fourier Neural Operator (FNO) inference.
+          </div>
+        </details>
       </div>
 
       <div class="grid-1-2">
@@ -1417,9 +1447,15 @@
          ==================================================================== -->
     <section id="view-poisson" class="page-view" aria-labelledby="heading-poisson">
       <div class="page-intro">
-        <h1 id="heading-poisson">Stage 2 2D Poisson Operator Workbench</h1>
-        <p class="page-subtitle" id="poisson-page-subtitle">Predict: if we know the material or source, what will the temperature be?</p>
-        <p class="page-desc">Solve −∇²u = f(x, y) on [0, 1]² with homogeneous Dirichlet boundaries. Benchmark exact sparse LU against FNO and Linear ridge baseline.</p>
+        <span class="page-eyebrow">PREDICT</span>
+        <h1 id="heading-poisson">Steady Heat Map (2D)</h1>
+        <p class="page-subtitle" id="poisson-page-subtitle">Place a heat source on a square plate and see the temperature it settles at. Three solvers are compared.</p>
+        <details class="technical-details" style="margin-top: 0.35rem; margin-bottom: 0.75rem;">
+          <summary class="technical-details-summary">Show details</summary>
+          <div class="technical-details-body" style="padding-top: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
+            Stage 2 · 2D Poisson −∇²u = f on [0, 1]² with homogeneous Dirichlet boundaries, exact sparse LU vs FNO vs linear ridge baseline.
+          </div>
+        </details>
       </div>
 
       <!-- High-Frequency Warning Callout (Visible conditionally) -->
@@ -1433,20 +1469,20 @@
       <div class="grid-1-2">
         <!-- Source Term Builder Card -->
         <div class="card">
-          <h2 class="card-title" style="margin-top: 0;">Source Term Builder f(x, y)</h2>
+          <h2 class="card-title" style="margin-top: 0;">Heat source</h2>
           
           <div class="form-group">
-            <label class="form-label">Source Family</label>
+            <label class="form-label">Heat source shape</label>
             <div class="btn-group" style="width: 100%;">
-              <button type="button" class="btn btn-secondary btn-sm active" id="poi-family-sine-btn">Harmonic Sine Modes</button>
-              <button type="button" class="btn btn-secondary btn-sm" id="poi-family-gauss-btn">Gaussian Heaters</button>
+              <button type="button" class="btn btn-secondary btn-sm active" id="poi-family-sine-btn">Wave pattern</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="poi-family-gauss-btn">Hot spots</button>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Quick Presets</label>
+            <label class="form-label">Examples</label>
             <select id="poi-presets-select" class="form-select">
-              <option value="sine_low" selected>Sine Mode [2, 2] (In-Distribution)</option>
+              <option value="sine_low" selected>Sine Mode [2, 2] (Typical case)</option>
               <option value="sine_high">Sine Mode [6, 2] (Out-of-Distribution High Mode)</option>
               <option value="gauss_center">Single Center Gaussian Heater [0.5, 0.5]</option>
               <option value="gauss_dual">Dual Gaussian Heaters [0.3, 0.3] &amp; [0.7, 0.7]</option>
@@ -1457,11 +1493,11 @@
           <div id="poi-sine-controls">
             <div class="grid-2">
               <div class="form-group">
-                <label for="poi-mode-m" class="form-label">Wavenumber m (x)</label>
+                <label for="poi-mode-m" class="form-label">Waves across (x)</label>
                 <input type="number" id="poi-mode-m" class="form-control mono" value="2" min="1" max="16" step="1">
               </div>
               <div class="form-group">
-                <label for="poi-mode-n" class="form-label">Wavenumber n (y)</label>
+                <label for="poi-mode-n" class="form-label">Waves up (y)</label>
                 <input type="number" id="poi-mode-n" class="form-control mono" value="2" min="1" max="16" step="1">
               </div>
             </div>
@@ -1508,7 +1544,7 @@
 
         <!-- Poisson Output Card -->
         <div class="card" id="poisson-results-card">
-          <h2 class="card-title" style="margin-top: 0;">Tri-Solver Comparison &amp; Error Analysis</h2>
+          <h2 class="card-title" style="margin-top: 0;">Three solvers compared</h2>
 
           <div id="poi-state-container">
             <div class="state-box">
@@ -1523,7 +1559,7 @@
                 <thead>
                   <tr>
                     <th>Method</th>
-                    <th class="text-right">Relative L₂ Error vs Exact</th>
+                    <th class="text-right">How far from the exact answer</th>
                     <th class="text-right">CPU Latency (ms)</th>
                     <th>Status</th>
                   </tr>
@@ -2219,6 +2255,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=thermalens-v22"></script>
+  <script src="app.js?v=thermalens-v23"></script>
 </body>
 </html>

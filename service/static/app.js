@@ -4779,7 +4779,7 @@ async function executePoisson() {
       fnoBadge.textContent = 'Degraded (>50%)';
     } else {
       fnoBadge.className = 'badge badge-info';
-      fnoBadge.textContent = 'In-Distribution';
+      fnoBadge.textContent = 'Typical case';
     }
 
     // Render Canvas Heatmaps

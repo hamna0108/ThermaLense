@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ThermaLens — Thermal PDE Inference &amp; Diagnostics Instrument</title>
   <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
-  <link rel="stylesheet" href="style.css?v=thermalens-v27">
+  <link rel="stylesheet" href="style.css?v=thermalens-v28">
 </head>
 <body>
 
@@ -65,6 +65,8 @@
         </div>
       </div>
 
+      <!-- HIDDEN-UI: nav-secondary-about-links (uncomment to restore) -->
+      <!--
       <div class="nav-secondary-section" id="nav-group-about">
         <div class="nav-group-header">
           <span class="nav-group-label" id="nav-label-about">About</span>
@@ -74,6 +76,7 @@
           <a href="#limits" class="nav-link nav-link-secondary" id="nav-limits">Limits</a>
         </div>
       </div>
+      -->
     </div>
   </nav>
 
@@ -216,11 +219,13 @@
         </div>
       </div>
 
-      <!-- "How good is it?" Row of 3 numbers -->
+      <!-- HIDDEN-UI: overview-accuracy-limits-and-details (uncomment to restore) -->
+      <!--
+      <!-- "How good is it?" Row of 3 numbers -- >
       <div class="accuracy-section">
         <h2 class="section-heading">How good is it?</h2>
         <div class="headline-grid" id="headline-findings-container">
-          <!-- Card 1: Pooled Anomaly Confusion -->
+          <!-- Card 1: Pooled Anomaly Confusion -- >
           <div class="headline-card">
             <div class="headline-stat">84.0%</div>
             <div class="headline-title">Sensor Fault Detection</div>
@@ -231,7 +236,7 @@
             </div>
           </div>
 
-          <!-- Card 2: Mode 3+ Coverage -->
+          <!-- Card 2: Mode 3+ Coverage -- >
           <div class="headline-card">
             <div class="headline-stat">94.0%</div>
             <div class="headline-title">Production Estimate Accuracy</div>
@@ -242,7 +247,7 @@
             </div>
           </div>
 
-          <!-- Card 3: Mode 3 Coverage -->
+          <!-- Card 3: Mode 3 Coverage -- >
           <div class="headline-card">
             <div class="headline-stat">95.4% / 88.2%</div>
             <div class="headline-title">Fast Surrogate Coverage</div>
@@ -255,7 +260,7 @@
         </div>
       </div>
 
-      <!-- "Know the limits" strip -->
+      <!-- "Know the limits" strip -- >
       <div class="card limits-strip" id="overview-limits-strip">
         <div class="limits-strip-header">
           <div class="limits-strip-title-area">
@@ -271,7 +276,7 @@
         </ul>
       </div>
 
-      <!-- Collapsed Technical Details Section -->
+      <!-- Collapsed Technical Details Section -- >
       <details class="disclosure technical-details-card" id="overview-technical-details">
         <summary class="technical-details-summary">Technical details &amp; Mathematical formulation</summary>
         <div class="technical-details-content">
@@ -332,6 +337,7 @@
           </p>
         </div>
       </details>
+      -->
     </section>
 
     <!-- ====================================================================
@@ -1644,6 +1650,8 @@
     <!-- ====================================================================
          PAGE 7: EVIDENCE (VERIFIED RESULTS ARCHIVE)
          ==================================================================== -->
+    <!-- HIDDEN-UI: view-evidence (uncomment to restore) -->
+    <!--
     <section id="view-evidence" class="page-view" aria-labelledby="heading-evidence">
       <div class="page-intro">
         <span class="page-eyebrow">EVIDENCE</span>
@@ -1658,7 +1666,7 @@
         </details>
       </div>
 
-      <!-- Caveat Highlights Strip -->
+      <!-- Caveat Highlights Strip -- >
       <div class="card" style="border-left: 4px solid var(--accent-amber);">
         <h2 class="card-title" style="margin-top: 0; color: var(--accent-amber);">Mandatory Caveats &amp; Honest Findings</h2>
         <ul style="margin-left: 1.25rem; line-height: 1.7; font-size: 0.9rem;">
@@ -1669,7 +1677,7 @@
         </ul>
       </div>
 
-      <!-- Section 1: Stage 1 Inverse Modes -->
+      <!-- Section 1: Stage 1 Inverse Modes -- >
       <div class="card">
         <h2 class="card-title">1. Stage 1 Inverse Estimation Benchmark</h2>
         <p class="text-muted" style="margin-bottom: 0.75rem;">Source: <code>mode2_pipeline_results_v2.csv</code>, <code>mode3_pipeline_results_v2.csv</code>, <code>mode3plus_hybrid_results.csv</code></p>
@@ -1689,7 +1697,7 @@
         </div>
       </div>
 
-      <!-- Section 2: Sensor Placement -->
+      <!-- Section 2: Sensor Placement -- >
       <div class="card">
         <h2 class="card-title">2. Sensor Placement Strategy Comparison</h2>
         <p class="text-muted" style="margin-bottom: 0.75rem;">Source: <code>sensor_placement_summary.csv</code></p>
@@ -1709,13 +1717,13 @@
         </div>
       </div>
 
-      <!-- Section 3: Anomaly Detection: Real Benchmark vs Demo Scenarios -->
+      <!-- Section 3: Anomaly Detection: Real Benchmark vs Demo Scenarios -- >
       <div class="card">
         <h2 class="card-title">3. Anomaly Cascade: Real Benchmark vs Demo Scenarios</h2>
         <p class="text-muted" style="margin-bottom: 1rem;">Primary Operational Test Set (N = 10, &sigma; = 0.01). Side-by-side comparison of rigorous frozen benchmark results against interactive demo cases. Sources: <code>anomaly_frozen_final_tables.json</code> and <code>eval_demo_scenarios_20seeds.py</code></p>
         
         <div class="grid-2">
-          <!-- Left Column: Real Benchmark Table & Confusion Matrix -->
+          <!-- Left Column: Real Benchmark Table & Confusion Matrix -- >
           <div>
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
               <h3 style="font-size: 0.95rem; margin: 0;">Real Benchmark Table (800 Monte Carlo Runs)</h3>
@@ -1775,7 +1783,7 @@
             </figure>
           </div>
 
-          <!-- Right Column: Demo Cases Table with Label -->
+          <!-- Right Column: Demo Cases Table with Label -- >
           <div>
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
               <h3 style="font-size: 0.95rem; margin: 0;">Seven-Scenario Demo Table</h3>
@@ -1864,14 +1872,14 @@
         </div>
       </div>
 
-      <!-- Full Technical Tables (Collapsed by Default) -->
+      <!-- Full Technical Tables (Collapsed by Default) -- >
       <details class="card technical-details full-tables-card" id="ev-full-tables-details" style="margin-top: 1.25rem;">
         <summary class="technical-details-summary full-tables-summary" style="cursor: pointer; font-weight: 600; font-size: 0.95rem; color: var(--text-heading); padding: 0.35rem 0.5rem; user-select: none;">
           Show full tables &darr;
         </summary>
         <div class="technical-details-body full-tables-body" style="padding-top: 1rem;">
 
-          <!-- Paired 200-Seed Sensitivity Benchmark -->
+          <!-- Paired 200-Seed Sensitivity Benchmark -- >
           <div style="margin-bottom: 1.5rem;">
             <h3 style="font-size: 0.95rem; margin-bottom: 0.35rem;">Paired 200-Seed Sensitivity Benchmark: Material Guess &amp; Timing Accuracy</h3>
             <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0.75rem;">
@@ -1979,7 +1987,7 @@
             </div>
           </div>
 
-          <!-- Section 4: Empirical Stress Testing (Week 5 Matrix v2b) -->
+          <!-- Section 4: Empirical Stress Testing (Week 5 Matrix v2b) -- >
           <div class="card" style="box-shadow: none; border: 1px solid var(--rule-hairline); margin-bottom: 1rem;">
         <h2 class="card-title">4. Empirical Stress Testing (Week 5 Matrix v2b)</h2>
         <p class="text-muted" style="margin-bottom: 0.75rem;">13 Scenarios × 3 Severities across 5 Frozen Modules (100 reps/cell). Source: <code>stress_summary_v2b.csv</code></p>
@@ -2009,7 +2017,7 @@
         </div>
       </div>
 
-      <!-- Section 5: V2 Before / After Table -->
+      <!-- Section 5: V2 Before / After Table -- >
       <div class="card">
         <h2 class="card-title">5. V2 Wrappers Before / After Targets (D1–D4)</h2>
         <p class="text-muted" style="margin-bottom: 0.75rem;">34 Pre-registered evaluation criteria. Source: <code>v2_before_after_summary.csv</code></p>
@@ -2031,7 +2039,7 @@
         </div>
       </div>
 
-      <!-- Section 5b: V2 Followup Targets Final State (D2, D3, D5) -->
+      <!-- Section 5b: V2 Followup Targets Final State (D2, D3, D5) -- >
       <div class="card">
         <h2 class="card-title">5b. V2 Followup Targets: Final Empirical State (D2, D3, D5)</h2>
         <p class="text-muted" style="margin-bottom: 0.75rem;">Large-sample N-sweep (1,000 runs/N), AR(1) Durbin-Watson calibration, multi-criteria range guard, and warning power analysis. Source: <code>task_e_v2_followups.json</code></p>
@@ -2098,7 +2106,7 @@
         </div>
       </div>
 
-      <!-- Section 6: Stage 2 Poisson Benchmark -->
+      <!-- Section 6: Stage 2 Poisson Benchmark -- >
       <div class="card">
         <h2 class="card-title">6. Stage 2 Poisson 2D Operator Benchmark</h2>
         <p class="text-muted" style="margin-bottom: 0.75rem;">Source: <code>poisson_v2_benchmark_table.csv</code> and <code>timing_honesty.json</code></p>
@@ -2119,7 +2127,7 @@
         </div>
       </div>
 
-      <!-- Section 7: PINN Ablation -->
+      <!-- Section 7: PINN Ablation -- >
       <div class="card">
         <h2 class="card-title">7. PINN Architecture &amp; Reparametrization Ablation</h2>
         <p class="text-muted" style="margin-bottom: 0.75rem;">Source: <code>experiments_summary.csv</code> and <code>mode1_pinn_summary.csv</code></p>
@@ -2166,10 +2174,13 @@
         </div>
       </details>
     </section>
+    -->
 
     <!-- ====================================================================
          PAGE 8: LIMITS (OPERATIONAL BOUNDARIES)
          ==================================================================== -->
+    <!-- HIDDEN-UI: view-limits (uncomment to restore) -->
+    <!--
     <section id="view-limits" class="page-view" aria-labelledby="heading-limits">
       <div class="page-intro">
         <span class="page-eyebrow">LIMITS</span>
@@ -2183,7 +2194,7 @@
         </details>
       </div>
 
-      <!-- Plain Language Operational Limits -->
+      <!-- Plain Language Operational Limits -- >
       <div class="card" style="border-left: 4px solid var(--accent-amber, #d97706); margin-bottom: 1.25rem;">
         <h2 class="card-title" style="margin-top: 0; color: var(--text-main);">Diagnosis &amp; Detector Operating Limits (Plain Language)</h2>
         <p style="font-size: 0.92rem; line-height: 1.6; margin-bottom: 0.85rem;">
@@ -2275,6 +2286,7 @@
         </div>
       </details>
     </section>
+    -->
 
   </main>
 
@@ -2293,6 +2305,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=thermalens-v27"></script>
+  <script src="app.js?v=thermalens-v28"></script>
 </body>
 </html>

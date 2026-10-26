@@ -316,6 +316,7 @@ code {
   height: 100%;
 }
 
+/* HIDDEN-UI: nav-secondary-section (uncomment to restore)
 .nav-secondary-section {
   display: flex;
   align-items: center;
@@ -329,6 +330,7 @@ code {
   height: 100%;
   gap: 0.15rem;
 }
+*/
 
 .nav-group-section {
   display: flex;
@@ -1112,7 +1114,7 @@ details.disclosure pre {
   text-decoration: underline;
 }
 
-/* Limits Strip (Overview Page) */
+/* HIDDEN-UI: limits-strip (uncomment to restore)
 .limits-strip {
   border-left: 4px solid var(--accent-amber);
   background-color: var(--bg-surface);
@@ -1154,6 +1156,7 @@ details.disclosure pre {
 .limits-bullets-list li:last-child {
   margin-bottom: 0;
 }
+*/
 
 /* Technical Details Disclosure (Overview Page) */
 details.technical-details-card {
@@ -1998,6 +2001,7 @@ tr[id*="alpha"] td {
     height: auto;
     gap: 0.25rem;
   }
+  /* HIDDEN-UI: mobile-nav-secondary-section (uncomment to restore)
   .nav-bar.mobile-menu-open .nav-secondary-section {
     flex-direction: column;
     align-items: stretch;
@@ -2015,6 +2019,7 @@ tr[id*="alpha"] td {
     gap: 0.25rem;
     width: 100%;
   }
+  */
   .nav-bar.mobile-menu-open .nav-link {
     width: 100%;
     height: 38px;

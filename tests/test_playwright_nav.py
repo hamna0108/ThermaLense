@@ -1,19 +1,23 @@
-"""Playwright test suite for Type Scale, Header Compaction, Top Bar, and Nav Polish.
+"""Playwright test suite for Navigation, Type Scale, Header Compaction, and Smoke Load.
 
 Verifies:
-1. Type Scale with CSS variables:
+1. Navigation bar:
+   - Main row: Overview | Field | Poisson | Place Sensors | Estimate | Diagnose
+   - Group dividers present
+   - Secondary links (Accuracy, Limits) and About group hidden
+   - Routing to #evidence and #limits falls back to Overview
+2. Type Scale with CSS variables:
    - Eyebrow 12px uppercase, letter-spacing 0.08em
    - Page title (H1) clamp(1.625rem, 1.3rem + 0.8vw, 1.875rem) i.e. 26-30px desktop, 24-28px mobile
    - Subtitle 15-16px, muted colour, max-width 70ch
    - "Show details" summary 14px
    - Section headings (H2) 20px, card headings 17-18px
    - H1 is clearly smaller than the brand name in the top bar on every page.
-2. Page header block (.page-intro) <= ~140px tall at 1440px width.
-3. First input is visible without scrolling at 1440x768 viewport.
-4. Top bar: status pill text "Service online" (green dot kept), tagline "Heat modelling and sensor diagnostics".
-5. Extra horizontal rule under page header removed.
-6. Navigation bar: single row, uniform baseline/height, 3 dividers, mobile menu section headers.
-7. Screenshots of all 8 pages at 1440 and 390.
+3. Page header block (.page-intro) <= ~140px tall at 1440px width.
+4. First input is visible without scrolling at 1440x768 viewport.
+5. Top bar: status pill text "Service online" (green dot kept), tagline "Heat modelling and sensor diagnostics".
+6. Mobile menu: keeps Predict and Investigate group headers; About group hidden; 6 main links.
+7. Zero console errors on load and navigation across all remaining pages.
 """
 
 import os
@@ -38,8 +42,6 @@ ALL_PAGES = [
     {"hash": "placement", "h1_id": "heading-placement", "has_input": True},
     {"hash": "estimate", "h1_id": "heading-estimate", "has_input": True},
     {"hash": "diagnose", "h1_id": "heading-diagnose", "has_input": True},
-    {"hash": "evidence", "h1_id": "heading-evidence", "has_input": False},
-    {"hash": "limits", "h1_id": "heading-limits", "has_input": False},
 ]
 
 
@@ -68,14 +70,13 @@ def live_server():
     proc = subprocess.Popen(
         [sys.executable, "-u", "-m", "uvicorn", "service.app:app", "--port", str(port), "--host", "127.0.0.1"],
         cwd=REPO_ROOT,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         env=env
     )
     if not wait_for_port(port, timeout=60):
         proc.kill()
-        out, _ = proc.communicate()
-        raise RuntimeError(f"Server failed to start on port {port}: {out.decode()}")
+        raise RuntimeError(f"Server failed to start on port {port}")
 
     yield f"http://127.0.0.1:{port}"
 
@@ -97,7 +98,7 @@ def save_screenshot(target, filename):
 
 
 def test_type_scale_and_header_compaction_1440(live_server):
-    """Desktop 1440x768 viewport: check type scale, header compaction <= 140px, first input above fold, top bar, and 8 screenshots."""
+    """Desktop 1440x768 viewport: check main nav, type scale, header compaction <= 140px, first input above fold, top bar."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         # Using exact 1440x768 viewport requested to verify above-the-fold visibility
@@ -111,7 +112,7 @@ def test_type_scale_and_header_compaction_1440(live_server):
         # 1. Top Bar Checks
         # Pill text "Service online"
         pill_text = page.locator("#service-health-text")
-        # Wait up to 2 seconds for health check to settle
+        # Wait up to 5 seconds for health check to settle
         page.wait_for_function("document.getElementById('service-health-text').textContent.includes('Service online')", timeout=5000)
         assert pill_text.inner_text().strip() == "Service online"
         badge = page.locator("#service-health-badge")
@@ -144,29 +145,25 @@ def test_type_scale_and_header_compaction_1440(live_server):
         # Two group dividers in the main nav row
         assert page.locator("#nav-main-row .nav-divider").count() == 2
 
-        # Secondary links at the right end: Accuracy (-> #evidence) and Limits (-> #limits)
-        sec_links = page.locator("#nav-group-about .nav-link")
-        expected_sec = ["Accuracy", "Limits"]
-        assert [sec_links.nth(i).inner_text().strip() for i in range(sec_links.count())] == expected_sec
-        assert page.locator("#nav-evidence").get_attribute("href") == "#evidence"
-        assert page.locator("#nav-limits").get_attribute("href") == "#limits"
-
-        # Verify secondary section is at the right end on 1440px desktop
-        main_box = page.locator("#nav-main-row").bounding_box()
-        sec_box = page.locator("#nav-group-about").bounding_box()
-        assert main_box is not None and sec_box is not None
-        assert sec_box["x"] >= main_box["x"] + main_box["width"] - 5.0, (
-            f"Secondary links x={sec_box['x']} should be at the right end of main row"
-        )
+        # Verify secondary links (Accuracy, Limits) and About group are commented out
+        assert page.locator("#nav-group-about").count() == 0
+        assert page.locator("#nav-evidence").count() == 0
+        assert page.locator("#nav-limits").count() == 0
 
         # No bold group headers visible in desktop nav bar
         assert not page.locator("#nav-label-predict").is_visible()
         assert not page.locator("#nav-label-investigate").is_visible()
-        assert not page.locator("#nav-label-about").is_visible()
 
         save_screenshot(page.locator(".nav-bar"), "nav_1440px.png")
 
-        # 3. Type scale and header block checks across ALL EIGHT PAGES
+        # 3. Route fallback: navigating to #evidence or #limits falls back to overview
+        for hidden_hash in ["evidence", "limits"]:
+            page.goto(f"{live_server}/#{hidden_hash}")
+            page.wait_for_selector("#heading-overview", state="visible")
+            assert page.locator("#view-overview").evaluate("el => el.classList.contains('active')")
+            assert page.locator(f"#view-{hidden_hash}").count() == 0
+
+        # 4. Type scale and header block checks across remaining active pages
         for p_info in ALL_PAGES:
             page.goto(f"{live_server}/#{p_info['hash']}")
             page.wait_for_selector(f"#{p_info['h1_id']}", state="visible")
@@ -180,30 +177,6 @@ def test_type_scale_and_header_compaction_1440(live_server):
 
             # H1 must stay at or below the brand size minus 2px
             assert h1_fs <= brand_fs - 1.9, f"Page {p_info['hash']} H1 {h1_fs}px not <= brand ({brand_fs}px) - 2px"
-
-            # Specific checks for Evidence page
-            if p_info["hash"] == "evidence":
-                assert h1.inner_text().strip() == "How Accurate Is It?"
-                sub = view_elem.locator(".page-desc")
-                assert sub.inner_text().strip() == "The tests behind every number in ThermaLens, with the honest limits."
-                note = view_elem.locator(".evidence-full-methods-note")
-                assert "Full methods, tables and figures are in the project report and README." in note.inner_text()
-                det = view_elem.locator(".page-intro .technical-details")
-                assert det.count() > 0
-                assert "ThermaLens: Empirical Evidence" in det.text_content()
-                full_tables = view_elem.locator("#ev-full-tables-details")
-                assert full_tables.count() > 0
-                assert not full_tables.evaluate("el => el.open")
-                assert "Show full tables" in full_tables.locator("summary").inner_text()
-
-            # Specific checks for Limits page
-            if p_info["hash"] == "limits":
-                assert h1.inner_text().strip() == "What It Can't Do"
-                sub = view_elem.locator(".page-desc")
-                assert sub.inner_text().strip() == "Where ThermaLens is reliable, where it is not, and what to do about it."
-                det = view_elem.locator(".page-intro .technical-details")
-                assert det.count() > 0
-                assert "Operational Boundaries & Mathematical Limits" in det.text_content()
 
             # Check header block (.page-intro): height must be at most about 140px tall at 1440px
             intro_el = view_elem.locator(".page-intro")
@@ -240,7 +213,7 @@ def test_type_scale_and_header_compaction_1440(live_server):
 
 
 def test_type_scale_mobile_390(live_server):
-    """Mobile 390x844 viewport: check H1 size ~22px, brand ~24px (H1 <= brand - 2px), top bar, and 8 screenshots."""
+    """Mobile 390x844 viewport: check H1 size ~22px, brand ~24px (H1 <= brand - 2px), top bar, and mobile menu."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 390, "height": 844})
@@ -258,7 +231,7 @@ def test_type_scale_mobile_390(live_server):
         # Capture mobile top bar screenshot
         save_screenshot(page.locator(".app-header"), "topbar_390px.png")
 
-        # Verify mobile menu keeps group headers
+        # Verify mobile menu keeps group headers for Predict and Investigate, but About is hidden
         menu_btn = page.locator("#mobile-menu-btn")
         assert menu_btn.is_visible()
         menu_btn.click()
@@ -268,11 +241,14 @@ def test_type_scale_mobile_390(live_server):
         assert nav_bar.evaluate("el => el.classList.contains('mobile-menu-open')")
         assert page.locator("#nav-label-predict").is_visible()
         assert page.locator("#nav-label-investigate").is_visible()
-        assert page.locator("#nav-label-about").is_visible()
+        assert page.locator("#nav-label-about").count() == 0
+        assert page.locator("#nav-group-about").count() == 0
 
-        # Verify About links at bottom of menu: Accuracy and Limits
-        sec_menu_links = page.locator("#nav-group-about .nav-link")
-        assert [sec_menu_links.nth(i).inner_text().strip() for i in range(sec_menu_links.count())] == ["Accuracy", "Limits"]
+        # Menu links: only the 6 main links
+        menu_links = page.locator("#app-nav-bar .nav-link")
+        assert [menu_links.nth(i).inner_text().strip() for i in range(menu_links.count())] == [
+            "Overview", "Field", "Poisson", "Place Sensors", "Estimate", "Diagnose"
+        ]
 
         save_screenshot(nav_bar, "nav_390px.png")
 
@@ -280,7 +256,7 @@ def test_type_scale_mobile_390(live_server):
         page.locator("#nav-overview").click()
         page.wait_for_timeout(200)
 
-        # Measure H1 on all eight pages at 390px
+        # Measure H1 on all remaining pages at 390px
         for p_info in ALL_PAGES:
             page.goto(f"{live_server}/#{p_info['hash']}")
             page.wait_for_selector(f"#{p_info['h1_id']}", state="visible")
@@ -296,5 +272,57 @@ def test_type_scale_mobile_390(live_server):
 
             # Capture screenshot of each page at 390px
             save_screenshot(page, f"{p_info['hash']}_390px.png")
+
+        browser.close()
+
+
+def test_smoke_load_remaining_pages_no_console_errors(live_server):
+    """Quick smoke load of every remaining page and check for zero console errors."""
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+
+        console_errors = []
+        page.on("console", lambda msg: console_errors.append(f"[{msg.type}] {msg.text}") if msg.type == "error" else None)
+        page.on("pageerror", lambda err: console_errors.append(f"[pageerror] {err}"))
+
+        # Initial load
+        page.goto(f"{live_server}/#overview", wait_until="domcontentloaded")
+        page.wait_for_selector("#heading-overview", state="visible")
+
+        # Smoke load each active page
+        for p_info in ALL_PAGES:
+            page.evaluate(f"window.location.hash = '#{p_info['hash']}'")
+            page.wait_for_selector(f"#{p_info['h1_id']}", state="visible")
+            assert page.locator(f"#view-{p_info['hash']}").evaluate("el => el.classList.contains('active')")
+
+        # Check fallback routes
+        for hidden in ["evidence", "limits"]:
+            page.evaluate(f"window.location.hash = '#{hidden}'")
+            page.wait_for_selector("#heading-overview", state="visible")
+            assert page.locator("#view-overview").evaluate("el => el.classList.contains('active')")
+
+        browser.close()
+        assert console_errors == [], f"Console errors encountered: {console_errors}"
+
+
+@pytest.mark.skip(reason="Evidence/Limits UI hidden; uncomment to restore")
+def test_evidence_and_limits_ui(live_server):
+    """Skipped while Evidence and Limits UI is commented out."""
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(viewport={"width": 1440, "height": 768})
+        page = context.new_page()
+
+        page.goto(f"{live_server}/#evidence")
+        page.wait_for_selector("#heading-evidence", state="visible")
+        h1_ev = page.locator("#heading-evidence")
+        assert h1_ev.inner_text().strip() == "How Accurate Is It?"
+
+        page.goto(f"{live_server}/#limits")
+        page.wait_for_selector("#heading-limits", state="visible")
+        h1_lim = page.locator("#heading-limits")
+        assert h1_lim.inner_text().strip() == "What It Can't Do"
 
         browser.close()

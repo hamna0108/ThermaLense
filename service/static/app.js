@@ -138,7 +138,9 @@ function initMobileNav() {
 
 function handleRoute() {
   const rawHash = window.location.hash.replace('#', '').trim();
-  const validRoutes = ['overview', 'estimate', 'diagnose', 'placement', 'field', 'poisson', 'evidence', 'limits'];
+  // HIDDEN-UI: validRoutes without evidence and limits (uncomment to restore)
+  const validRoutes = ['overview', 'estimate', 'diagnose', 'placement', 'field', 'poisson'];
+  // const validRoutes = ['overview', 'estimate', 'diagnose', 'placement', 'field', 'poisson', 'evidence', 'limits'];
   const targetRoute = validRoutes.includes(rawHash) ? rawHash : 'overview';
   STATE.activeRoute = targetRoute;
 
@@ -152,10 +154,10 @@ function handleRoute() {
     view.classList.toggle('active', view.id === `view-${targetRoute}`);
   });
 
-  // Lazy render for evidence page
-  if (targetRoute === 'evidence' && STATE.evidence) {
-    renderEvidencePage();
-  }
+  // HIDDEN-UI: Lazy render for evidence page (uncomment to restore)
+  // if (targetRoute === 'evidence' && STATE.evidence) {
+  //   renderEvidencePage();
+  // }
 
   // Ensure table is in sync with storage when opening diagnose or estimate
   if (targetRoute === 'diagnose' || targetRoute === 'estimate') {
@@ -219,9 +221,10 @@ async function loadEvidenceJson() {
     if (res.ok) {
       STATE.evidence = await res.json();
       populateHeadlineFindings();
-      if (STATE.activeRoute === 'evidence') {
-        renderEvidencePage();
-      }
+      // HIDDEN-UI: renderEvidencePage on load if route is evidence (uncomment to restore)
+      // if (STATE.activeRoute === 'evidence') {
+      //   renderEvidencePage();
+      // }
     }
   } catch (err) {
     console.error('Failed to load evidence.json', err);
@@ -4853,7 +4856,8 @@ function draw2DGridCanvas(canvasId, grid, isErrorMap = false) {
 // -------------------------------------------------------------------------------------------------
 
 function renderEvidencePage() {
-  if (!STATE.evidence) return;
+  // HIDDEN-UI: guard against missing view-evidence (uncomment to restore)
+  if (!document.getElementById('view-evidence') || !STATE.evidence) return;
   const ev = STATE.evidence;
 
   // 1. Stage 1 Modes

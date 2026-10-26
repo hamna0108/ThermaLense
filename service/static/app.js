@@ -11,6 +11,8 @@ const STATE = {
   theme: localStorage.getItem('thermalens_theme') || localStorage.getItem('novatore_theme') || 'light',
   lastEstimateResult: null,
   lastDiagnoseResult: null,
+  crossCheckDiagnoseResult: null,
+  crossCheckEstimateResult: null,
   lastPlacementResult: null,
   lastFieldResult: null,
   lastPoissonResult: null
@@ -131,6 +133,9 @@ function handleRoute() {
   if (targetRoute === 'evidence' && STATE.evidence) {
     renderEvidencePage();
   }
+
+  // Update cross-check banners when switching routes
+  renderCrossCheckBanners();
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -555,6 +560,8 @@ function clearEstimateResultState() {
   if (resultPanel) resultPanel.style.display = 'none';
   if (emptyState) emptyState.style.display = 'none';
   if (stateContainer) stateContainer.innerHTML = '';
+  const estCrossBanner = document.getElementById('est-crosscheck-banner');
+  if (estCrossBanner) estCrossBanner.style.display = 'none';
 }
 
 function validateEstimateTable() {
@@ -1653,6 +1660,7 @@ async function executeParameterEstimate() {
       resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+    triggerEstimateCrossCheck({ x: xList, t: tList, y: yList });
   } catch (err) {
     console.error("Execute estimate catch error:", err);
     if (stateContainer) {
@@ -2230,6 +2238,10 @@ function clearDiagnoseResultState() {
   const gotoEstNoFaultBtn = document.getElementById('diag-goto-estimate-without-fault-btn');
   if (gotoEstBtn) gotoEstBtn.style.display = 'none';
   if (gotoEstNoFaultBtn) gotoEstNoFaultBtn.style.display = 'none';
+  const flaggedCrossCheckNote = document.getElementById('diag-details-crosscheck-note');
+  if (flaggedCrossCheckNote) flaggedCrossCheckNote.style.display = 'none';
+  const diagCrossBanner = document.getElementById('diag-crosscheck-banner');
+  if (diagCrossBanner) diagCrossBanner.style.display = 'none';
 }
 
 function syncSharedField(id1, id2) {
@@ -2482,6 +2494,7 @@ function initDiagnoseWorkbench() {
       if (estProfileSelect) estProfileSelect.value = '';
       updateProfileMetadataUI(null);
       checkProfileSetupDifferencesAndSuggestions();
+      renderCrossCheckBanners();
       return;
     }
 
@@ -3397,6 +3410,13 @@ async function executeDiagnosis() {
 
     renderDiagnoseChart();
 
+    const flaggedCrossCheckNote = document.getElementById('diag-details-crosscheck-note');
+    if (flaggedCrossCheckNote) {
+      flaggedCrossCheckNote.style.display = (assignedClass !== 'H') ? 'block' : 'none';
+    }
+
+    triggerDiagnoseCrossCheck({ x: testData.x, t: testData.t, y: testData.y });
+
     resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   } catch (err) {
@@ -3639,6 +3659,308 @@ function renderDiagnoseChart() {
     <text x="${pad.left + plotW / 2}" y="${height - 8}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Time (s)</text>
     <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="18" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Temperature (°C)</text>
   `;
+}
+
+// -------------------------------------------------------------------------------------------------
+// Cross-Check Between Estimate and Diagnose
+// -------------------------------------------------------------------------------------------------
+
+function getActiveReferenceData() {
+  if (STATE.currentProfile && Array.isArray(STATE.currentProfile.readings) && STATE.currentProfile.readings.length >= 20) {
+    const prof = STATE.currentProfile;
+    return {
+      source: 'profile',
+      name: prof.name,
+      x: prof.readings.map(r => r.position_m),
+      t: prof.readings.map(r => r.time_s),
+      y: prof.readings.map(r => r.temperature_c),
+      L: prof.bar_length_m,
+      T: prof.test_duration_s,
+      Tb: prof.boundary_temperature,
+      Tp: prof.initial_peak_temperature,
+      sigma: prof.sensor_accuracy || 0.5
+    };
+  }
+
+  const baseTbody = document.getElementById('diag-base-table-tbody');
+  if (baseTbody) {
+    const baseData = parseDiagnoseTableData(baseTbody);
+    if (baseData.x.length >= 20) {
+      const L = parseFloat(document.getElementById('diag-bar-length') ? document.getElementById('diag-bar-length').value : '0.1') || 0.1;
+      const T = parseFloat(document.getElementById('diag-duration') ? document.getElementById('diag-duration').value : '100.0') || 100.0;
+      const Tb = parseFloat(document.getElementById('diag-tb') ? document.getElementById('diag-tb').value : '20.0') || 20.0;
+      const Tp = parseFloat(document.getElementById('diag-tp') ? document.getElementById('diag-tp').value : '80.0') || 80.0;
+      const sigma = parseFloat(document.getElementById('diag-sigma-val') ? document.getElementById('diag-sigma-val').value : '0.5') || 0.5;
+      return {
+        source: 'table',
+        name: 'Reference Run',
+        x: baseData.x,
+        t: baseData.t,
+        y: baseData.y,
+        L, T, Tb, Tp, sigma
+      };
+    }
+  }
+  return null;
+}
+
+function arraysAlmostEqual(a, b, tol = 1e-4) {
+  if (!a || !b || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (Math.abs(a[i] - b[i]) > tol) return false;
+  }
+  return true;
+}
+
+async function triggerEstimateCrossCheck(testData) {
+  const ref = getActiveReferenceData();
+  if (!ref) {
+    renderCrossCheckBanners();
+    return;
+  }
+
+  // Check if we already have a recent matching diagnose result
+  if (STATE.lastDiagnoseResult && STATE.lastDiagnoseResult.request && STATE.lastDiagnoseResult.response) {
+    const dReq = STATE.lastDiagnoseResult.request;
+    const dx = dReq.readings ? (dReq.readings.x || dReq.readings.x_coords) : [];
+    const dy = dReq.readings ? (dReq.readings.y || dReq.readings.readings) : [];
+    if (arraysAlmostEqual(testData.x, dx) && arraysAlmostEqual(testData.y, dy)) {
+      STATE.crossCheckDiagnoseResult = STATE.lastDiagnoseResult.response;
+      renderCrossCheckBanners();
+      return;
+    }
+  }
+
+  try {
+    const diagPayload = {
+      readings: { x: testData.x, t: testData.t, y: testData.y },
+      baseline: { x: ref.x, t: ref.t, y: ref.y },
+      bar_length_m: ref.L,
+      test_duration_s: ref.T,
+      boundary_temperature: ref.Tb,
+      initial_peak_temperature: ref.Tp,
+      sigma: ref.sigma
+    };
+    const res = await fetch('/v1/diagnose', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(diagPayload)
+    });
+    if (res.ok) {
+      STATE.crossCheckDiagnoseResult = await res.json();
+    }
+  } catch (e) {
+    console.warn('Cross-check diagnose query error:', e);
+  }
+  renderCrossCheckBanners();
+}
+
+async function triggerDiagnoseCrossCheck(testData) {
+  const ref = getActiveReferenceData();
+  if (!ref) {
+    renderCrossCheckBanners();
+    return;
+  }
+
+  // Check if we already have a recent matching estimate result
+  if (STATE.lastEstimateResult && STATE.lastEstimateResult.request && STATE.lastEstimateResult.response) {
+    const eReq = STATE.lastEstimateResult.request;
+    const ex = eReq.x || eReq.x_coords || [];
+    const ey = eReq.y || eReq.readings || [];
+    if (arraysAlmostEqual(testData.x, ex) && arraysAlmostEqual(testData.y, ey)) {
+      STATE.crossCheckEstimateResult = STATE.lastEstimateResult.response;
+      renderCrossCheckBanners();
+      return;
+    }
+  }
+
+  try {
+    const estBarInput = document.getElementById('est-bar-length');
+    const estDurInput = document.getElementById('est-experiment-time');
+    const estTbInput = document.getElementById('est-temp-edge') || document.getElementById('est-temp-ends');
+    const estTpInput = document.getElementById('est-temp-peak') || document.getElementById('est-temp-hottest');
+    const estSigInput = document.getElementById('est-sigma-val');
+
+    const estBar = parseFloat(estBarInput && estBarInput.value ? estBarInput.value : ref.L) || ref.L;
+    const estDur = parseFloat(estDurInput && estDurInput.value ? estDurInput.value : ref.T) || ref.T;
+    const estTb = parseFloat(estTbInput && estTbInput.value ? estTbInput.value : ref.Tb) || ref.Tb;
+    const estTp = parseFloat(estTpInput && estTpInput.value ? estTpInput.value : ref.Tp) || ref.Tp;
+    const estSig = parseFloat(estSigInput && estSigInput.value ? estSigInput.value : ref.sigma) || ref.sigma;
+
+    const estPayload = {
+      x: testData.x,
+      t: testData.t,
+      y: testData.y,
+      bar_length_m: estBar,
+      test_duration_s: estDur,
+      boundary_temperature: estTb,
+      initial_peak_temperature: estTp,
+      sigma: estSig,
+      mode: 'mode3plus'
+    };
+    const res = await fetch('/v1/estimate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(estPayload)
+    });
+    if (res.ok) {
+      STATE.crossCheckEstimateResult = await res.json();
+    }
+  } catch (e) {
+    console.warn('Cross-check estimate query error:', e);
+  }
+  renderCrossCheckBanners();
+}
+
+function renderCrossCheckBanners() {
+  const estBanner = document.getElementById('est-crosscheck-banner');
+  const estText = document.getElementById('est-crosscheck-text');
+  const diagBanner = document.getElementById('diag-crosscheck-banner');
+  const diagText = document.getElementById('diag-crosscheck-text');
+
+  const ref = getActiveReferenceData();
+  if (!ref) {
+    if (estBanner) estBanner.style.display = 'none';
+    if (diagBanner) diagBanner.style.display = 'none';
+    return;
+  }
+
+  const hasEstRun = Boolean(STATE.lastEstimateResult && STATE.lastEstimateResult.response);
+  const hasDiagRun = Boolean(STATE.lastDiagnoseResult && STATE.lastDiagnoseResult.response);
+
+  if (!hasEstRun && !hasDiagRun) {
+    if (estBanner) estBanner.style.display = 'none';
+    if (diagBanner) diagBanner.style.display = 'none';
+    return;
+  }
+
+  const estData = (STATE.lastEstimateResult && STATE.lastEstimateResult.response && !STATE.lastEstimateResult.response.detail)
+    ? STATE.lastEstimateResult.response
+    : STATE.crossCheckEstimateResult;
+
+  const diagData = (STATE.lastDiagnoseResult && STATE.lastDiagnoseResult.response && !STATE.lastDiagnoseResult.response.detail)
+    ? STATE.lastDiagnoseResult.response
+    : STATE.crossCheckDiagnoseResult;
+
+  if (!estData || !diagData) return;
+
+  const flags = estData.flags || {};
+  const isEstInvalid = Boolean(flags.model_invalid);
+  const isEstOutOfRange = Boolean(flags.out_of_range || flags.at_bound);
+  const isEstGreen = !isEstInvalid && !isEstOutOfRange;
+
+  const assignedClass = diagData.assigned_class || 'H';
+  const isDiagGreen = (assignedClass === 'H');
+
+  let bannerClass = 'green';
+  let bannerHtml = '';
+
+  if (isEstGreen && isDiagGreen) {
+    bannerClass = 'green';
+    bannerHtml = 'Estimate and Diagnose agree: the readings fit the heat model and match your healthy reference.';
+  } else if (isEstGreen && !isDiagGreen) {
+    bannerClass = 'amber';
+    let reason = 'reading differs from reference';
+    let actionHtml = '<button type="button" class="crosscheck-action-btn" id="crosscheck-recheck-ref-btn">re-check reference</button>';
+
+    if (assignedClass === 'F') {
+      const fIdx = (diagData.faulty_sensor_idx !== undefined && diagData.faulty_sensor_idx !== null) ? diagData.faulty_sensor_idx : 3;
+      reason = `reading #${fIdx} looks faulty`;
+      actionHtml = `<button type="button" class="crosscheck-action-btn" id="crosscheck-remove-fault-btn" data-fidx="${fIdx}">Estimate without reading ${fIdx}</button>`;
+    } else if (assignedClass === 'A') {
+      reason = 'heat spread differs from baseline';
+      actionHtml = '<button type="button" class="crosscheck-action-btn" id="crosscheck-recheck-ref-btn">re-check reference</button>';
+    } else if (assignedClass === 'C') {
+      const tc = diagData.change_time;
+      reason = (tc !== undefined && tc !== null) ? `mid-test change detected around ${tc} s` : 'mid-test change detected';
+      actionHtml = '<button type="button" class="crosscheck-action-btn" id="crosscheck-recheck-ref-btn">re-check reference</button>';
+    }
+
+    bannerHtml = `The readings fit a heat curve, but they differ from your healthy reference (${reason}). The estimate may be less reliable. Try ${actionHtml}.`;
+  } else if (!isEstGreen && isDiagGreen) {
+    bannerClass = 'amber';
+    bannerHtml = 'The readings match your reference but do not fit the heat model. Check your setup values (length, duration, temperatures).';
+  } else {
+    bannerClass = 'amber';
+    bannerHtml = 'Neither check passed: the readings do not fit the heat model and differ from your healthy reference. Check your setup values and inspect the test readings.';
+  }
+
+  if (estBanner && estText) {
+    const estCard = document.getElementById('estimate-results-card');
+    if (estCard && estCard.style.display !== 'none' && hasEstRun) {
+      estBanner.className = `crosscheck-banner ${bannerClass}`;
+      estText.innerHTML = bannerHtml;
+      estBanner.style.display = 'flex';
+      attachCrossCheckActionHandlers(estBanner);
+    } else {
+      estBanner.style.display = 'none';
+    }
+  }
+
+  if (diagBanner && diagText) {
+    const diagCard = document.getElementById('diagnose-results-card');
+    if (diagCard && diagCard.style.display !== 'none' && hasDiagRun) {
+      diagBanner.className = `crosscheck-banner ${bannerClass}`;
+      diagText.innerHTML = bannerHtml;
+      diagBanner.style.display = 'flex';
+      attachCrossCheckActionHandlers(diagBanner);
+    } else {
+      diagBanner.style.display = 'none';
+    }
+  }
+}
+
+function attachCrossCheckActionHandlers(container) {
+  const faultBtn = container.querySelector('#crosscheck-remove-fault-btn');
+  if (faultBtn) {
+    faultBtn.onclick = (e) => {
+      e.preventDefault();
+      const fIdx = parseInt(faultBtn.getAttribute('data-fidx'), 10);
+      let currentReadings = extractSharedReadings('est');
+      if (currentReadings.length === 0 || !currentReadings.some(r => r.x && r.u)) {
+        currentReadings = extractSharedReadings('diag-test');
+      }
+      if (currentReadings.length > 0) {
+        let targetIdx = fIdx;
+        if (targetIdx < 0 || targetIdx >= currentReadings.length) {
+          targetIdx = 0;
+        }
+        const removedRow = currentReadings[targetIdx];
+        const newReadings = currentReadings.filter((_, idx) => idx !== targetIdx);
+
+        STATE.removedSensorInfo = {
+          sensorLabel: fIdx,
+          targetIdx: targetIdx,
+          removedRow: removedRow,
+          originalReadings: [...currentReadings]
+        };
+
+        setSharedReadings(newReadings, true);
+
+        const noteEl = document.getElementById('est-removed-sensor-note');
+        const noteText = document.getElementById('est-removed-sensor-text');
+        if (noteEl && noteText) {
+          noteText.textContent = `Reading #${fIdx} was removed from these readings.`;
+          noteEl.style.display = 'flex';
+        }
+      }
+      window.location.hash = '#estimate';
+      const estTable = document.getElementById('est-readings-table');
+      if (estTable) estTable.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+  }
+  const refBtn = container.querySelector('#crosscheck-recheck-ref-btn');
+  if (refBtn) {
+    refBtn.onclick = (e) => {
+      e.preventDefault();
+      window.location.hash = '#diagnose';
+      const profSelect = document.getElementById('diag-profile-select');
+      if (profSelect) {
+        profSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        profSelect.focus();
+      }
+    };
+  }
 }
 
 // -------------------------------------------------------------------------------------------------

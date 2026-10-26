@@ -512,6 +512,12 @@
               <span id="est-traffic-reasons" style="display: none;"></span>
             </div>
 
+            <!-- Plain Cross-check banner (shown when both an Estimate result and a healthy reference exist) -->
+            <div id="est-crosscheck-banner" class="crosscheck-banner" style="display: none;">
+              <span class="crosscheck-label">Cross-check:</span>
+              <span class="crosscheck-text" id="est-crosscheck-text"></span>
+            </div>
+
             <!-- Demo Mode Callout (shown only when running in demo mode) -->
             <div id="est-demo-callout" class="demo-mode-callout" style="display: none;"></div>
 
@@ -940,6 +946,12 @@
             <!-- Specific Fault/Change/Readings details in plain language -->
             <div id="diag-specific-info" style="margin: 0.6rem 0; font-size: 0.92rem; line-height: 1.5; color: var(--text-normal);"></div>
 
+            <!-- Plain Cross-check banner (shown when both a Diagnose result and a healthy reference exist) -->
+            <div id="diag-crosscheck-banner" class="crosscheck-banner" style="display: none;">
+              <span class="crosscheck-label">Cross-check:</span>
+              <span class="crosscheck-text" id="diag-crosscheck-text"></span>
+            </div>
+
             <!-- Hand-off actions -->
             <div class="result-actions" id="diag-handoff-actions" style="margin-top: 0.75rem; margin-bottom: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
               <button type="button" class="btn btn-secondary btn-sm" id="diag-goto-estimate-btn" style="display: none;">Estimate the heat spread</button>
@@ -972,6 +984,7 @@
               <summary class="technical-details-summary">Show details</summary>
               <div class="technical-details-body" style="padding-top: 0.75rem;">
                 <p class="diag-scope-note" style="margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--text-normal); line-height: 1.5;" id="diag-detector-scope-note">The detector is built for one or two isolated bad readings, not a sensor that is wrong for the whole test.</p>
+                <p class="diag-crosscheck-note" style="display: none; margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--text-normal); line-height: 1.5;" id="diag-details-crosscheck-note">Estimate can still pass because it only checks that a smooth heat curve fits; Diagnose compares against your healthy reference.</p>
                 <div class="table-container" style="margin-bottom: 0.75rem;">
                   <table class="booktabs" id="diag-evidence-table">
                     <thead>

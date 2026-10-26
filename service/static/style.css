@@ -38,9 +38,9 @@
   --transition-fast: 150ms ease-out;
 
   /* Shared Type Scale Tokens (Base 16px, rem units) */
-  --fs-brand: 2.25rem;                                /* 36px - clearly larger than H1 */
+  --fs-brand: 1.75rem;                                /* 28px - top bar brand desktop */
   --fs-eyebrow: 0.75rem;                              /* 12px uppercase */
-  --fs-h1: clamp(1.625rem, 1.3rem + 0.8vw, 1.875rem); /* 26-30px */
+  --fs-h1: clamp(1.375rem, 1.25rem + 0.45vw, 1.625rem); /* 22px mobile (390px), 26px desktop (1440px) */
   --fs-subtitle: 0.96875rem;                          /* 15.5px (15-16px) */
   --fs-details: 0.875rem;                             /* 14px */
   --fs-h2: 1.25rem;                                   /* 20px section headings */
@@ -203,7 +203,7 @@ code {
 .header-inner {
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 0.6rem 1.2rem;
+  padding: 0.45rem 1.2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1849,7 +1849,7 @@ tr[id*="alpha"] td {
     width: 100%;
   }
   .brand-title {
-    font-size: 1.85rem;
+    font-size: 1.5rem; /* 24px mobile */
   }
   .brand-subtitle {
     font-size: 0.72rem;

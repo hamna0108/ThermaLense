@@ -121,10 +121,17 @@ def test_type_scale_and_header_compaction_1440(live_server):
         tagline = page.locator(".brand-subtitle")
         assert tagline.inner_text().strip() == "Heat modelling and sensor diagnostics"
 
-        # Brand title font-size
+        # Brand title font-size: about 28px desktop
         brand_el = page.locator("#brand-link")
         brand_fs = float(brand_el.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
-        assert brand_fs >= 32.0, f"Brand title {brand_fs}px should be prominent"
+        assert 27.0 <= brand_fs <= 29.0, f"Brand title {brand_fs}px should be about 28px on desktop"
+
+        # Top bar height must be compact
+        header_el = page.locator(".app-header")
+        header_box = header_el.bounding_box()
+        assert header_box is not None
+        assert header_box["height"] <= 65.0, f"Top bar height {header_box['height']}px should be compact (<= 65px)"
+        save_screenshot(header_el, "topbar_1440px.png")
 
         # 2. Navigation bar checks
         links = page.locator(".nav-link")
@@ -146,13 +153,30 @@ def test_type_scale_and_header_compaction_1440(live_server):
             view_elem = page.locator(f"#view-{p_info['hash']}")
             h1 = page.locator(f"#{p_info['h1_id']}")
 
-            # Measure H1 computed font size: must be between 26 and 30 px at 1440px width
+            # Measure H1 computed font size: 26px desktop (stays at 26-30px, max 26px)
             h1_fs = float(h1.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
-            assert 26.0 <= h1_fs <= 30.05, f"Page {p_info['hash']} H1 font size {h1_fs}px not between 26 and 30 px"
+            assert 25.5 <= h1_fs <= 26.5, f"Page {p_info['hash']} H1 font size {h1_fs}px not ~26px"
 
-            # H1 must be clearly smaller than the brand name in the top bar on every page
-            assert h1_fs < brand_fs, f"Page {p_info['hash']} H1 {h1_fs}px not smaller than brand {brand_fs}px"
-            assert (brand_fs - h1_fs) >= 4.0, f"Page {p_info['hash']} difference {brand_fs - h1_fs}px not distinct enough"
+            # H1 must stay at or below the brand size minus 2px
+            assert h1_fs <= brand_fs - 1.9, f"Page {p_info['hash']} H1 {h1_fs}px not <= brand ({brand_fs}px) - 2px"
+
+            # Specific checks for Evidence page
+            if p_info["hash"] == "evidence":
+                assert h1.inner_text().strip() == "How Accurate Is It?"
+                sub = view_elem.locator(".page-desc")
+                assert sub.inner_text().strip() == "The tests behind every number in ThermaLens, with the honest limits."
+                det = view_elem.locator(".technical-details")
+                assert det.count() > 0
+                assert "ThermaLens: Empirical Evidence" in det.text_content()
+
+            # Specific checks for Limits page
+            if p_info["hash"] == "limits":
+                assert h1.inner_text().strip() == "What It Can't Do"
+                sub = view_elem.locator(".page-desc")
+                assert sub.inner_text().strip() == "Where ThermaLens is reliable, where it is not, and what to do about it."
+                det = view_elem.locator(".technical-details")
+                assert det.count() > 0
+                assert "Operational Boundaries & Mathematical Limits" in det.text_content()
 
             # Check header block (.page-intro): height must be at most about 140px tall at 1440px
             intro_el = view_elem.locator(".page-intro")
@@ -189,7 +213,7 @@ def test_type_scale_and_header_compaction_1440(live_server):
 
 
 def test_type_scale_mobile_390(live_server):
-    """Mobile 390x844 viewport: check H1 size between 24-28px, mobile menu, brand > H1, and 8 screenshots."""
+    """Mobile 390x844 viewport: check H1 size ~22px, brand ~24px (H1 <= brand - 2px), top bar, and 8 screenshots."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 390, "height": 844})
@@ -199,9 +223,13 @@ def test_type_scale_mobile_390(live_server):
         page.wait_for_load_state("domcontentloaded")
         page.wait_for_selector("#heading-overview", state="visible")
 
-        # Top bar brand on mobile
+        # Top bar brand on mobile: about 24px
         brand_el = page.locator("#brand-link")
         brand_fs = float(brand_el.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
+        assert 23.0 <= brand_fs <= 25.0, f"Mobile brand title {brand_fs}px should be about 24px"
+
+        # Capture mobile top bar screenshot
+        save_screenshot(page.locator(".app-header"), "topbar_390px.png")
 
         # Verify mobile menu keeps group headers
         menu_btn = page.locator("#mobile-menu-btn")
@@ -228,11 +256,11 @@ def test_type_scale_mobile_390(live_server):
             h1 = page.locator(f"#{p_info['h1_id']}")
             h1_fs = float(h1.evaluate("el => parseFloat(window.getComputedStyle(el).fontSize)"))
 
-            # Must be between 24 and 28 px at 390px
-            assert 24.0 <= h1_fs <= 28.05, f"Page {p_info['hash']} mobile H1 font size {h1_fs}px not between 24 and 28 px"
+            # Must be ~22px at 390px
+            assert 21.5 <= h1_fs <= 22.5, f"Page {p_info['hash']} mobile H1 font size {h1_fs}px not ~22px"
 
-            # H1 must be smaller than brand title
-            assert h1_fs < brand_fs, f"Page {p_info['hash']} mobile H1 {h1_fs}px not smaller than brand {brand_fs}px"
+            # H1 must stay at or below brand size minus 2px
+            assert h1_fs <= brand_fs - 1.9, f"Page {p_info['hash']} mobile H1 {h1_fs}px not <= brand ({brand_fs}px) - 2px"
 
             # Capture screenshot of each page at 390px
             save_screenshot(page, f"{p_info['hash']}_390px.png")

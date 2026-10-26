@@ -134,6 +134,18 @@ function handleRoute() {
     renderEvidencePage();
   }
 
+  // Ensure table is in sync with storage when opening diagnose or estimate
+  if (targetRoute === 'diagnose' || targetRoute === 'estimate') {
+    const stored = loadSharedReadingsFromStorage();
+    if (stored && stored.length > 0) {
+      const cur = extractSharedReadings(targetRoute === 'diagnose' ? 'diag-test' : 'est');
+      const mismatch = cur.length !== stored.length || cur.some((r, i) => r.x !== stored[i].x || r.t !== stored[i].t || r.u !== stored[i].u);
+      if (mismatch) {
+        setSharedReadings(stored, false);
+      }
+    }
+  }
+
   // Update cross-check banners when switching routes
   renderCrossCheckBanners();
 }
@@ -505,6 +517,45 @@ function setSharedReadings(readings, clearResults = true) {
   }
 }
 
+function setEstimateRows(rows, source = 'estimate') {
+  const normalized = (rows || []).map(r => ({
+    x: r.x !== undefined && r.x !== null ? String(r.x).trim() : '',
+    t: r.t !== undefined && r.t !== null ? String(r.t).trim() : '',
+    u: r.u !== undefined && r.u !== null ? String(r.u).trim() : ''
+  }));
+
+  while (normalized.length < 3) {
+    normalized.push({ x: '', t: '', u: '' });
+  }
+
+  // Reset demo flag on programmatic table fills so demo cannot override shared rows
+  if (source !== 'demo_run') {
+    STATE.isEstimateDemo = false;
+  }
+
+  setSharedReadings(normalized, true);
+  if (typeof renderCrossCheckBanners === 'function') {
+    renderCrossCheckBanners();
+  }
+}
+
+function setDiagnoseTestRows(rows, source = 'diagnose') {
+  const normalized = (rows || []).map(r => ({
+    x: r.x !== undefined && r.x !== null ? String(r.x).trim() : '',
+    t: r.t !== undefined && r.t !== null ? String(r.t).trim() : '',
+    u: r.u !== undefined && r.u !== null ? String(r.u).trim() : ''
+  }));
+
+  while (normalized.length < 3) {
+    normalized.push({ x: '', t: '', u: '' });
+  }
+
+  setSharedReadings(normalized, true);
+  if (typeof renderCrossCheckBanners === 'function') {
+    renderCrossCheckBanners();
+  }
+}
+
 function clearSharedReadingsData() {
   const blankRows = [
     { x: '', t: '', u: '' },
@@ -512,11 +563,13 @@ function clearSharedReadingsData() {
     { x: '', t: '', u: '' }
   ];
   clearSharedReadingsStorage();
-  setSharedReadings(blankRows, true);
+  setEstimateRows(blankRows, 'clear_data');
   const note = document.getElementById('est-removed-sensor-note');
   if (note) note.style.display = 'none';
   STATE.removedSensorInfo = null;
+  STATE.isEstimateDemo = false;
 }
+
 
 function createEstimateTableRow(x = '', t = '', u = '', rowNum = 1) {
   const scaledToggle = document.getElementById('est-scaled-toggle');
@@ -999,17 +1052,17 @@ function initEstimateWorkbench() {
     useExampleBtn.addEventListener('click', () => {
       const isScaled = Boolean(scaledToggle && scaledToggle.checked);
       if (isScaled) {
-        setSharedReadings(DEFAULT_ESTIMATE_SCALED_ROWS, true);
         const sigmaInput = document.getElementById('est-sigma-val');
         if (sigmaInput) sigmaInput.value = '0.01';
+        setEstimateRows(DEFAULT_ESTIMATE_SCALED_ROWS, 'use_example');
       } else {
-        setSharedReadings(DEFAULT_ESTIMATE_EXAMPLE_ROWS, true);
         if (barLengthInput) barLengthInput.value = '0.1';
         if (expDurationInput) expDurationInput.value = '100';
         if (tempEdgeInput) tempEdgeInput.value = '20';
         if (tempPeakInput) tempPeakInput.value = '80';
         if (sigmaVal) sigmaVal.value = '0.5';
         if (heatSine) heatSine.checked = true;
+        setEstimateRows(DEFAULT_ESTIMATE_EXAMPLE_ROWS, 'use_example');
       }
       STATE.isEstimateDemo = false;
       const note = document.getElementById('est-removed-sensor-note');
@@ -1029,7 +1082,7 @@ function initEstimateWorkbench() {
   if (estUndoBtn) {
     estUndoBtn.addEventListener('click', () => {
       if (STATE.removedSensorInfo && STATE.removedSensorInfo.originalReadings) {
-        setSharedReadings(STATE.removedSensorInfo.originalReadings, true);
+        setEstimateRows(STATE.removedSensorInfo.originalReadings, 'undo_remove_sensor');
         STATE.removedSensorInfo = null;
         const note = document.getElementById('est-removed-sensor-note');
         if (note) note.style.display = 'none';
@@ -1087,27 +1140,19 @@ function initEstimateWorkbench() {
       reader.onload = (evt) => {
         const text = evt.target.result;
         const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-        if (tbody) {
-          tbody.innerHTML = '';
-          let added = 0;
-          for (let line of lines) {
-            if (!line || line.startsWith('#')) continue;
-            const parts = line.split(/[,\t]+/).map(p => p.trim()).filter(Boolean);
-            if (parts.length >= 3) {
-              if (isNaN(parseFloat(parts[0])) && isNaN(parseFloat(parts[1]))) continue;
-              tbody.appendChild(createEstimateTableRow(parts[0], parts[1], parts[2]));
-              added++;
-            }
-          }
-          if (added === 0) {
-            for (let i = 0; i < 3; i++) tbody.appendChild(createEstimateTableRow());
+        const rows = [];
+        for (let line of lines) {
+          if (!line || line.startsWith('#')) continue;
+          const parts = line.split(/[,\t]+/).map(p => p.trim()).filter(Boolean);
+          if (parts.length >= 3) {
+            if (isNaN(parseFloat(parts[0])) && isNaN(parseFloat(parts[1]))) continue;
+            rows.push({ x: parts[0], t: parts[1], u: parts[2] });
           }
         }
-        STATE.isEstimateDemo = false;
-        updateTableRowNumbers();
-        validateEstimateTable();
-        clearEstimateResultState();
-        syncSharedReadings('est');
+        if (rows.length === 0) {
+          for (let i = 0; i < 3; i++) rows.push({ x: '', t: '', u: '' });
+        }
+        setEstimateRows(rows, 'csv_upload');
         csvUpload.value = '';
       };
       reader.readAsText(file);
@@ -1142,28 +1187,31 @@ function initEstimateWorkbench() {
   if (pasteText) {
     pasteText.addEventListener('input', () => {
       const rawText = pasteText.value.trim();
-      if (!rawText || !tbody) return;
+      if (!rawText) return;
       const lines = rawText.split('\n');
-      tbody.innerHTML = '';
-      let added = 0;
+      const rows = [];
       for (let l of lines) {
         const cleanLine = l.trim();
         if (!cleanLine || cleanLine.startsWith('#')) continue;
         const parts = cleanLine.split(/[,\t]+/).map(p => p.trim()).filter(Boolean);
         if (parts.length >= 3) {
-          tbody.appendChild(createEstimateTableRow(parts[0], parts[1], parts[2]));
-          added++;
+          rows.push({ x: parts[0], t: parts[1], u: parts[2] });
         } else if (parts.length > 0) {
-          tbody.appendChild(createEstimateTableRow(parts[0] || '', parts[1] || '', parts[2] || ''));
-          added++;
+          rows.push({ x: parts[0] || '', t: parts[1] || '', u: parts[2] || '' });
         }
       }
-      if (added === 0) {
-        for (let i = 0; i < 3; i++) tbody.appendChild(createEstimateTableRow());
-      }
-      updateTableRowNumbers();
-      validateEstimateTable();
-      clearEstimateResultState();
+      setEstimateRows(rows, 'paste_text');
+    });
+  }
+
+  // Seed input listener: regenerate readings and sync across shared tables
+  const seedInput = document.getElementById('est-seed');
+  if (seedInput) {
+    ['input', 'change'].forEach(evt => {
+      seedInput.addEventListener(evt, () => {
+        STATE.isEstimateDemo = false;
+        generateEstimateSample();
+      });
     });
   }
 
@@ -1267,64 +1315,51 @@ function runRandomDemo() {
   const seedInput = document.getElementById('est-seed');
   const curSeed = parseInt(seedInput ? seedInput.value : '42') || 42;
   if (seedInput) seedInput.value = curSeed + 1;
-  STATE.isEstimateDemo = true;
   generateEstimateSample();
+  STATE.isEstimateDemo = true;
   executeParameterEstimate();
 }
 
 function generateEstimateSample() {
-  const alphaTrue = parseFloat(document.getElementById('est-true-alpha').value) || 0.10;
-  const N = parseInt(document.getElementById('est-num-sensors').value) || 10;
-  const seed = parseInt(document.getElementById('est-seed').value) || 42;
+  const alphaTrue = parseFloat(document.getElementById('est-true-alpha')?.value) || 0.10;
+  const N = parseInt(document.getElementById('est-num-sensors')?.value) || 10;
+  const seed = parseInt(document.getElementById('est-seed')?.value) || 42;
   const rng = mulberry32(seed);
   const scaledToggle = document.getElementById('est-scaled-toggle');
   const isScaled = Boolean(scaledToggle && scaledToggle.checked);
 
-  const tbody = document.getElementById('est-table-tbody');
-  if (tbody) {
-    tbody.innerHTML = '';
-    if (isScaled) {
-      const sigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.01;
-      for (let i = 0; i < N; i++) {
-        const x = 0.50;
-        const t = Math.pow(10, Math.log10(0.01) + (i / Math.max(1, N - 1)) * (Math.log10(1.0) - Math.log10(0.01)));
-        const uExact = Math.sin(Math.PI * x) * Math.exp(-alphaTrue * Math.PI * Math.PI * t);
-        const noise = randomNormal(rng, 0, sigma);
-        const y = Math.max(0, uExact + noise);
-        tbody.appendChild(createEstimateTableRow(x.toFixed(2), t.toFixed(4), y.toFixed(4), i + 1));
-      }
-    } else {
-      const L = 0.1;
-      const T = 100.0;
-      const Tb = 20.0;
-      const Tp = 80.0;
-      const sigma = parseFloat(document.getElementById('est-sigma-val').value) || 0.5;
+  const rows = [];
+  if (isScaled) {
+    const sigma = parseFloat(document.getElementById('est-sigma-val')?.value) || 0.01;
+    for (let i = 0; i < N; i++) {
+      const x = 0.50;
+      const t = Math.pow(10, Math.log10(0.01) + (i / Math.max(1, N - 1)) * (Math.log10(1.0) - Math.log10(0.01)));
+      const uExact = Math.sin(Math.PI * x) * Math.exp(-alphaTrue * Math.PI * Math.PI * t);
+      const noise = randomNormal(rng, 0, sigma);
+      const y = Math.max(0, uExact + noise);
+      rows.push({ x: x.toFixed(2), t: t.toFixed(4), u: y.toFixed(4) });
+    }
+  } else {
+    const L = parseFloat(document.getElementById('est-bar-length')?.value) || 0.1;
+    const T = parseFloat(document.getElementById('est-experiment-time')?.value) || 100.0;
+    const Tb = parseFloat(document.getElementById('est-temp-edge')?.value) || 20.0;
+    const Tp = parseFloat(document.getElementById('est-temp-peak')?.value) || 80.0;
+    const sigma = parseFloat(document.getElementById('est-sigma-val')?.value) || 0.5;
 
-      const barLengthInput = document.getElementById('est-bar-length');
-      const expDurationInput = document.getElementById('est-experiment-time');
-      const tempEdgeInput = document.getElementById('est-temp-edge');
-      const tempPeakInput = document.getElementById('est-temp-peak');
-      if (barLengthInput) barLengthInput.value = String(L);
-      if (expDurationInput) expDurationInput.value = String(T);
-      if (tempEdgeInput) tempEdgeInput.value = String(Tb);
-      if (tempPeakInput) tempPeakInput.value = String(Tp);
-
-      for (let i = 0; i < N; i++) {
-        const x = 0.05;
-        const tNorm = Math.pow(10, Math.log10(0.01) + (i / Math.max(1, N - 1)) * (Math.log10(1.0) - Math.log10(0.01)));
-        const tSec = tNorm * T;
-        const uNorm = Math.sin(Math.PI * (x / L)) * Math.exp(-alphaTrue * Math.PI * Math.PI * tNorm);
-        const noise = randomNormal(rng, 0, sigma);
-        const tempC = Tb + (Tp - Tb) * uNorm + noise;
-        tbody.appendChild(createEstimateTableRow(x.toFixed(2), tSec.toFixed(2), tempC.toFixed(2), i + 1));
-      }
+    for (let i = 0; i < N; i++) {
+      const x = L / 2; // Middle of the bar
+      const tNorm = Math.pow(10, Math.log10(0.01) + (i / Math.max(1, N - 1)) * (Math.log10(1.0) - Math.log10(0.01)));
+      const tSec = tNorm * T;
+      const uNorm = Math.sin(Math.PI * (x / L)) * Math.exp(-alphaTrue * Math.PI * Math.PI * tNorm);
+      const noise = randomNormal(rng, 0, sigma);
+      const tempC = Tb + (Tp - Tb) * uNorm + noise;
+      rows.push({ x: x.toFixed(2), t: tSec.toFixed(2), u: tempC.toFixed(2) });
     }
   }
 
-  STATE.isEstimateDemo = true;
-  updateTableRowNumbers();
-  validateEstimateTable();
-  clearEstimateResultState();
+  // Reset demo flag on seed change/regeneration so demo cannot override shared rows afterwards
+  STATE.isEstimateDemo = false;
+  setEstimateRows(rows, 'seed_change');
 }
 
 async function executeParameterEstimate() {
@@ -2194,30 +2229,29 @@ function setupDiagnoseTableEvents(tbody, addBtn, csvBtn, csvInput, countBadge, m
         const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
         if (lines.length === 0) return;
 
-        tbody.innerHTML = '';
-        let startIdx = 0;
-        const firstParts = lines[0].split(/[,\t]+/).map(p => p.trim());
-        if (isNaN(parseFloat(firstParts[0])) && isNaN(parseFloat(firstParts[1] || ''))) {
-          startIdx = 1;
-        }
-
-        let rowCount = 0;
+        const rows = [];
         for (let i = startIdx; i < lines.length; i++) {
           const line = lines[i];
           if (!line || line.startsWith('#')) continue;
           const parts = line.split(/[,\t]+/).map(p => p.trim());
           if (parts.length < 3) continue;
-          rowCount++;
-          tbody.appendChild(createDiagnoseTableRow(parts[0], parts[1], parts[2], rowCount, prefix));
+          rows.push({ x: parts[0], t: parts[1], u: parts[2] });
         }
 
-        while (tbody.children.length < 3) {
-          tbody.appendChild(createDiagnoseTableRow('', '', '', tbody.children.length + 1, prefix));
+        if (prefix === 'diag-test') {
+          setDiagnoseTestRows(rows, 'diagnose_csv_upload');
+        } else {
+          tbody.innerHTML = '';
+          rows.forEach((r, idx) => {
+            tbody.appendChild(createDiagnoseTableRow(r.x, r.t, r.u, idx + 1, prefix));
+          });
+          while (tbody.children.length < minNeeded) {
+            tbody.appendChild(createDiagnoseTableRow('', '', '', tbody.children.length + 1, prefix));
+          }
+          updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
+          clearDiagnoseResultState();
+          markProfileAsModified();
         }
-
-        updateDiagnoseRowNumbers(tbody, countBadge, minNeeded, prefix);
-        clearDiagnoseResultState();
-        if (prefix === 'diag-test') syncSharedReadings('diag-test');
         csvInput.value = '';
       };
       reader.readAsText(file);
@@ -2993,13 +3027,13 @@ function initDiagnoseWorkbench() {
     });
     updateDiagnoseRowNumbers(baseTbody, baseBadge, 20, 'diag-base');
 
-    // Populate Test table
-    testTbody.innerHTML = '';
-    testRows.forEach((r, idx) => {
-      testTbody.appendChild(createDiagnoseTableRow(r.x.toFixed(2), r.t.toFixed(2), r.u.toFixed(2), idx + 1, 'diag-test'));
-    });
-    updateDiagnoseRowNumbers(testTbody, testBadge, 3, 'diag-test');
-    syncSharedReadings('diag-test');
+    // Populate Test table via centralized setDiagnoseTestRows
+    const formattedTestRows = testRows.map(r => ({
+      x: Number(r.x).toFixed(2),
+      t: Number(r.t).toFixed(2),
+      u: Number(r.u).toFixed(2)
+    }));
+    setDiagnoseTestRows(formattedTestRows, 'diagnose_demo_scenario');
 
     STATE.diagnoseDemo = {
       scenario: sc,
@@ -3043,13 +3077,8 @@ function initDiagnoseWorkbench() {
       });
       updateDiagnoseRowNumbers(baseTbody, baseBadge, 20, 'diag-base');
 
-      // Populate Test table (10 realistic noisy readings, seed 0)
-      testTbody.innerHTML = '';
-      DEFAULT_DIAGNOSE_TEST_ROWS.forEach((r, idx) => {
-        testTbody.appendChild(createDiagnoseTableRow(r.x.toFixed(2), r.t.toFixed(2), r.u.toFixed(2), idx + 1, 'diag-test'));
-      });
-      updateDiagnoseRowNumbers(testTbody, testBadge, 3, 'diag-test');
-      syncSharedReadings('diag-test');
+      // Populate Test table via centralized setDiagnoseTestRows
+      setDiagnoseTestRows(DEFAULT_DIAGNOSE_TEST_ROWS, 'diagnose_example');
 
       STATE.diagnoseDemo = {
         scenario: 'H',
@@ -3107,7 +3136,7 @@ function initDiagnoseWorkbench() {
         originalReadings: [...currentReadings]
       };
 
-      setSharedReadings(newReadings, true);
+      setEstimateRows(newReadings, 'remove_sensor');
 
       const noteEl = document.getElementById('est-removed-sensor-note');
       const noteText = document.getElementById('est-removed-sensor-text');
@@ -4114,7 +4143,7 @@ function initPlacementWorkbench() {
         u: ''
       }));
 
-      setSharedReadings(updatedReadings, true);
+      setEstimateRows(updatedReadings, 'placement_handoff');
 
       // 3. Navigate to Estimate tab and scroll table into view
       window.location.hash = '#estimate';

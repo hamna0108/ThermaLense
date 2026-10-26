@@ -1064,6 +1064,21 @@ def post_field(req: FieldRequest):
         T = float(req.test_duration_s)
         T_edge = float(req.boundary_temperature if req.boundary_temperature is not None else 20.0)
         T_peak = float(req.initial_peak_temperature if req.initial_peak_temperature is not None else 80.0)
+        if T_edge == T_peak:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "Starting peak temperature must differ from the ends temperature."}
+            )
+        if L <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "Bar length must be a positive number."}
+            )
+        if T <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"error_code": "VALIDATION_ERROR", "message": "Test duration must be a positive number."}
+            )
         alpha_norm = float(raw_alpha * T / (L ** 2))
     else:
         L = 1.0

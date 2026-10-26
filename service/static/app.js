@@ -4417,6 +4417,7 @@ function renderPlacementChart() {
 
 
 // -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
 // 6. Page 5: Field (Forward Problem)
 // -------------------------------------------------------------------------------------------------
 
@@ -4425,6 +4426,7 @@ function initFieldWorkbench() {
   const fnoBtn = document.getElementById('field-method-fno-btn');
   const compBtn = document.getElementById('field-method-compare-btn');
   const slider = document.getElementById('field-time-slider');
+  const spotSlider = document.getElementById('field-spot-slider');
   const submitBtn = document.getElementById('field-submit-btn');
   const downloadBtn = document.getElementById('field-download-btn');
   const downloadCsvBtn = document.getElementById('field-download-csv-btn');
@@ -4465,7 +4467,7 @@ function initFieldWorkbench() {
     });
   }
 
-  // Material dropdown handler
+  // Material dropdown handler with scientific notation
   if (matSelect && alphaInput) {
     matSelect.addEventListener('change', () => {
       const selected = matSelect.options[matSelect.selectedIndex];
@@ -4478,12 +4480,16 @@ function initFieldWorkbench() {
 
     alphaInput.addEventListener('input', () => {
       const cur = alphaInput.value.trim();
+      const curNum = parseFloat(cur);
       let matched = false;
-      for (let i = 0; i < matSelect.options.length; i++) {
-        if (matSelect.options[i].getAttribute('data-alpha') === cur) {
-          matSelect.selectedIndex = i;
-          matched = true;
-          break;
+      if (!isNaN(curNum)) {
+        for (let i = 0; i < matSelect.options.length; i++) {
+          const optAlpha = parseFloat(matSelect.options[i].getAttribute('data-alpha'));
+          if (!isNaN(optAlpha) && Math.abs(curNum - optAlpha) / optAlpha < 0.01) {
+            matSelect.selectedIndex = i;
+            matched = true;
+            break;
+          }
         }
       }
       if (!matched) {
@@ -4501,19 +4507,31 @@ function initFieldWorkbench() {
     const timeMinEl = document.getElementById('field-time-min');
     const timeMaxEl = document.getElementById('field-time-max');
     const timeValEl = document.getElementById('field-time-val');
-    const titleEl = document.getElementById('field-profile-title');
+    const stripTimeEl = document.getElementById('field-bar-strip-time');
 
     if (timeMinEl) timeMinEl.textContent = '0.0 s';
     if (timeMaxEl) timeMaxEl.textContent = `${T.toFixed(1)} s`;
     if (timeValEl) timeValEl.textContent = `${tSeconds} s`;
-    if (titleEl) titleEl.textContent = `Temperature along the bar at ${tSeconds} s`;
+    if (stripTimeEl) stripTimeEl.textContent = `${tSeconds} s`;
     return tIdx;
   }
 
   if (slider) {
     slider.addEventListener('input', () => {
       const tIdx = updateTimeLabels();
-      renderFieldProfile(tIdx);
+      if (STATE.lastFieldResult) {
+        renderFieldBarStrip(tIdx);
+        renderFieldCurves(tIdx);
+      }
+    });
+  }
+
+  if (spotSlider) {
+    spotSlider.addEventListener('input', () => {
+      const spotRatio = parseInt(spotSlider.value) || 50;
+      if (STATE.lastFieldResult) {
+        renderFieldSpotOverTime(spotRatio);
+      }
     });
   }
 
@@ -4523,7 +4541,10 @@ function initFieldWorkbench() {
       updateFieldNormAlphaPreview();
       updateFieldAxisTicks();
       if (STATE.lastFieldResult) {
-        renderFieldProfile(parseInt(slider?.value || 40));
+        const tIdx = parseInt(slider?.value || 40);
+        renderFieldBarStrip(tIdx);
+        renderFieldCurves(tIdx);
+        renderFieldSpotOverTime(parseInt(spotSlider?.value || 50));
       }
     });
   }
@@ -4532,6 +4553,9 @@ function initFieldWorkbench() {
     barLenInput.addEventListener('input', () => {
       updateFieldNormAlphaPreview();
       updateFieldAxisTicks();
+      if (STATE.lastFieldResult) {
+        renderFieldSpotOverTime(parseInt(spotSlider?.value || 50));
+      }
     });
   }
 
@@ -4564,7 +4588,7 @@ function initFieldWorkbench() {
     downloadCsvBtn.addEventListener('click', handleFieldDownloadCsv);
   }
 
-  // Setup colorbar gradient
+  // Setup colorbar gradient in heatmap
   const colorbar = document.getElementById('field-colorbar');
   if (colorbar) {
     colorbar.style.background = 'linear-gradient(to right, rgb(10,5,30), rgb(75,20,120), rgb(185,40,80), rgb(235,120,20), rgb(255,255,160))';
@@ -4579,7 +4603,7 @@ function initFieldWorkbench() {
 function updateFieldNormAlphaPreview() {
   const L = parseFloat(document.getElementById('field-bar-length')?.value) || 0.1;
   const T = parseFloat(document.getElementById('field-experiment-time')?.value) || 100;
-  const alpha = parseFloat(document.getElementById('field-alpha')?.value) || 0.000013;
+  const alpha = parseFloat(document.getElementById('field-alpha')?.value) || 1.3e-5;
   const alphaNorm = (alpha * T) / (L * L);
   const normValEl = document.getElementById('field-norm-alpha-val');
   if (normValEl) {
@@ -4612,6 +4636,11 @@ function updateFieldAxisTicks() {
       <span>${L.toFixed(2)} m</span>
     `;
   }
+
+  const spotMinEl = document.getElementById('field-spot-min');
+  const spotMaxEl = document.getElementById('field-spot-max');
+  if (spotMinEl) spotMinEl.textContent = `0.00 m (left end)`;
+  if (spotMaxEl) spotMaxEl.textContent = `${L.toFixed(2)} m (right end)`;
 }
 
 function updateFieldColorbarLabels() {
@@ -4648,11 +4677,17 @@ async function executeField(methodChoice) {
   const resultPanel = document.getElementById('field-result-panel');
   const barLen = parseFloat(document.getElementById('field-bar-length')?.value) || 0.1;
   const expDur = parseFloat(document.getElementById('field-experiment-time')?.value) || 100;
-  const tempEdge = parseFloat(document.getElementById('field-temp-edge')?.value) || 20.0;
-  const tempPeak = parseFloat(document.getElementById('field-temp-peak')?.value) || 80.0;
-  const alpha = parseFloat(document.getElementById('field-alpha')?.value) || 0.000013;
+  const tempEdge = parseFloat(document.getElementById('field-temp-edge')?.value) ?? 20.0;
+  const tempPeak = parseFloat(document.getElementById('field-temp-peak')?.value) ?? 80.0;
+  const alpha = parseFloat(document.getElementById('field-alpha')?.value) || 1.3e-5;
   const Nx = parseInt(document.getElementById('field-nx')?.value) || 101;
   const Nt = parseInt(document.getElementById('field-nt')?.value) || 201;
+
+  if (tempEdge === tempPeak) {
+    stateContainer.innerHTML = '<div class="state-box error">Starting peak temperature must differ from the ends temperature.</div>';
+    if (resultPanel) resultPanel.style.display = 'none';
+    return;
+  }
 
   stateContainer.innerHTML = '<div class="state-box loading"><span class="spinner"></span> Simulating thermal diffusion field...</div>';
   resultPanel.style.display = 'none';
@@ -4730,22 +4765,324 @@ async function executeField(methodChoice) {
 
     document.getElementById('field-json-dump').textContent = JSON.stringify({ request: payload, response: data }, null, 2);
 
-    renderFieldHeatmap();
     const slider = document.getElementById('field-time-slider');
     const tIdx = parseInt(slider ? slider.value : '40') || 40;
-    const tSeconds = ((tIdx / 200) * expDur).toFixed(1);
-    const titleEl = document.getElementById('field-profile-title');
-    if (titleEl) titleEl.textContent = `Temperature along the bar at ${tSeconds} s`;
-    const timeValEl = document.getElementById('field-time-val');
-    if (timeValEl) timeValEl.textContent = `${tSeconds} s`;
+    const spotSlider = document.getElementById('field-spot-slider');
+    const spotRatio = parseInt(spotSlider ? spotSlider.value : '50') || 50;
 
-    renderFieldProfile(tIdx);
+    // Render 3 Main Visuals
+    renderFieldBarStrip(tIdx);
+    renderFieldCurves(tIdx);
+    renderFieldSpotOverTime(spotRatio);
+
+    // Render Collapsed Heatmap
+    renderFieldHeatmap();
 
   } catch (err) {
     stateContainer.innerHTML = `<div class="state-box error"><strong>Field Simulation Error:</strong> ${err.message}</div>`;
   }
 }
 
+// -------------------------------------------------------------------------------------------------
+// Colormap for Bar Strip (Cold = Blue, Hot = Red)
+// -------------------------------------------------------------------------------------------------
+function getBarStripColor(val) {
+  const v = Math.max(0, Math.min(1, val));
+  let r, g, b;
+  if (v < 0.5) {
+    const t = v / 0.5;
+    r = Math.round(43 + t * (230 - 43));
+    g = Math.round(92 + t * (160 - 92));
+    b = Math.round(165 + t * (40 - 165));
+  } else {
+    const t = (v - 0.5) / 0.5;
+    r = Math.round(230 + t * (215 - 230));
+    g = Math.round(160 + t * (45 - 160));
+    b = Math.round(40 + t * (35 - 40));
+  }
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+// -------------------------------------------------------------------------------------------------
+// Visual C: Coloured strip of the bar at selected moment
+// -------------------------------------------------------------------------------------------------
+function renderFieldBarStrip(tIdx) {
+  const result = STATE.lastFieldResult;
+  if (!result || !result.response) return;
+
+  const canvas = document.getElementById('field-bar-strip-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const uGrid = result.response.u_grid;
+  const Nt = uGrid.length;
+  const safeTIdx = Math.min(Nt - 1, Math.max(0, tIdx));
+  const uSlice = uGrid[safeTIdx];
+  const Nx = uSlice.length;
+
+  const L = result.barLengthM ?? 0.1;
+  const T = result.testDurationS ?? 100.0;
+  const edgeT = result.boundaryTemp ?? 20.0;
+  const peakT = result.peakTemp ?? 80.0;
+  const tMin = Math.min(edgeT, peakT);
+  const tMax = Math.max(edgeT, peakT);
+  const span = (tMax - tMin) || 1.0;
+
+  const w = canvas.width;
+  const h = canvas.height;
+
+  for (let px = 0; px < w; px++) {
+    const xFrac = px / (w - 1);
+    const xIdx = Math.min(Nx - 1, Math.floor(xFrac * Nx));
+    const temp = uSlice[xIdx];
+    const normVal = (temp - tMin) / span;
+    ctx.fillStyle = getBarStripColor(normVal);
+    ctx.fillRect(px, 0, 1, h);
+  }
+
+  const tSeconds = ((safeTIdx / (Nt - 1)) * T).toFixed(1);
+  const timeEl = document.getElementById('field-bar-strip-time');
+  const leftLabel = document.getElementById('field-strip-left-label');
+  const rightLabel = document.getElementById('field-strip-right-label');
+  const midTemp = document.getElementById('field-strip-mid-temp');
+
+  if (timeEl) timeEl.textContent = `${tSeconds} s`;
+  if (leftLabel) leftLabel.textContent = `0.00 m (${uSlice[0].toFixed(1)} °C)`;
+  if (rightLabel) rightLabel.textContent = `${L.toFixed(2)} m (${uSlice[Nx - 1].toFixed(1)} °C)`;
+  if (midTemp) midTemp.textContent = `${uSlice[Math.floor(Nx / 2)].toFixed(1)} °C`;
+}
+
+// -------------------------------------------------------------------------------------------------
+// Visual A: Temperature along the bar (5 line curves + time slider moment)
+// -------------------------------------------------------------------------------------------------
+function renderFieldCurves(selectedTIdx) {
+  const result = STATE.lastFieldResult;
+  if (!result || !result.response) return;
+
+  const svg = document.getElementById('field-profile-svg');
+  if (!svg) return;
+  const uGrid = result.response.u_grid;
+  const Nt = uGrid.length;
+  const Nx = uGrid[0].length;
+
+  const L = result.barLengthM ?? 0.1;
+  const T = result.testDurationS ?? 100.0;
+  const edgeT = result.boundaryTemp ?? 20.0;
+  const peakT = result.peakTemp ?? 80.0;
+  const alpha = result.alpha ?? 1.3e-5;
+
+  const width = 540;
+  const height = 230;
+  const pad = { top: 20, right: 25, bottom: 42, left: 60 };
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
+
+  svg.innerHTML = '';
+
+  const scaleX = xNorm => pad.left + xNorm * plotW;
+  const minTemp = Math.min(edgeT, peakT);
+  const maxTemp = Math.max(edgeT, peakT);
+  const ySpan = (maxTemp - minTemp) || 1.0;
+  const scaleY = temp => pad.top + plotH - ((temp - minTemp) / ySpan) * plotH;
+
+  // X Grid lines (Position in m)
+  let gridLines = '';
+  for (let s = 0; s <= 4; s++) {
+    const frac = s / 4;
+    const xPos = scaleX(frac);
+    const xValM = (frac * L).toFixed(2);
+    gridLines += `<line x1="${xPos}" y1="${pad.top}" x2="${xPos}" y2="${pad.top + plotH}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
+    gridLines += `<text x="${xPos}" y="${pad.top + plotH + 16}" text-anchor="middle" fill="var(--text-muted)" font-size="10">${xValM} m</text>`;
+  }
+
+  // Y Grid lines (Temperature in °C)
+  for (let s = 0; s <= 4; s++) {
+    const frac = s / 4;
+    const tValC = minTemp + frac * ySpan;
+    const yPos = scaleY(tValC);
+    gridLines += `<line x1="${pad.left}" y1="${yPos}" x2="${pad.left + plotW}" y2="${yPos}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
+    gridLines += `<text x="${pad.left - 6}" y="${yPos + 3}" text-anchor="end" fill="var(--text-muted)" font-size="10">${tValC.toFixed(0)} °C</text>`;
+  }
+
+  // 5 Snapshot curves: 0%, 10%, 25%, 50%, 100%
+  const snapshots = [
+    { frac: 0.0, color: '#c0392b', label: '0%' },
+    { frac: 0.10, color: '#e67e22', label: '10%' },
+    { frac: 0.25, color: '#f39c12', label: '25%' },
+    { frac: 0.50, color: '#27ae60', label: '50%' },
+    { frac: 1.00, color: '#2980b9', label: '100%' }
+  ];
+
+  let snapshotPaths = '';
+  let legendItems = '';
+
+  snapshots.forEach(s => {
+    const rIdx = Math.min(Nt - 1, Math.round(s.frac * (Nt - 1)));
+    const slice = uGrid[rIdx];
+    const sTime = (s.frac * T).toFixed(0);
+
+    let d = [];
+    for (let i = 0; i < Nx; i++) {
+      const xNorm = i / (Nx - 1);
+      const temp = slice[i];
+      d.push(`${i === 0 ? 'M' : 'L'} ${scaleX(xNorm).toFixed(1)} ${scaleY(temp).toFixed(1)}`);
+    }
+    snapshotPaths += `<path d="${d.join(' ')}" fill="none" stroke="${s.color}" stroke-width="1.8" opacity="0.85"/>`;
+    legendItems += `
+      <div class="legend-item" style="font-size: 0.78rem;">
+        <span class="legend-line" style="background-color: ${s.color}; height: 2px;"></span>
+        ${sTime} s (${s.label})
+      </div>
+    `;
+  });
+
+  // Highlighted Selected Moment Curve
+  const safeTIdx = Math.min(Nt - 1, Math.max(0, selectedTIdx));
+  const activeSlice = uGrid[safeTIdx];
+  const realSelectedT = (safeTIdx / (Nt - 1)) * T;
+
+  let activeD = [];
+  for (let i = 0; i < Nx; i++) {
+    const xNorm = i / (Nx - 1);
+    const temp = activeSlice[i];
+    activeD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(xNorm).toFixed(1)} ${scaleY(temp).toFixed(1)}`);
+  }
+  const activePath = `<path d="${activeD.join(' ')}" fill="none" stroke="var(--primary-navy)" stroke-width="2.8"/>`;
+
+  // Exact Fourier Formula Overlay for Selected Moment
+  let exactD = [];
+  const decay = Math.exp(-alpha * Math.PI * Math.PI * realSelectedT / (L * L));
+  for (let i = 0; i <= 100; i++) {
+    const xNorm = i / 100;
+    const exactTemp = edgeT + (peakT - edgeT) * Math.sin(Math.PI * xNorm) * decay;
+    exactD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(xNorm).toFixed(1)} ${scaleY(exactTemp).toFixed(1)}`);
+  }
+  const exactPath = `<path d="${exactD.join(' ')}" fill="none" stroke="#8e44ad" stroke-width="1.6" stroke-dasharray="3 3"/>`;
+
+  legendItems += `
+    <div class="legend-item" style="font-size: 0.78rem; font-weight: 600;">
+      <span class="legend-line" style="background-color: var(--primary-navy); height: 2.8px;"></span>
+      Moment (${realSelectedT.toFixed(1)} s)
+    </div>
+    <div class="legend-item" style="font-size: 0.78rem;">
+      <span class="legend-line" style="border-top: 1.6px dashed #8e44ad;"></span>
+      Exact formula
+    </div>
+  `;
+
+  const legendContainer = document.getElementById('field-profile-legend');
+  if (legendContainer) {
+    legendContainer.innerHTML = legendItems;
+  }
+
+  svg.innerHTML = `
+    <g class="chart-grid">${gridLines}</g>
+    ${snapshotPaths}
+    ${activePath}
+    ${exactPath}
+    <line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
+    <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
+    <text x="${pad.left + plotW / 2}" y="${height - 6}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Position along the bar (m)</text>
+    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="16" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Temperature (°C)</text>
+  `;
+}
+
+// -------------------------------------------------------------------------------------------------
+// Visual B: Temperature at one spot over time
+// -------------------------------------------------------------------------------------------------
+function renderFieldSpotOverTime(spotRatio) {
+  const result = STATE.lastFieldResult;
+  if (!result || !result.response) return;
+
+  const svg = document.getElementById('field-spot-svg');
+  if (!svg) return;
+  const uGrid = result.response.u_grid;
+  const Nt = uGrid.length;
+  const Nx = uGrid[0].length;
+
+  const L = result.barLengthM ?? 0.1;
+  const T = result.testDurationS ?? 100.0;
+  const edgeT = result.boundaryTemp ?? 20.0;
+  const peakT = result.peakTemp ?? 80.0;
+  const alpha = result.alpha ?? 1.3e-5;
+
+  const spotFrac = Math.max(0, Math.min(1, spotRatio / 100.0));
+  const realX = (spotFrac * L).toFixed(3);
+  const spotColIdx = Math.min(Nx - 1, Math.round(spotFrac * (Nx - 1)));
+
+  const spotValEl = document.getElementById('field-spot-val');
+  if (spotValEl) {
+    const desc = spotRatio === 50 ? 'middle' : (spotRatio === 0 ? 'left end' : (spotRatio === 100 ? 'right end' : `${spotRatio}%`));
+    spotValEl.textContent = `${realX} m (${desc})`;
+  }
+
+  const width = 540;
+  const height = 210;
+  const pad = { top: 20, right: 25, bottom: 42, left: 60 };
+  const plotW = width - pad.left - pad.right;
+  const plotH = height - pad.top - pad.bottom;
+
+  svg.innerHTML = '';
+
+  const scaleT = tFrac => pad.left + tFrac * plotW;
+  const minTemp = Math.min(edgeT, peakT);
+  const maxTemp = Math.max(edgeT, peakT);
+  const ySpan = (maxTemp - minTemp) || 1.0;
+  const scaleY = temp => pad.top + plotH - ((temp - minTemp) / ySpan) * plotH;
+
+  // X Grid lines (Time in s)
+  let gridLines = '';
+  for (let s = 0; s <= 4; s++) {
+    const frac = s / 4;
+    const xPos = scaleT(frac);
+    const tValS = (frac * T).toFixed(0);
+    gridLines += `<line x1="${xPos}" y1="${pad.top}" x2="${xPos}" y2="${pad.top + plotH}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
+    gridLines += `<text x="${xPos}" y="${pad.top + plotH + 16}" text-anchor="middle" fill="var(--text-muted)" font-size="10">${tValS} s</text>`;
+  }
+
+  // Y Grid lines (Temperature in °C)
+  for (let s = 0; s <= 4; s++) {
+    const frac = s / 4;
+    const tValC = minTemp + frac * ySpan;
+    const yPos = scaleY(tValC);
+    gridLines += `<line x1="${pad.left}" y1="${yPos}" x2="${pad.left + plotW}" y2="${yPos}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
+    gridLines += `<text x="${pad.left - 6}" y="${yPos + 3}" text-anchor="end" fill="var(--text-muted)" font-size="10">${tValC.toFixed(0)} °C</text>`;
+  }
+
+  // Computed curve at this spot
+  let modelD = [];
+  for (let i = 0; i < Nt; i++) {
+    const tFrac = i / (Nt - 1);
+    const temp = uGrid[i][spotColIdx];
+    modelD.push(`${i === 0 ? 'M' : 'L'} ${scaleT(tFrac).toFixed(1)} ${scaleY(temp).toFixed(1)}`);
+  }
+  const modelPath = `<path d="${modelD.join(' ')}" fill="none" stroke="var(--primary-navy)" stroke-width="2.5"/>`;
+
+  // Exact analytic formula curve at this spot
+  let exactD = [];
+  const sinFactor = Math.sin(Math.PI * spotFrac);
+  for (let i = 0; i <= 100; i++) {
+    const tFrac = i / 100;
+    const tSec = tFrac * T;
+    const decay = Math.exp(-alpha * Math.PI * Math.PI * tSec / (L * L));
+    const exactTemp = edgeT + (peakT - edgeT) * sinFactor * decay;
+    exactD.push(`${i === 0 ? 'M' : 'L'} ${scaleT(tFrac).toFixed(1)} ${scaleY(exactTemp).toFixed(1)}`);
+  }
+  const exactPath = `<path d="${exactD.join(' ')}" fill="none" stroke="#e67e22" stroke-width="2" stroke-dasharray="4 4"/>`;
+
+  svg.innerHTML = `
+    <g class="chart-grid">${gridLines}</g>
+    ${modelPath}
+    ${exactPath}
+    <line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
+    <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
+    <text x="${pad.left + plotW / 2}" y="${height - 6}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Time (s)</text>
+    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="16" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Temperature (°C)</text>
+  `;
+}
+
+// -------------------------------------------------------------------------------------------------
+// Collapsed Heatmap Renderer (with robust normalization bug fix)
+// -------------------------------------------------------------------------------------------------
 function renderFieldHeatmap() {
   const result = STATE.lastFieldResult;
   if (!result || !result.response) return;
@@ -4757,9 +5094,30 @@ function renderFieldHeatmap() {
   const Nt = uGrid.length;
   const Nx = uGrid[0].length;
 
-  const edgeT = result.boundaryTemp ?? 20.0;
-  const peakT = result.peakTemp ?? 80.0;
-  const tRange = (peakT - edgeT) || 1.0;
+  let edgeT = result.boundaryTemp;
+  let peakT = result.peakTemp;
+  if (edgeT === undefined || edgeT === null) {
+    edgeT = parseFloat(document.getElementById('field-temp-edge')?.value) ?? 20.0;
+  }
+  if (peakT === undefined || peakT === null) {
+    peakT = parseFloat(document.getElementById('field-temp-peak')?.value) ?? 80.0;
+  }
+
+  // Scan min and max to ensure robust normalization
+  let gridMin = uGrid[0][0];
+  let gridMax = uGrid[0][0];
+  for (let r = 0; r < Nt; r++) {
+    const row = uGrid[r];
+    for (let c = 0; c < Nx; c++) {
+      if (row[c] < gridMin) gridMin = row[c];
+      if (row[c] > gridMax) gridMax = row[c];
+    }
+  }
+
+  const isNormalized = (gridMax <= 1.05 && gridMin >= -0.05 && (Math.abs(peakT) > 1.5 || Math.abs(edgeT) > 1.5));
+  const tMin = isNormalized ? 0.0 : Math.min(edgeT, peakT);
+  const tMax = isNormalized ? 1.0 : Math.max(edgeT, peakT);
+  const span = (tMax - tMin) || 1.0;
 
   const w = canvas.width;
   const h = canvas.height;
@@ -4771,7 +5129,7 @@ function renderFieldHeatmap() {
     for (let px = 0; px < w; px++) {
       const xIdx = Math.floor((px / w) * Nx);
       const val = row[Math.min(Nx - 1, xIdx)];
-      const normVal = Math.max(0, Math.min(1, (val - edgeT) / tRange));
+      const normVal = Math.max(0, Math.min(1, isNormalized ? val : ((val - tMin) / span)));
       const colStr = getThermalColor(normVal);
       const m = colStr.match(/\d+/g);
       const idx = (py * w + px) * 4;
@@ -4815,90 +5173,6 @@ function handleFieldCanvasHover(e) {
   if (readout) {
     readout.textContent = `Position: ${realX} m, Time: ${realT} s → ${uVal} °C`;
   }
-}
-
-function renderFieldProfile(tIdx) {
-  const result = STATE.lastFieldResult;
-  if (!result || !result.response) return;
-
-  const svg = document.getElementById('field-profile-svg');
-  if (!svg) return;
-  const uGrid = result.response.u_grid;
-  const Nt = uGrid.length;
-  const safeTIdx = Math.min(Nt - 1, Math.max(0, tIdx));
-  const uSlice = uGrid[safeTIdx];
-  const Nx = uSlice.length;
-
-  const L = result.barLengthM ?? 0.1;
-  const T = result.testDurationS ?? 100.0;
-  const edgeT = result.boundaryTemp ?? 20.0;
-  const peakT = result.peakTemp ?? 80.0;
-  const alpha = result.alpha ?? 0.000013;
-
-  const tFraction = safeTIdx / (Nt - 1);
-  const realT = tFraction * T;
-
-  const width = 540;
-  const height = 220;
-  const pad = { top: 20, right: 25, bottom: 40, left: 60 };
-  const plotW = width - pad.left - pad.right;
-  const plotH = height - pad.top - pad.bottom;
-
-  svg.innerHTML = '';
-
-  const scaleX = xNorm => pad.left + xNorm * plotW;
-  const minTemp = Math.min(edgeT, peakT);
-  const maxTemp = Math.max(edgeT, peakT);
-  const ySpan = (maxTemp - minTemp) || 1.0;
-  const scaleY = temp => pad.top + plotH - ((temp - minTemp) / ySpan) * plotH;
-
-  // X Grid lines (Metres)
-  let gridLines = '';
-  for (let s = 0; s <= 4; s++) {
-    const frac = s / 4;
-    const xPos = scaleX(frac);
-    const xValM = (frac * L).toFixed(2);
-    gridLines += `<line x1="${xPos}" y1="${pad.top}" x2="${xPos}" y2="${pad.top + plotH}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
-    gridLines += `<text x="${xPos}" y="${pad.top + plotH + 16}" text-anchor="middle" fill="var(--text-muted)" font-size="10">${xValM} m</text>`;
-  }
-
-  // Y Grid lines (Degrees C)
-  for (let s = 0; s <= 4; s++) {
-    const frac = s / 4;
-    const tValC = minTemp + frac * ySpan;
-    const yPos = scaleY(tValC);
-    gridLines += `<line x1="${pad.left}" y1="${yPos}" x2="${pad.left + plotW}" y2="${yPos}" stroke="var(--rule-subtle)" stroke-dasharray="2 3"/>`;
-    gridLines += `<text x="${pad.left - 6}" y="${yPos + 3}" text-anchor="end" fill="var(--text-muted)" font-size="10">${tValC.toFixed(0)} °C</text>`;
-  }
-
-  // Computed Model Curve
-  let modelD = [];
-  for (let i = 0; i < Nx; i++) {
-    const xNorm = i / (Nx - 1);
-    const temp = uSlice[i];
-    modelD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(xNorm).toFixed(1)} ${scaleY(temp).toFixed(1)}`);
-  }
-  const modelPath = `<path d="${modelD.join(' ')}" fill="none" stroke="var(--primary-navy)" stroke-width="2.5"/>`;
-
-  // Exact Fourier Formula Curve
-  let exactD = [];
-  const decay = Math.exp(-alpha * Math.PI * Math.PI * realT / (L * L));
-  for (let i = 0; i <= 100; i++) {
-    const xNorm = i / 100;
-    const exactTemp = edgeT + (peakT - edgeT) * Math.sin(Math.PI * xNorm) * decay;
-    exactD.push(`${i === 0 ? 'M' : 'L'} ${scaleX(xNorm).toFixed(1)} ${scaleY(exactTemp).toFixed(1)}`);
-  }
-  const exactPath = `<path d="${exactD.join(' ')}" fill="none" stroke="#e67e22" stroke-width="2" stroke-dasharray="4 4"/>`;
-
-  svg.innerHTML = `
-    <g class="chart-grid">${gridLines}</g>
-    ${modelPath}
-    ${exactPath}
-    <line x1="${pad.left}" y1="${pad.top + plotH}" x2="${pad.left + plotW}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
-    <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + plotH}" stroke="var(--rule-hairline)" stroke-width="1.5"/>
-    <text x="${pad.left + plotW / 2}" y="${height - 5}" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Position along the bar (m)</text>
-    <text transform="rotate(-90)" x="${-(pad.top + plotH / 2)}" y="16" text-anchor="middle" fill="var(--text-main)" font-size="11" font-weight="600">Temperature (°C)</text>
-  `;
 }
 
 // -------------------------------------------------------------------------------------------------

@@ -304,9 +304,30 @@ code {
   padding: 0 1.2rem;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   height: 44px;
   overflow-x: auto;
   white-space: nowrap;
+}
+
+.nav-main-row {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.nav-secondary-section {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  margin-left: auto;
+}
+
+.nav-secondary-links {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  gap: 0.15rem;
 }
 
 .nav-group-section {
@@ -365,6 +386,12 @@ code {
   transition: color var(--transition-fast), background-color var(--transition-fast);
   border-radius: 0;
   box-sizing: border-box;
+}
+
+.nav-link.nav-link-secondary {
+  font-size: 0.8rem;
+  padding: 0 0.65rem;
+  opacity: 0.9;
 }
 
 .nav-link:hover {
@@ -1893,6 +1920,18 @@ tr[id*="alpha"] td {
     height: 40px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+  }
+  .nav-main-row {
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+  .nav-secondary-section {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    margin-left: 0.5rem;
   }
   .nav-group-section {
     display: flex;
@@ -1926,6 +1965,13 @@ tr[id*="alpha"] td {
     padding: 0.75rem 1rem;
     white-space: normal;
   }
+  .nav-bar.mobile-menu-open .nav-main-row {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    gap: 0.35rem;
+    width: 100%;
+  }
   .nav-bar.mobile-menu-open .nav-divider {
     display: none;
   }
@@ -1951,6 +1997,23 @@ tr[id*="alpha"] td {
     align-items: stretch;
     height: auto;
     gap: 0.25rem;
+  }
+  .nav-bar.mobile-menu-open .nav-secondary-section {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    margin-left: 0;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--rule-hairline);
+    width: 100%;
+  }
+  .nav-bar.mobile-menu-open .nav-secondary-links {
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    gap: 0.25rem;
+    width: 100%;
   }
   .nav-bar.mobile-menu-open .nav-link {
     width: 100%;

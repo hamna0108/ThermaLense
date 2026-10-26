@@ -134,14 +134,35 @@ def test_type_scale_and_header_compaction_1440(live_server):
         save_screenshot(header_el, "topbar_1440px.png")
 
         # 2. Navigation bar checks
-        links = page.locator(".nav-link")
-        expected_order = [
-            "Overview", "Field", "Poisson", "Place Sensors", "Estimate", "Diagnose", "Evidence", "Limits"
+        # Main row links: Overview | Field | Poisson | Place Sensors | Estimate | Diagnose
+        main_links = page.locator("#nav-main-row .nav-link")
+        expected_main = [
+            "Overview", "Field", "Poisson", "Place Sensors", "Estimate", "Diagnose"
         ]
-        assert [links.nth(i).inner_text().strip() for i in range(links.count())] == expected_order
+        assert [main_links.nth(i).inner_text().strip() for i in range(main_links.count())] == expected_main
+
+        # Two group dividers in the main nav row
+        assert page.locator("#nav-main-row .nav-divider").count() == 2
+
+        # Secondary links at the right end: Accuracy (-> #evidence) and Limits (-> #limits)
+        sec_links = page.locator("#nav-group-about .nav-link")
+        expected_sec = ["Accuracy", "Limits"]
+        assert [sec_links.nth(i).inner_text().strip() for i in range(sec_links.count())] == expected_sec
+        assert page.locator("#nav-evidence").get_attribute("href") == "#evidence"
+        assert page.locator("#nav-limits").get_attribute("href") == "#limits"
+
+        # Verify secondary section is at the right end on 1440px desktop
+        main_box = page.locator("#nav-main-row").bounding_box()
+        sec_box = page.locator("#nav-group-about").bounding_box()
+        assert main_box is not None and sec_box is not None
+        assert sec_box["x"] >= main_box["x"] + main_box["width"] - 5.0, (
+            f"Secondary links x={sec_box['x']} should be at the right end of main row"
+        )
+
+        # No bold group headers visible in desktop nav bar
         assert not page.locator("#nav-label-predict").is_visible()
         assert not page.locator("#nav-label-investigate").is_visible()
-        assert page.locator(".nav-divider").count() == 3
+        assert not page.locator("#nav-label-about").is_visible()
 
         save_screenshot(page.locator(".nav-bar"), "nav_1440px.png")
 
@@ -165,16 +186,22 @@ def test_type_scale_and_header_compaction_1440(live_server):
                 assert h1.inner_text().strip() == "How Accurate Is It?"
                 sub = view_elem.locator(".page-desc")
                 assert sub.inner_text().strip() == "The tests behind every number in ThermaLens, with the honest limits."
-                det = view_elem.locator(".technical-details")
+                note = view_elem.locator(".evidence-full-methods-note")
+                assert "Full methods, tables and figures are in the project report and README." in note.inner_text()
+                det = view_elem.locator(".page-intro .technical-details")
                 assert det.count() > 0
                 assert "ThermaLens: Empirical Evidence" in det.text_content()
+                full_tables = view_elem.locator("#ev-full-tables-details")
+                assert full_tables.count() > 0
+                assert not full_tables.evaluate("el => el.open")
+                assert "Show full tables" in full_tables.locator("summary").inner_text()
 
             # Specific checks for Limits page
             if p_info["hash"] == "limits":
                 assert h1.inner_text().strip() == "What It Can't Do"
                 sub = view_elem.locator(".page-desc")
                 assert sub.inner_text().strip() == "Where ThermaLens is reliable, where it is not, and what to do about it."
-                det = view_elem.locator(".technical-details")
+                det = view_elem.locator(".page-intro .technical-details")
                 assert det.count() > 0
                 assert "Operational Boundaries & Mathematical Limits" in det.text_content()
 
@@ -241,6 +268,11 @@ def test_type_scale_mobile_390(live_server):
         assert nav_bar.evaluate("el => el.classList.contains('mobile-menu-open')")
         assert page.locator("#nav-label-predict").is_visible()
         assert page.locator("#nav-label-investigate").is_visible()
+        assert page.locator("#nav-label-about").is_visible()
+
+        # Verify About links at bottom of menu: Accuracy and Limits
+        sec_menu_links = page.locator("#nav-group-about .nav-link")
+        assert [sec_menu_links.nth(i).inner_text().strip() for i in range(sec_menu_links.count())] == ["Accuracy", "Limits"]
 
         save_screenshot(nav_bar, "nav_390px.png")
 

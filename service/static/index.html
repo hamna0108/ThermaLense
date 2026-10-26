@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ThermaLens — Thermal PDE Inference &amp; Diagnostics Instrument</title>
   <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
-  <link rel="stylesheet" href="style.css?v=thermalens-v26">
+  <link rel="stylesheet" href="style.css?v=thermalens-v27">
 </head>
 <body>
 
@@ -34,40 +34,45 @@
   <!-- Navigation Bar (Hash Routing) -->
   <nav class="nav-bar" id="app-nav-bar" aria-label="Workbench navigation">
     <div class="nav-inner" id="nav-inner">
-      <div class="nav-group-section nav-section-overview">
-        <a href="#overview" class="nav-link active" id="nav-overview">Overview</a>
+      <div class="nav-main-row" id="nav-main-row">
+        <div class="nav-group-section nav-section-overview">
+          <a href="#overview" class="nav-link active" id="nav-overview">Overview</a>
+        </div>
+
+        <div class="nav-divider" aria-hidden="true"></div>
+
+        <div class="nav-group-section nav-section-predict" id="nav-group-predict">
+          <div class="nav-group-header">
+            <span class="nav-group-label" id="nav-label-predict">Predict</span>
+          </div>
+          <div class="nav-group-links">
+            <a href="#field" class="nav-link" id="nav-field">Field</a>
+            <a href="#poisson" class="nav-link" id="nav-poisson">Poisson</a>
+          </div>
+        </div>
+
+        <div class="nav-divider" aria-hidden="true"></div>
+
+        <div class="nav-group-section nav-section-investigate" id="nav-group-investigate">
+          <div class="nav-group-header">
+            <span class="nav-group-label" id="nav-label-investigate">Investigate</span>
+          </div>
+          <div class="nav-group-links">
+            <a href="#placement" class="nav-link" id="nav-placement">Place Sensors</a>
+            <a href="#estimate" class="nav-link" id="nav-estimate">Estimate</a>
+            <a href="#diagnose" class="nav-link" id="nav-diagnose">Diagnose</a>
+          </div>
+        </div>
       </div>
 
-      <div class="nav-divider" aria-hidden="true"></div>
-
-      <div class="nav-group-section nav-section-predict" id="nav-group-predict">
+      <div class="nav-secondary-section" id="nav-group-about">
         <div class="nav-group-header">
-          <span class="nav-group-label" id="nav-label-predict">Predict</span>
+          <span class="nav-group-label" id="nav-label-about">About</span>
         </div>
-        <div class="nav-group-links">
-          <a href="#field" class="nav-link" id="nav-field">Field</a>
-          <a href="#poisson" class="nav-link" id="nav-poisson">Poisson</a>
+        <div class="nav-secondary-links">
+          <a href="#evidence" class="nav-link nav-link-secondary" id="nav-evidence">Accuracy</a>
+          <a href="#limits" class="nav-link nav-link-secondary" id="nav-limits">Limits</a>
         </div>
-      </div>
-
-      <div class="nav-divider" aria-hidden="true"></div>
-
-      <div class="nav-group-section nav-section-investigate" id="nav-group-investigate">
-        <div class="nav-group-header">
-          <span class="nav-group-label" id="nav-label-investigate">Investigate</span>
-        </div>
-        <div class="nav-group-links">
-          <a href="#placement" class="nav-link" id="nav-placement">Place Sensors</a>
-          <a href="#estimate" class="nav-link" id="nav-estimate">Estimate</a>
-          <a href="#diagnose" class="nav-link" id="nav-diagnose">Diagnose</a>
-        </div>
-      </div>
-
-      <div class="nav-divider" aria-hidden="true"></div>
-
-      <div class="nav-group-section nav-section-archive">
-        <a href="#evidence" class="nav-link" id="nav-evidence">Evidence</a>
-        <a href="#limits" class="nav-link" id="nav-limits">Limits</a>
       </div>
     </div>
   </nav>
@@ -1644,6 +1649,7 @@
         <span class="page-eyebrow">EVIDENCE</span>
         <h1 id="heading-evidence">How Accurate Is It?</h1>
         <p class="page-desc">The tests behind every number in ThermaLens, with the honest limits.</p>
+        <p class="evidence-full-methods-note" style="font-size: 0.88rem; color: var(--text-muted); margin: 0 0 8px 0;">Full methods, tables and figures are in the project report and README.</p>
         <details class="technical-details">
           <summary class="technical-details-summary">Show details</summary>
           <div class="technical-details-body">
@@ -1700,113 +1706,6 @@
             </thead>
             <tbody id="ev-tbody-placement"></tbody>
           </table>
-        </div>
-
-        <div style="margin-top: 1.5rem;">
-          <h3 style="font-size: 0.95rem; margin-bottom: 0.35rem;">Paired 200-Seed Sensitivity Benchmark: Material Guess &amp; Timing Accuracy</h3>
-          <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0.75rem;">
-            Paired evaluation over 200 identical noise seeds (N = 10, L = 0.1 m, T = 100 s, &sigma; = 0.5 &deg;C, x = 0.05 m). Comparing two-stage information-weighted placement vs. evenly spaced sampling across three initial guess conditions.
-          </p>
-          <div class="table-container">
-            <table class="booktabs" style="font-size: 0.85rem;">
-              <thead>
-                <tr>
-                  <th>True &alpha; Setup</th>
-                  <th>Assumed Material Guess</th>
-                  <th>Schedule Type</th>
-                  <th class="text-right">Median Error</th>
-                  <th class="text-right">Median 95% CI Width</th>
-                  <th class="text-right">Coverage</th>
-                  <th>Honest Assessment &amp; Trade-off</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td rowspan="6"><strong>Slow cooling (&alpha; = 1e-5 m&sup2;/s)</strong><br><span class="text-muted">&alpha;<sub>norm</sub> = 0.10</span></td>
-                  <td rowspan="2">Guess = Truth (&alpha; = 1e-5)</td>
-                  <td>Two-Stage Optimal</td>
-                  <td class="text-right mono">0.73%</td>
-                  <td class="text-right mono">3.81%</td>
-                  <td class="text-right mono">97.0%</td>
-                  <td rowspan="6">When cooling is slow, the bar retains thermal gradient throughout the 100 s window; both strategies perform within 0.1% error with nominal ~97% coverage.</td>
-                </tr>
-                <tr>
-                  <td>Evenly Spaced</td>
-                  <td class="text-right mono">0.66%</td>
-                  <td class="text-right mono">3.66%</td>
-                  <td class="text-right mono">97.5%</td>
-                </tr>
-                <tr>
-                  <td rowspan="2">3&times; Too Low (&alpha; = 3.3e-6)</td>
-                  <td>Two-Stage Optimal</td>
-                  <td class="text-right mono">0.68%</td>
-                  <td class="text-right mono">3.71%</td>
-                  <td class="text-right mono">97.0%</td>
-                </tr>
-                <tr>
-                  <td>Evenly Spaced</td>
-                  <td class="text-right mono">0.66%</td>
-                  <td class="text-right mono">3.66%</td>
-                  <td class="text-right mono">97.5%</td>
-                </tr>
-                <tr>
-                  <td rowspan="2">3&times; Too High (&alpha; = 3e-5)</td>
-                  <td>Two-Stage Optimal</td>
-                  <td class="text-right mono">0.85%</td>
-                  <td class="text-right mono">4.31%</td>
-                  <td class="text-right mono">97.0%</td>
-                </tr>
-                <tr>
-                  <td>Evenly Spaced</td>
-                  <td class="text-right mono">0.66%</td>
-                  <td class="text-right mono">3.66%</td>
-                  <td class="text-right mono">97.5%</td>
-                </tr>
-
-                <tr>
-                  <td rowspan="6"><strong>Fast cooling (&alpha; = 1e-4 m&sup2;/s)</strong><br><span class="text-muted">&alpha;<sub>norm</sub> = 1.00</span></td>
-                  <td rowspan="2">Guess = Truth (&alpha; = 1e-4)</td>
-                  <td>Two-Stage Optimal</td>
-                  <td class="text-right mono">1.28%</td>
-                  <td class="text-right mono">3.86%</td>
-                  <td class="text-right mono">70.0%</td>
-                  <td rowspan="6">When cooling is rapid, the rod reaches ambient boundaries by ~30 s. Two-stage placement sharpens CI width substantially (3.86&ndash;5.55% vs 6.99%). However, clustering all Stage 2 points tightly around an assumed t* without early-readings refinement risks over-confidence (70% coverage), whereas a conservative (3&times; lower) guess broadens sampling and preserves 90.5% coverage.</td>
-                </tr>
-                <tr>
-                  <td>Evenly Spaced</td>
-                  <td class="text-right mono">1.36%</td>
-                  <td class="text-right mono">6.99%</td>
-                  <td class="text-right mono">88.0%</td>
-                </tr>
-                <tr>
-                  <td rowspan="2">3&times; Too Low (&alpha; = 3.3e-5)</td>
-                  <td>Two-Stage Optimal</td>
-                  <td class="text-right mono">1.27%</td>
-                  <td class="text-right mono">5.55%</td>
-                  <td class="text-right mono">90.5%</td>
-                </tr>
-                <tr>
-                  <td>Evenly Spaced</td>
-                  <td class="text-right mono">1.36%</td>
-                  <td class="text-right mono">6.99%</td>
-                  <td class="text-right mono">88.0%</td>
-                </tr>
-                <tr>
-                  <td rowspan="2">3&times; Too High (&alpha; = 3e-4)</td>
-                  <td>Two-Stage Optimal</td>
-                  <td class="text-right mono">0.88%</td>
-                  <td class="text-right mono">4.12%</td>
-                  <td class="text-right mono">90.5%</td>
-                </tr>
-                <tr>
-                  <td>Evenly Spaced</td>
-                  <td class="text-right mono">1.36%</td>
-                  <td class="text-right mono">6.99%</td>
-                  <td class="text-right mono">88.0%</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
 
@@ -1964,7 +1863,124 @@
           </div>
         </div>
       </div>
-      <div class="card">
+
+      <!-- Full Technical Tables (Collapsed by Default) -->
+      <details class="card technical-details full-tables-card" id="ev-full-tables-details" style="margin-top: 1.25rem;">
+        <summary class="technical-details-summary full-tables-summary" style="cursor: pointer; font-weight: 600; font-size: 0.95rem; color: var(--text-heading); padding: 0.35rem 0.5rem; user-select: none;">
+          Show full tables &darr;
+        </summary>
+        <div class="technical-details-body full-tables-body" style="padding-top: 1rem;">
+
+          <!-- Paired 200-Seed Sensitivity Benchmark -->
+          <div style="margin-bottom: 1.5rem;">
+            <h3 style="font-size: 0.95rem; margin-bottom: 0.35rem;">Paired 200-Seed Sensitivity Benchmark: Material Guess &amp; Timing Accuracy</h3>
+            <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 0.75rem;">
+              Paired evaluation over 200 identical noise seeds (N = 10, L = 0.1 m, T = 100 s, &sigma; = 0.5 &deg;C, x = 0.05 m). Comparing two-stage information-weighted placement vs. evenly spaced sampling across three initial guess conditions.
+            </p>
+            <div class="table-container">
+              <table class="booktabs" style="font-size: 0.85rem;">
+                <thead>
+                  <tr>
+                    <th>True &alpha; Setup</th>
+                    <th>Assumed Material Guess</th>
+                    <th>Schedule Type</th>
+                    <th class="text-right">Median Error</th>
+                    <th class="text-right">Median 95% CI Width</th>
+                    <th class="text-right">Coverage</th>
+                    <th>Honest Assessment &amp; Trade-off</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td rowspan="6"><strong>Slow cooling (&alpha; = 1e-5 m&sup2;/s)</strong><br><span class="text-muted">&alpha;<sub>norm</sub> = 0.10</span></td>
+                    <td rowspan="2">Guess = Truth (&alpha; = 1e-5)</td>
+                    <td>Two-Stage Optimal</td>
+                    <td class="text-right mono">0.73%</td>
+                    <td class="text-right mono">3.81%</td>
+                    <td class="text-right mono">97.0%</td>
+                    <td rowspan="6">When cooling is slow, the bar retains thermal gradient throughout the 100 s window; both strategies perform within 0.1% error with nominal ~97% coverage.</td>
+                  </tr>
+                  <tr>
+                    <td>Evenly Spaced</td>
+                    <td class="text-right mono">0.66%</td>
+                    <td class="text-right mono">3.66%</td>
+                    <td class="text-right mono">97.5%</td>
+                  </tr>
+                  <tr>
+                    <td rowspan="2">3&times; Too Low (&alpha; = 3.3e-6)</td>
+                    <td>Two-Stage Optimal</td>
+                    <td class="text-right mono">0.68%</td>
+                    <td class="text-right mono">3.71%</td>
+                    <td class="text-right mono">97.0%</td>
+                  </tr>
+                  <tr>
+                    <td>Evenly Spaced</td>
+                    <td class="text-right mono">0.66%</td>
+                    <td class="text-right mono">3.66%</td>
+                    <td class="text-right mono">97.5%</td>
+                  </tr>
+                  <tr>
+                    <td rowspan="2">3&times; Too High (&alpha; = 3e-5)</td>
+                    <td>Two-Stage Optimal</td>
+                    <td class="text-right mono">0.85%</td>
+                    <td class="text-right mono">4.31%</td>
+                    <td class="text-right mono">97.0%</td>
+                  </tr>
+                  <tr>
+                    <td>Evenly Spaced</td>
+                    <td class="text-right mono">0.66%</td>
+                    <td class="text-right mono">3.66%</td>
+                    <td class="text-right mono">97.5%</td>
+                  </tr>
+
+                  <tr>
+                    <td rowspan="6"><strong>Fast cooling (&alpha; = 1e-4 m&sup2;/s)</strong><br><span class="text-muted">&alpha;<sub>norm</sub> = 1.00</span></td>
+                    <td rowspan="2">Guess = Truth (&alpha; = 1e-4)</td>
+                    <td>Two-Stage Optimal</td>
+                    <td class="text-right mono">1.28%</td>
+                    <td class="text-right mono">3.86%</td>
+                    <td class="text-right mono">70.0%</td>
+                    <td rowspan="6">When cooling is rapid, the rod reaches ambient boundaries by ~30 s. Two-stage placement sharpens CI width substantially (3.86&ndash;5.55% vs 6.99%). However, clustering all Stage 2 points tightly around an assumed t* without early-readings refinement risks over-confidence (70% coverage), whereas a conservative (3&times; lower) guess broadens sampling and preserves 90.5% coverage.</td>
+                  </tr>
+                  <tr>
+                    <td>Evenly Spaced</td>
+                    <td class="text-right mono">1.36%</td>
+                    <td class="text-right mono">6.99%</td>
+                    <td class="text-right mono">88.0%</td>
+                  </tr>
+                  <tr>
+                    <td rowspan="2">3&times; Too Low (&alpha; = 3.3e-5)</td>
+                    <td>Two-Stage Optimal</td>
+                    <td class="text-right mono">1.27%</td>
+                    <td class="text-right mono">5.55%</td>
+                    <td class="text-right mono">90.5%</td>
+                  </tr>
+                  <tr>
+                    <td>Evenly Spaced</td>
+                    <td class="text-right mono">1.36%</td>
+                    <td class="text-right mono">6.99%</td>
+                    <td class="text-right mono">88.0%</td>
+                  </tr>
+                  <tr>
+                    <td rowspan="2">3&times; Too High (&alpha; = 3e-4)</td>
+                    <td>Two-Stage Optimal</td>
+                    <td class="text-right mono">0.88%</td>
+                    <td class="text-right mono">4.12%</td>
+                    <td class="text-right mono">90.5%</td>
+                  </tr>
+                  <tr>
+                    <td>Evenly Spaced</td>
+                    <td class="text-right mono">1.36%</td>
+                    <td class="text-right mono">6.99%</td>
+                    <td class="text-right mono">88.0%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Section 4: Empirical Stress Testing (Week 5 Matrix v2b) -->
+          <div class="card" style="box-shadow: none; border: 1px solid var(--rule-hairline); margin-bottom: 1rem;">
         <h2 class="card-title">4. Empirical Stress Testing (Week 5 Matrix v2b)</h2>
         <p class="text-muted" style="margin-bottom: 0.75rem;">13 Scenarios × 3 Severities across 5 Frozen Modules (100 reps/cell). Source: <code>stress_summary_v2b.csv</code></p>
         <div class="grid-2">
@@ -2147,6 +2163,8 @@
           </table>
         </div>
       </div>
+        </div>
+      </details>
     </section>
 
     <!-- ====================================================================
@@ -2180,77 +2198,82 @@
         </ul>
       </div>
 
-      <div class="card">
-        <h2 class="card-title" style="margin-top: 0;">What the Digital Twin Cannot Do</h2>
-        <div class="table-container">
-          <table class="booktabs">
-            <thead>
-              <tr>
-                <th style="width: 25%;">Boundary Condition</th>
-                <th style="width: 50%;">Operational Constraint &amp; Mathematical Cause</th>
-                <th style="width: 25%;">Empirical Evidence Link</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Assumed Physics &amp; BCs</strong></td>
-                <td>The standard twin assumes homogeneous Dirichlet boundaries u = 0 and fundamental harmonic initial state sin(πx). Under unannounced boundary offsets or sources, the goodness-of-fit gate correctly flags invalidity, but parameter estimates degrade without declared physics.</td>
-                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 4 &amp; 5 (S4–S6, D4)</a></td>
-              </tr>
-              <tr>
-                <td><strong>Reference Run Requirement (k ≥ 20)</strong></td>
-                <td>The reference run must be healthy. Calibration of noise estimate &sigma;&#770; and GLR baseline calibration fail statistically below 20 readings. Corrupted or &lt;20 reading baseline runs cause high false alarm rates and are strictly refused.</td>
-                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 3 &amp; Limits (e)</a></td>
-              </tr>
-              <tr>
-                <td><strong>Small Heat Spread Shifts (e.g. 30%)</strong></td>
-                <td>Small shifts in heat spread (e.g. 30%) are usually misread as a mid-test change (19/20 in our demo test). Spatial cooling rate shifts mimic temporal jumps under GLR without extensive multi-sensor arrays.</td>
-                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 3 &amp; Limits (a)</a></td>
-              </tr>
-              <tr>
-                <td><strong>Weak Sensor Offsets (~3σ)</strong></td>
-                <td>Weak offsets (about 3 sigma) are found about 35% of the time; roughly 60% of runs remain hidden below the Gaussian noise floor and register as healthy.</td>
-                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 3 &amp; Limits (b)</a></td>
-              </tr>
-              <tr>
-                <td><strong>Change Time Grid Window (5–70 s)</strong></td>
-                <td>Change times are located only on a 5 s grid between 5 s and 70 s of a 100 s test, and changes outside that window cannot be located. Grid alignment explains discrete demo detection.</td>
-                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 3 &amp; Limits (c)</a></td>
-              </tr>
-              <tr>
-                <td><strong>Sensor Fault Model Scope</strong></td>
-                <td>Fault model = one or two corrupted readings, not a stuck sensor over time. The detector uses leave-one-out BIC scoring for isolated point anomalies rather than persistent multi-step drift.</td>
-                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 3 &amp; Limits (d)</a></td>
-              </tr>
-              <tr>
-                <td><strong>Diffusivity Range Limits</strong></td>
-                <td>The FNO neural surrogate is verified only for α ∈ [0.01, 1.0]. Outside this range, the Range Guard routes queries to Mode 3+ or the numerical solver; severe extrapolation errors occur if FNO is forced.</td>
-                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 1 &amp; 5 (S12, D3)</a></td>
-              </tr>
-              <tr>
-                <td><strong>Correlated &amp; Heavy-Tailed Noise</strong></td>
-                <td>Wald confidence intervals assume independent Gaussian perturbations. Strongly correlated AR(1) noise and Cauchy heavy-tailed noise invalidate the Fisher information matrix and breach the 80% coverage threshold.</td>
-                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 4 (S2, S3)</a></td>
-              </tr>
-              <tr>
-                <td><strong>Slow Thermal Baseline Drift</strong></td>
-                <td>Uncompensated sensor calibration drift over time masquerades as anomalous physical diffusion or triggers false alarms in the GLR cascade unless periodically recalibrated against fresh baseline runs.</td>
-                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 4 (S13)</a></td>
-              </tr>
-              <tr>
-                <td><strong>Poisson High-Mode Operator Failure</strong></td>
-                <td>The Fourier Neural Operator fails on 2D Poisson source terms with harmonic wavenumbers m, n &gt; 4, exhibiting 80.4% median relative error. Only the classical sparse direct solver or linear baseline should be deployed for high-frequency loading.</td>
-                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 6 (High Modes)</a></td>
-              </tr>
-              <tr>
-                <td><strong>Simulation vs Hardware Domain Gap</strong></td>
-                <td>All validation datasets, noise models, and sensor faults are synthesized via numerical solutions. No hardware test bench with physical thermocouples or real materials has been evaluated.</td>
-                <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 7 (Meta)</a></td>
-              </tr>
-            </tbody>
-          </table>
+      <details class="technical-details" style="margin-top: 1rem;">
+        <summary class="technical-details-summary">Show technical boundary table</summary>
+        <div class="technical-details-body" style="padding-top: 0.5rem;">
+          <div class="card" style="box-shadow: none; border: 1px solid var(--rule-hairline);">
+            <h2 class="card-title" style="margin-top: 0;">What the Digital Twin Cannot Do</h2>
+            <div class="table-container">
+              <table class="booktabs">
+                <thead>
+                  <tr>
+                    <th style="width: 25%;">Boundary Condition</th>
+                    <th style="width: 50%;">Operational Constraint &amp; Mathematical Cause</th>
+                    <th style="width: 25%;">Empirical Evidence Link</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Assumed Physics &amp; BCs</strong></td>
+                    <td>The standard twin assumes homogeneous Dirichlet boundaries u = 0 and fundamental harmonic initial state sin(πx). Under unannounced boundary offsets or sources, the goodness-of-fit gate correctly flags invalidity, but parameter estimates degrade without declared physics.</td>
+                    <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 4 &amp; 5 (S4–S6, D4)</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Reference Run Requirement (k ≥ 20)</strong></td>
+                    <td>The reference run must be healthy. Calibration of noise estimate &sigma;&#770; and GLR baseline calibration fail statistically below 20 readings. Corrupted or &lt;20 reading baseline runs cause high false alarm rates and are strictly refused.</td>
+                    <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 3 &amp; Limits (e)</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Small Heat Spread Shifts (e.g. 30%)</strong></td>
+                    <td>Small shifts in heat spread (e.g. 30%) are usually misread as a mid-test change (19/20 in our demo test). Spatial cooling rate shifts mimic temporal jumps under GLR without extensive multi-sensor arrays.</td>
+                    <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 3 &amp; Limits (a)</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Weak Sensor Offsets (~3σ)</strong></td>
+                    <td>Weak offsets (about 3 sigma) are found about 35% of the time; roughly 60% of runs remain hidden below the Gaussian noise floor and register as healthy.</td>
+                    <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 3 &amp; Limits (b)</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Change Time Grid Window (5–70 s)</strong></td>
+                    <td>Change times are located only on a 5 s grid between 5 s and 70 s of a 100 s test, and changes outside that window cannot be located. Grid alignment explains discrete demo detection.</td>
+                    <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 3 &amp; Limits (c)</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Sensor Fault Model Scope</strong></td>
+                    <td>Fault model = one or two corrupted readings, not a stuck sensor over time. The detector uses leave-one-out BIC scoring for isolated point anomalies rather than persistent multi-step drift.</td>
+                    <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 3 &amp; Limits (d)</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Diffusivity Range Limits</strong></td>
+                    <td>The FNO neural surrogate is verified only for α ∈ [0.01, 1.0]. Outside this range, the Range Guard routes queries to Mode 3+ or the numerical solver; severe extrapolation errors occur if FNO is forced.</td>
+                    <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 1 &amp; 5 (S12, D3)</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Correlated &amp; Heavy-Tailed Noise</strong></td>
+                    <td>Wald confidence intervals assume independent Gaussian perturbations. Strongly correlated AR(1) noise and Cauchy heavy-tailed noise invalidate the Fisher information matrix and breach the 80% coverage threshold.</td>
+                    <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 4 (S2, S3)</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Slow Thermal Baseline Drift</strong></td>
+                    <td>Uncompensated sensor calibration drift over time masquerades as anomalous physical diffusion or triggers false alarms in the GLR cascade unless periodically recalibrated against fresh baseline runs.</td>
+                    <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 4 (S13)</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Poisson High-Mode Operator Failure</strong></td>
+                    <td>The Fourier Neural Operator fails on 2D Poisson source terms with harmonic wavenumbers m, n &gt; 4, exhibiting 80.4% median relative error. Only the classical sparse direct solver or linear baseline should be deployed for high-frequency loading.</td>
+                    <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 6 (High Modes)</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Simulation vs Hardware Domain Gap</strong></td>
+                    <td>All validation datasets, noise models, and sensor faults are synthesized via numerical solutions. No hardware test bench with physical thermocouples or real materials has been evaluated.</td>
+                    <td><a href="#evidence" style="color: var(--primary-navy); font-weight: 600;">Evidence Section 7 (Meta)</a></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      </details>
     </section>
 
   </main>
@@ -2270,6 +2293,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=thermalens-v26"></script>
+  <script src="app.js?v=thermalens-v27"></script>
 </body>
 </html>

@@ -113,6 +113,29 @@ function initTheme() {
   applyTheme(STATE.theme);
 }
 
+function initMobileNav() {
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const navBar = document.getElementById('app-nav-bar');
+  if (menuBtn && navBar) {
+    menuBtn.addEventListener('click', () => {
+      const isOpen = navBar.classList.toggle('mobile-menu-open');
+      menuBtn.textContent = isOpen ? 'Menu ✕' : 'Menu ☰';
+      menuBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+
+    // Close menu when a link is clicked
+    navBar.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        if (navBar.classList.contains('mobile-menu-open')) {
+          navBar.classList.remove('mobile-menu-open');
+          menuBtn.textContent = 'Menu ☰';
+          menuBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    });
+  }
+}
+
 function handleRoute() {
   const rawHash = window.location.hash.replace('#', '').trim();
   const validRoutes = ['overview', 'estimate', 'diagnose', 'placement', 'field', 'poisson', 'evidence', 'limits'];
@@ -5087,6 +5110,7 @@ function downloadJson(obj, filename = 'result.json') {
 
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  initMobileNav();
   checkServiceHealth();
   setInterval(checkServiceHealth, 15000); // 15-second heartbeat
   loadVersionMetadata();

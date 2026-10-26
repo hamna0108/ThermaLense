@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ThermaLens — Thermal PDE Inference &amp; Diagnostics Instrument</title>
   <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
-  <link rel="stylesheet" href="style.css?v=thermalens-v20">
+  <link rel="stylesheet" href="style.css?v=thermalens-v22">
 </head>
 <body>
 
@@ -24,21 +24,45 @@
         <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle light and dark color theme">
           <span id="theme-toggle-text">Dark Theme</span>
         </button>
+        <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Toggle navigation menu" aria-expanded="false">
+          Menu ☰
+        </button>
       </div>
     </div>
   </header>
 
   <!-- Navigation Bar (Hash Routing) -->
-  <nav class="nav-bar" aria-label="Workbench navigation">
-    <div class="nav-inner">
-      <a href="#overview" class="nav-link active" id="nav-overview">Overview</a>
-      <a href="#estimate" class="nav-link" id="nav-estimate">Estimate</a>
-      <a href="#diagnose" class="nav-link" id="nav-diagnose">Diagnose</a>
-      <a href="#placement" class="nav-link" id="nav-placement">Place Sensors</a>
-      <a href="#field" class="nav-link" id="nav-field">Field (Forward)</a>
-      <a href="#poisson" class="nav-link" id="nav-poisson">Stage 2 Poisson</a>
-      <a href="#evidence" class="nav-link" id="nav-evidence">Evidence</a>
-      <a href="#limits" class="nav-link" id="nav-limits">Limits</a>
+  <nav class="nav-bar" id="app-nav-bar" aria-label="Workbench navigation">
+    <div class="nav-inner" id="nav-inner">
+      <div class="nav-standalone">
+        <a href="#overview" class="nav-link active" id="nav-overview">Overview</a>
+      </div>
+
+      <div class="nav-group" id="nav-group-predict">
+        <div class="nav-group-header">
+          <span class="nav-group-label" id="nav-label-predict">Predict</span>
+        </div>
+        <div class="nav-group-links">
+          <a href="#field" class="nav-link" id="nav-field">Field</a>
+          <a href="#poisson" class="nav-link" id="nav-poisson">Poisson</a>
+        </div>
+      </div>
+
+      <div class="nav-group" id="nav-group-investigate">
+        <div class="nav-group-header">
+          <span class="nav-group-label" id="nav-label-investigate">Investigate</span>
+        </div>
+        <div class="nav-group-links">
+          <a href="#placement" class="nav-link" id="nav-placement">Place Sensors</a>
+          <a href="#estimate" class="nav-link" id="nav-estimate">Estimate</a>
+          <a href="#diagnose" class="nav-link" id="nav-diagnose">Diagnose</a>
+        </div>
+      </div>
+
+      <div class="nav-standalone nav-standalone-trailing">
+        <a href="#evidence" class="nav-link" id="nav-evidence">Evidence</a>
+        <a href="#limits" class="nav-link" id="nav-limits">Limits</a>
+      </div>
     </div>
   </nav>
 
@@ -304,6 +328,7 @@
     <section id="view-estimate" class="page-view" aria-labelledby="heading-estimate">
       <div class="page-intro">
         <h1 id="heading-estimate">How fast does heat spread in my material?</h1>
+        <p class="page-subtitle" id="estimate-page-subtitle">Investigate: start from measurements and work backwards.</p>
         <p class="page-desc">Enter your sensor readings and get the material's thermal diffusivity, with a range you can trust.</p>
       </div>
 
@@ -693,6 +718,7 @@
     <section id="view-diagnose" class="page-view" aria-labelledby="heading-diagnose">
       <div class="page-intro">
         <h1 id="heading-diagnose">Is my test behaving normally?</h1>
+        <p class="page-subtitle" id="diagnose-page-subtitle">Investigate: start from measurements and work backwards.</p>
         <p class="page-desc">Compare your sensor readings against a normal reference run to check if the test is behaving as expected, or if a sensor is faulty.</p>
       </div>
 
@@ -1067,6 +1093,7 @@
     <section id="view-placement" class="page-view" aria-labelledby="heading-placement">
       <div class="page-intro">
         <h1 id="heading-placement">Plan Sensor Readings</h1>
+        <p class="page-subtitle" id="placement-page-subtitle">Investigate: start from measurements and work backwards.</p>
         <p class="page-desc">Find the optimal times and position to measure temperature so your heat spread estimate is as accurate as possible.</p>
       </div>
 
@@ -1260,6 +1287,7 @@
     <section id="view-field" class="page-view" aria-labelledby="heading-field">
       <div class="page-intro">
         <h1 id="heading-field">Heat Diffusion Field Simulation u(x, t)</h1>
+        <p class="page-subtitle" id="field-page-subtitle">Predict: if we know the material or source, what will the temperature be?</p>
         <p class="page-desc">High-resolution 2D spatio-temporal forward solution of the heat equation ∂u/∂t = α ∂²u/∂x². Compare classical Crank-Nicolson numerical solves against Fourier Neural Operator (FNO) inference.</p>
       </div>
 
@@ -1390,6 +1418,7 @@
     <section id="view-poisson" class="page-view" aria-labelledby="heading-poisson">
       <div class="page-intro">
         <h1 id="heading-poisson">Stage 2 2D Poisson Operator Workbench</h1>
+        <p class="page-subtitle" id="poisson-page-subtitle">Predict: if we know the material or source, what will the temperature be?</p>
         <p class="page-desc">Solve −∇²u = f(x, y) on [0, 1]² with homogeneous Dirichlet boundaries. Benchmark exact sparse LU against FNO and Linear ridge baseline.</p>
       </div>
 
@@ -2190,6 +2219,6 @@
     </div>
   </footer>
 
-  <script src="app.js?v=thermalens-v20"></script>
+  <script src="app.js?v=thermalens-v22"></script>
 </body>
 </html>

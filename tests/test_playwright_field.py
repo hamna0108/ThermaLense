@@ -24,6 +24,7 @@ import socket
 import shutil
 import subprocess
 import pytest
+import re
 from playwright.sync_api import sync_playwright
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -137,7 +138,7 @@ def test_field_smoke_steel_copper_and_wood(live_server):
         page.click("#field-submit-btn")
         page.wait_for_selector("#field-result-panel", state="visible", timeout=10000)
 
-        # Verify summary strip
+        # Verify summary strip and API match for Steel
         method_badge = page.locator("#field-method-badge").inner_text()
         assert "Compare both" in method_badge or "Standard calculation" in method_badge
         diff_text = page.locator("#field-rel-diff-val").inner_text()
@@ -145,10 +146,28 @@ def test_field_smoke_steel_copper_and_wood(live_server):
         timing_text = page.locator("#field-timing-text").inner_text()
         assert "ms" in timing_text
 
+        # Verify on-screen relative difference matches /v1/field API directly
+        api_steel = page.evaluate("""async () => {
+            const res = await fetch('/v1/field', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    alpha: 1.3e-5, bar_length_m: 0.1, test_duration_s: 100,
+                    boundary_temperature: 20, initial_peak_temperature: 80,
+                    Nx: 101, Nt: 201, method: 'compare'
+                })
+            });
+            return await res.json();
+        }""")
+        expected_steel_diff = f"{api_steel['relative_difference'] * 100:.4f}%"
+        assert diff_text == expected_steel_diff, f"On-screen difference {diff_text} must match API {expected_steel_diff}"
+
         # Verify 3 New Visuals Present
         # Visual C: Bar strip
         assert page.locator("#field-bar-strip-box").is_visible()
         assert page.locator("#field-bar-strip-canvas").is_visible()
+        assert page.locator("#field-strip-points").is_visible()
+        assert page.locator("#field-moment-table").is_visible()
 
         # Visual A: Temperature along the bar (5 curves + slider moment + exact)
         assert page.locator("#field-curves-title").is_visible()
@@ -163,15 +182,88 @@ def test_field_smoke_steel_copper_and_wood(live_server):
         assert spot_svg.is_visible()
         assert spot_svg.locator("path").count() >= 2  # computed + exact
 
-        # Collapsed heatmap section
+        # 4. Check values at t = 20 s for Steel
+        # Middle temperature must be within 0.5 °C of exact formula value (~66.42 °C)
+        pt0_text = page.locator("#field-pt-0").inner_text()
+        pt4_text = page.locator("#field-pt-4").inner_text()
+        pt2_text = page.locator("#field-pt-2").inner_text()
+        assert "20.0" in pt0_text and "C" in pt0_text, f"Left end at 20 s should be 20.0 °C, got {pt0_text}"
+        assert "20.0" in pt4_text and "C" in pt4_text, f"Right end at 20 s should be 20.0 °C, got {pt4_text}"
+        m_t20 = re.search(r"([\d\.]+)\s*(?:°C|C|&deg;C)", pt2_text)
+        assert m_t20 is not None
+        mid_temp_20 = float(m_t20.group(1))
+        assert abs(mid_temp_20 - 66.42) <= 0.5, f"Middle temp at 20 s ({mid_temp_20}) must be within 0.5 C of 66.42 C"
+
+        # Check table at t=20 s
+        table_rows_20 = page.locator("#field-moment-table-body tr")
+        assert table_rows_20.count() == 5
+        assert "20.00" in table_rows_20.nth(0).inner_text()
+        assert "66.4" in table_rows_20.nth(2).inner_text()
+
+        # 5. STRIP PIXEL CHECK on #field-bar-strip-canvas at 20 s
+        strip_pixels = page.evaluate("""() => {
+            const canvas = document.getElementById('field-bar-strip-canvas');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            const p_end = Array.from(ctx.getImageData(4, Math.floor(h / 2), 1, 1).data);
+            const p_mid = Array.from(ctx.getImageData(Math.floor(w / 2), Math.floor(h / 2), 1, 1).data);
+            return { p_end, p_mid };
+        }""")
+        strip_end = strip_pixels["p_end"]
+        strip_mid = strip_pixels["p_mid"]
+        assert strip_mid[0] > 180, f"Strip middle pixel should be hot/warm red (R > 180), got {strip_mid}"
+        assert strip_end[0] < 80, f"Strip end pixel should be cold blue (R < 80), got {strip_end}"
+        assert abs(strip_mid[0] - strip_end[0]) > 100, f"Strip middle ({strip_mid[0]}) must differ clearly from end ({strip_end[0]})"
+
+        # 6. Check strip & table values at t = 0
+        page.fill("#field-time-slider", "0")
+        page.dispatch_event("#field-time-slider", "input")
+        page.wait_for_timeout(150)
+
+        pt0_t0 = page.locator("#field-pt-0").inner_text()
+        pt4_t0 = page.locator("#field-pt-4").inner_text()
+        pt2_t0 = page.locator("#field-pt-2").inner_text()
+        assert "20.0" in pt0_t0 and "C" in pt0_t0, f"Left end at t=0 should be 20.0 °C, got {pt0_t0}"
+        assert "20.0" in pt4_t0 and "C" in pt4_t0, f"Right end at t=0 should be 20.0 °C, got {pt4_t0}"
+        assert "80.0" in pt2_t0 and "C" in pt2_t0, f"Middle at t=0 should be 80.0 °C, got {pt2_t0}"
+
+        table_rows_0 = page.locator("#field-moment-table-body tr")
+        assert "20.00" in table_rows_0.nth(0).inner_text()
+        assert "80.00" in table_rows_0.nth(2).inner_text()
+
+        # Restore slider to 40 (20 s)
+        page.fill("#field-time-slider", "40")
+        page.dispatch_event("#field-time-slider", "input")
+        page.wait_for_timeout(100)
+
+        # 7. HOVER TOOLTIPS CHECK
+        # Hover over strip canvas
+        page.hover("#field-bar-strip-canvas", position={"x": 250, "y": 14})
+        page.wait_for_timeout(100)
+        tooltip = page.locator("#field-hover-tooltip")
+        assert tooltip.is_visible()
+        tip_text = tooltip.inner_text()
+        assert " m: " in tip_text and " °C" in tip_text
+
+        # Hover over profile SVG
+        page.hover("#field-profile-svg", position={"x": 270, "y": 100})
+        page.wait_for_timeout(100)
+        tip_profile = tooltip.inner_text()
+        assert " m: " in tip_profile and " °C" in tip_profile
+
+        # Hover over spot SVG
+        page.hover("#field-spot-svg", position={"x": 270, "y": 100})
+        page.wait_for_timeout(100)
+        tip_spot = tooltip.inner_text()
+        assert " m: " in tip_spot and " °C" in tip_spot
+
+        # 8. Collapsed heatmap pixel check
         heatmap_details = page.locator("#field-heatmap-disclosure")
         assert heatmap_details.count() > 0
-
-        # Open collapsed heatmap to inspect pixels
         page.evaluate("() => document.getElementById('field-heatmap-disclosure').open = true")
         page.wait_for_timeout(200)
 
-        # 4. PIXEL CHECK on #field-canvas
         pixels = page.evaluate("""() => {
             const canvas = document.getElementById('field-canvas');
             const ctx = canvas.getContext('2d');
@@ -182,38 +274,46 @@ def test_field_smoke_steel_copper_and_wood(live_server):
             const pLast_mid = Array.from(ctx.getImageData(Math.floor(w / 2), h - 5, 1, 1).data);
             return { p0_end, p0_mid, pLast_mid };
         }""")
-
         p0_end = pixels["p0_end"]
         p0_mid = pixels["p0_mid"]
         pLast_mid = pixels["pLast_mid"]
+        assert p0_mid[0] > 180, f"Heatmap middle of t=0 row must be hot (R > 180), got {p0_mid}"
+        assert p0_end[0] < 80, f"Heatmap bar end at t=0 row must be cold (R < 80), got {p0_end}"
+        assert abs(p0_mid[0] - p0_end[0]) > 100, f"Middle diff from end must exceed 100"
+        assert abs(p0_mid[0] - pLast_mid[0]) > 40, f"Middle diff from t=last must exceed 40"
 
-        # Middle at t=0 must be hot (bright, high red/green): not solid black!
-        assert p0_mid[0] > 180, f"Middle of t=0 row must be hot (R > 180), got {p0_mid}"
-        # End at t=0 must be cold (dark):
-        assert p0_end[0] < 80, f"Bar end at t=0 row must be cold (R < 80), got {p0_end}"
-        # Middle of t=0 row must differ clearly from bar end at same row:
-        diff_end = abs(p0_mid[0] - p0_end[0])
-        assert diff_end > 100, f"Middle at t=0 ({p0_mid[0]}) must differ clearly from end ({p0_end[0]}), diff={diff_end}"
-        # Middle of t=0 row must differ clearly from last row's middle:
-        diff_last = abs(p0_mid[0] - pLast_mid[0])
-        assert diff_last > 40, f"Middle at t=0 ({p0_mid[0]}) must differ clearly from t=last ({pLast_mid[0]}), diff={diff_last}"
-
-        # 5. Spot slider interaction
+        # 9. Spot slider interaction
         page.fill("#field-spot-slider", "25")
         page.dispatch_event("#field-spot-slider", "input")
         page.wait_for_timeout(100)
         assert "0.025 m" in page.locator("#field-spot-val").inner_text()
 
-        # 6. Save desktop screenshot
+        # 10. Save desktop screenshot
         save_screenshot(page, "field_1440px.png")
 
-        # 7. Test Copper preset
+        # 11. Test Copper preset & verify on-screen difference equals Copper API
         page.select_option("#field-material-select", value="copper")
         page.click("#field-submit-btn")
         page.wait_for_selector("#field-result-panel", state="visible", timeout=10000)
         page.wait_for_timeout(200)
 
-        # 8. Test Wood preset
+        copper_diff_text = page.locator("#field-rel-diff-val").inner_text()
+        api_copper = page.evaluate("""async () => {
+            const res = await fetch('/v1/field', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    alpha: 1.11e-4, bar_length_m: 0.1, test_duration_s: 100,
+                    boundary_temperature: 20, initial_peak_temperature: 80,
+                    Nx: 101, Nt: 201, method: 'compare'
+                })
+            });
+            return await res.json();
+        }""")
+        expected_copper_diff = f"{api_copper['relative_difference'] * 100:.4f}%"
+        assert copper_diff_text == expected_copper_diff, f"Copper on-screen {copper_diff_text} must match API {expected_copper_diff}"
+
+        # 12. Test Wood preset
         page.select_option("#field-material-select", value="wood")
         page.click("#field-submit-btn")
         page.wait_for_selector("#field-result-panel", state="visible", timeout=10000)

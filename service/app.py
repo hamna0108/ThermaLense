@@ -1058,10 +1058,10 @@ def post_field(req: FieldRequest):
     method_req = (req.method or "auto").lower()
 
     # Physical parameters normalisation
-    is_physical = req.bar_length_m is not None and req.test_duration_s is not None
+    is_physical = (req.bar_length_m is not None and req.test_duration_s is not None) or (req.boundary_temperature is not None and req.initial_peak_temperature is not None)
     if is_physical:
-        L = float(req.bar_length_m)
-        T = float(req.test_duration_s)
+        L = float(req.bar_length_m if req.bar_length_m is not None else 0.1)
+        T = float(req.test_duration_s if req.test_duration_s is not None else 100.0)
         T_edge = float(req.boundary_temperature if req.boundary_temperature is not None else 20.0)
         T_peak = float(req.initial_peak_temperature if req.initial_peak_temperature is not None else 80.0)
         if T_edge == T_peak:
@@ -1141,6 +1141,8 @@ def post_field(req: FieldRequest):
         u_solver_real = to_real_units(u_solver)
         u_fno_real = to_real_units(u_fno)
 
+        ret_units = "C" if is_physical else "normalized"
+
         return FieldResponse(
             u_grid=[[round(float(v), 5) for v in row] for row in u_solver_real],
             x_grid=x_grid,
@@ -1155,12 +1157,15 @@ def post_field(req: FieldRequest):
             bar_length_m=L if is_physical else None,
             test_duration_s=T if is_physical else None,
             boundary_temperature=T_edge if is_physical else None,
-            initial_peak_temperature=T_peak if is_physical else None
+            initial_peak_temperature=T_peak if is_physical else None,
+            units=ret_units,
+            temperature_units=ret_units
         )
     elif method_req in ["solver", "numerical_solver"]:
         u_solver = run_solver()
         total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
         u_solver_real = to_real_units(u_solver)
+        ret_units = "C" if is_physical else "normalized"
         return FieldResponse(
             u_grid=[[round(float(v), 5) for v in row] for row in u_solver_real],
             x_grid=x_grid,
@@ -1172,9 +1177,12 @@ def post_field(req: FieldRequest):
             bar_length_m=L if is_physical else None,
             test_duration_s=T if is_physical else None,
             boundary_temperature=T_edge if is_physical else None,
-            initial_peak_temperature=T_peak if is_physical else None
+            initial_peak_temperature=T_peak if is_physical else None,
+            units=ret_units,
+            temperature_units=ret_units
         )
     elif method_req == "fno":
+        ret_units = "C" if is_physical else "normalized"
         if can_use_fno or ("fno_heat" in APP_STATE and Nx == 101 and Nt == 201):
             u_fno = run_fno()
             total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
@@ -1190,7 +1198,9 @@ def post_field(req: FieldRequest):
                 bar_length_m=L if is_physical else None,
                 test_duration_s=T if is_physical else None,
                 boundary_temperature=T_edge if is_physical else None,
-                initial_peak_temperature=T_peak if is_physical else None
+                initial_peak_temperature=T_peak if is_physical else None,
+                units=ret_units,
+                temperature_units=ret_units
             )
         else:
             u_solver = run_solver()
@@ -1207,9 +1217,12 @@ def post_field(req: FieldRequest):
                 bar_length_m=L if is_physical else None,
                 test_duration_s=T if is_physical else None,
                 boundary_temperature=T_edge if is_physical else None,
-                initial_peak_temperature=T_peak if is_physical else None
+                initial_peak_temperature=T_peak if is_physical else None,
+                units=ret_units,
+                temperature_units=ret_units
             )
     else:  # auto
+        ret_units = "C" if is_physical else "normalized"
         if can_use_fno:
             u_fno = run_fno()
             total_ms = round((time.perf_counter() - t0) * 1000.0, 2)
@@ -1225,7 +1238,9 @@ def post_field(req: FieldRequest):
                 bar_length_m=L if is_physical else None,
                 test_duration_s=T if is_physical else None,
                 boundary_temperature=T_edge if is_physical else None,
-                initial_peak_temperature=T_peak if is_physical else None
+                initial_peak_temperature=T_peak if is_physical else None,
+                units=ret_units,
+                temperature_units=ret_units
             )
         else:
             u_solver = run_solver()
@@ -1242,7 +1257,9 @@ def post_field(req: FieldRequest):
                 bar_length_m=L if is_physical else None,
                 test_duration_s=T if is_physical else None,
                 boundary_temperature=T_edge if is_physical else None,
-                initial_peak_temperature=T_peak if is_physical else None
+                initial_peak_temperature=T_peak if is_physical else None,
+                units=ret_units,
+                temperature_units=ret_units
             )
 
 @app.post("/v1/poisson", response_model=PoissonResponse)

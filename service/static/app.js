@@ -4531,8 +4531,28 @@ function initFieldWorkbench() {
       const spotRatio = parseInt(spotSlider.value) || 50;
       if (STATE.lastFieldResult) {
         renderFieldSpotOverTime(spotRatio);
+        const tIdx = parseInt(slider?.value || 40);
+        renderFieldBarStrip(tIdx);
       }
     });
+  }
+
+  const stripCanvas = document.getElementById('field-bar-strip-canvas');
+  if (stripCanvas) {
+    stripCanvas.addEventListener('mousemove', handleBarStripHover);
+    stripCanvas.addEventListener('mouseleave', hideFieldTooltip);
+  }
+
+  const profileSvg = document.getElementById('field-profile-svg');
+  if (profileSvg) {
+    profileSvg.addEventListener('mousemove', handleProfileSvgHover);
+    profileSvg.addEventListener('mouseleave', hideFieldTooltip);
+  }
+
+  const spotSvg = document.getElementById('field-spot-svg');
+  if (spotSvg) {
+    spotSvg.addEventListener('mousemove', handleSpotSvgHover);
+    spotSvg.addEventListener('mouseleave', hideFieldTooltip);
   }
 
   if (expDurInput) {
@@ -4711,6 +4731,34 @@ async function executeField(methodChoice) {
     });
 
     const data = await res.json();
+    if (!res.ok) {
+      stateContainer.innerHTML = `<div class="state-box error"><strong>Simulation Error:</strong> ${data.message || JSON.stringify(data.detail)}</div>`;
+      return;
+    }
+
+    // Ensure u_grid and compare_grid are in real °C if returned as normalized
+    const respUnits = data.units || data.temperature_units || 'C';
+    if (respUnits === 'normalized') {
+      const edge = tempEdge;
+      const span = tempPeak - tempEdge;
+      if (data.u_grid) {
+        for (let r = 0; r < data.u_grid.length; r++) {
+          for (let c = 0; c < data.u_grid[r].length; c++) {
+            data.u_grid[r][c] = edge + span * data.u_grid[r][c];
+          }
+        }
+      }
+      if (data.compare_grid) {
+        for (let r = 0; r < data.compare_grid.length; r++) {
+          for (let c = 0; c < data.compare_grid[r].length; c++) {
+            data.compare_grid[r][c] = edge + span * data.compare_grid[r][c];
+          }
+        }
+      }
+      data.units = 'C';
+      data.temperature_units = 'C';
+    }
+
     STATE.lastFieldResult = {
       request: payload,
       response: data,
@@ -4720,11 +4768,6 @@ async function executeField(methodChoice) {
       boundaryTemp: tempEdge,
       peakTemp: tempPeak
     };
-
-    if (!res.ok) {
-      stateContainer.innerHTML = `<div class="state-box error"><strong>Simulation Error:</strong> ${data.message || JSON.stringify(data.detail)}</div>`;
-      return;
-    }
 
     stateContainer.innerHTML = '';
     resultPanel.style.display = 'block';
@@ -4823,6 +4866,7 @@ function renderFieldBarStrip(tIdx) {
   const T = result.testDurationS ?? 100.0;
   const edgeT = result.boundaryTemp ?? 20.0;
   const peakT = result.peakTemp ?? 80.0;
+  const alpha = result.alpha ?? 1.3e-5;
   const tMin = Math.min(edgeT, peakT);
   const tMax = Math.max(edgeT, peakT);
   const span = (tMax - tMin) || 1.0;
@@ -4830,25 +4874,95 @@ function renderFieldBarStrip(tIdx) {
   const w = canvas.width;
   const h = canvas.height;
 
+  // 1. Render smooth gradient along the bar
   for (let px = 0; px < w; px++) {
     const xFrac = px / (w - 1);
     const xIdx = Math.min(Nx - 1, Math.floor(xFrac * Nx));
     const temp = uSlice[xIdx];
-    const normVal = (temp - tMin) / span;
+    const normVal = Math.max(0, Math.min(1, (temp - tMin) / span));
     ctx.fillStyle = getBarStripColor(normVal);
     ctx.fillRect(px, 0, 1, h);
   }
 
+  // 2. Draw thin marker for the selected spot if spot slider is set
+  const spotSlider = document.getElementById('field-spot-slider');
+  const spotRatio = parseInt(spotSlider ? spotSlider.value : '50') || 50;
+  const spotMarkerPx = Math.round((spotRatio / 100.0) * (w - 1));
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+  ctx.fillRect(Math.max(0, spotMarkerPx - 1), 0, 2, h);
+
   const tSeconds = ((safeTIdx / (Nt - 1)) * T).toFixed(1);
   const timeEl = document.getElementById('field-bar-strip-time');
-  const leftLabel = document.getElementById('field-strip-left-label');
-  const rightLabel = document.getElementById('field-strip-right-label');
-  const midTemp = document.getElementById('field-strip-mid-temp');
-
   if (timeEl) timeEl.textContent = `${tSeconds} s`;
-  if (leftLabel) leftLabel.textContent = `0.00 m (${uSlice[0].toFixed(1)} °C)`;
-  if (rightLabel) rightLabel.textContent = `${L.toFixed(2)} m (${uSlice[Nx - 1].toFixed(1)} °C)`;
-  if (midTemp) midTemp.textContent = `${uSlice[Math.floor(Nx / 2)].toFixed(1)} °C`;
+
+  // 3. Five labelled points above the strip (0, L/4, L/2, 3L/4, L in m)
+  const idx0 = 0;
+  const idx1 = Math.round(0.25 * (Nx - 1));
+  const idx2 = Math.round(0.50 * (Nx - 1));
+  const idx3 = Math.round(0.75 * (Nx - 1));
+  const idx4 = Nx - 1;
+
+  const p0El = document.getElementById('field-pt-0');
+  const p1El = document.getElementById('field-pt-1');
+  const p2El = document.getElementById('field-pt-2');
+  const p3El = document.getElementById('field-pt-3');
+  const p4El = document.getElementById('field-pt-4');
+
+  if (p0El) p0El.textContent = `0.00 m: ${uSlice[idx0].toFixed(1)} °C`;
+  if (p1El) p1El.textContent = `${(0.25 * L).toFixed(3)} m: ${uSlice[idx1].toFixed(1)} °C`;
+  if (p2El) p2El.textContent = `${(0.50 * L).toFixed(3)} m: ${uSlice[idx2].toFixed(1)} °C`;
+  if (p3El) p3El.textContent = `${(0.75 * L).toFixed(3)} m: ${uSlice[idx3].toFixed(1)} °C`;
+  if (p4El) p4El.textContent = `${L.toFixed(2)} m: ${uSlice[idx4].toFixed(1)} °C`;
+
+  // 4. Simple colour key labels and moment peak marker
+  const keyMin = document.getElementById('field-key-min');
+  const keyMax = document.getElementById('field-key-max');
+  const keyMarker = document.getElementById('field-key-marker');
+
+  if (keyMin) keyMin.textContent = `${tMin.toFixed(1)} °C`;
+  if (keyMax) keyMax.textContent = `${tMax.toFixed(1)} °C`;
+
+  const midTempC = uSlice[idx2];
+  const peakNorm = Math.max(0, Math.min(1, (midTempC - tMin) / span));
+  if (keyMarker) {
+    keyMarker.style.left = `${(peakNorm * 100).toFixed(1)}%`;
+    keyMarker.title = `Peak temperature along the bar at ${tSeconds} s: ${midTempC.toFixed(1)} °C`;
+  }
+
+  // 5. Small table: "Temperatures at this moment"
+  const tableMomentTime = document.getElementById('field-table-moment-time');
+  if (tableMomentTime) tableMomentTime.textContent = `${tSeconds} s`;
+
+  const tableBody = document.getElementById('field-moment-table-body');
+  if (tableBody) {
+    const realT = (safeTIdx / (Nt - 1)) * T;
+    const decay = Math.exp(-alpha * Math.PI * Math.PI * realT / (L * L));
+
+    const positions = [
+      { label: 'Left end (0)', frac: 0.0, idx: idx0 },
+      { label: 'Quarter (L/4)', frac: 0.25, idx: idx1 },
+      { label: 'Middle (L/2)', frac: 0.50, idx: idx2 },
+      { label: 'Three-quarters (3L/4)', frac: 0.75, idx: idx3 },
+      { label: 'Right end (L)', frac: 1.0, idx: idx4 }
+    ];
+
+    let rowsHtml = '';
+    positions.forEach(p => {
+      const posM = (p.frac * L).toFixed(3);
+      const simT = uSlice[p.idx].toFixed(2);
+      const exactT = (edgeT + (peakT - edgeT) * Math.sin(Math.PI * p.frac) * decay).toFixed(2);
+      const isMid = p.frac === 0.5;
+      rowsHtml += `
+        <tr style="${isMid ? 'background: rgba(30,58,95,0.06); font-weight: 600;' : ''}">
+          <td style="padding: 4px 8px; font-weight: 500;">${p.label}</td>
+          <td style="padding: 4px 8px; text-align: right;" class="mono">${posM} m</td>
+          <td style="padding: 4px 8px; text-align: right;" class="mono ${isMid ? 'font-bold' : ''}">${simT} &deg;C</td>
+          <td style="padding: 4px 8px; text-align: right; color: var(--text-muted);" class="mono">${exactT} &deg;C</td>
+        </tr>
+      `;
+    });
+    tableBody.innerHTML = rowsHtml;
+  }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -5083,6 +5197,9 @@ function renderFieldSpotOverTime(spotRatio) {
 // -------------------------------------------------------------------------------------------------
 // Collapsed Heatmap Renderer (with robust normalization bug fix)
 // -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+// Collapsed Heatmap Renderer (Real °C Color Mapping)
+// -------------------------------------------------------------------------------------------------
 function renderFieldHeatmap() {
   const result = STATE.lastFieldResult;
   if (!result || !result.response) return;
@@ -5094,29 +5211,10 @@ function renderFieldHeatmap() {
   const Nt = uGrid.length;
   const Nx = uGrid[0].length;
 
-  let edgeT = result.boundaryTemp;
-  let peakT = result.peakTemp;
-  if (edgeT === undefined || edgeT === null) {
-    edgeT = parseFloat(document.getElementById('field-temp-edge')?.value) ?? 20.0;
-  }
-  if (peakT === undefined || peakT === null) {
-    peakT = parseFloat(document.getElementById('field-temp-peak')?.value) ?? 80.0;
-  }
-
-  // Scan min and max to ensure robust normalization
-  let gridMin = uGrid[0][0];
-  let gridMax = uGrid[0][0];
-  for (let r = 0; r < Nt; r++) {
-    const row = uGrid[r];
-    for (let c = 0; c < Nx; c++) {
-      if (row[c] < gridMin) gridMin = row[c];
-      if (row[c] > gridMax) gridMax = row[c];
-    }
-  }
-
-  const isNormalized = (gridMax <= 1.05 && gridMin >= -0.05 && (Math.abs(peakT) > 1.5 || Math.abs(edgeT) > 1.5));
-  const tMin = isNormalized ? 0.0 : Math.min(edgeT, peakT);
-  const tMax = isNormalized ? 1.0 : Math.max(edgeT, peakT);
+  const edgeT = result.boundaryTemp ?? 20.0;
+  const peakT = result.peakTemp ?? 80.0;
+  const tMin = Math.min(edgeT, peakT);
+  const tMax = Math.max(edgeT, peakT);
   const span = (tMax - tMin) || 1.0;
 
   const w = canvas.width;
@@ -5129,7 +5227,7 @@ function renderFieldHeatmap() {
     for (let px = 0; px < w; px++) {
       const xIdx = Math.floor((px / w) * Nx);
       const val = row[Math.min(Nx - 1, xIdx)];
-      const normVal = Math.max(0, Math.min(1, isNormalized ? val : ((val - tMin) / span)));
+      const normVal = Math.max(0, Math.min(1, (val - tMin) / span));
       const colStr = getThermalColor(normVal);
       const m = colStr.match(/\d+/g);
       const idx = (py * w + px) * 4;
@@ -5141,6 +5239,110 @@ function renderFieldHeatmap() {
   }
 
   ctx.putImageData(imgData, 0, 0);
+}
+
+// -------------------------------------------------------------------------------------------------
+// Shared Hover Tooltips: "x m: T °C"
+// -------------------------------------------------------------------------------------------------
+function showFieldTooltip(e, text) {
+  const tip = document.getElementById('field-hover-tooltip');
+  if (!tip) return;
+  tip.textContent = text;
+  tip.style.display = 'block';
+  const tipW = tip.offsetWidth || 110;
+  const tipH = tip.offsetHeight || 26;
+  let left = e.clientX + 12;
+  let top = e.clientY - 10 - tipH;
+  if (left + tipW > window.innerWidth - 8) left = Math.max(8, e.clientX - tipW - 12);
+  if (top < 8) top = e.clientY + 14;
+  tip.style.left = `${left}px`;
+  tip.style.top = `${top}px`;
+}
+
+function hideFieldTooltip() {
+  const tip = document.getElementById('field-hover-tooltip');
+  if (tip) tip.style.display = 'none';
+}
+
+function handleBarStripHover(e) {
+  const result = STATE.lastFieldResult;
+  if (!result || !result.response) return;
+  const canvas = document.getElementById('field-bar-strip-canvas');
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  const L = result.barLengthM ?? 0.1;
+  const xM = frac * L;
+
+  const slider = document.getElementById('field-time-slider');
+  const tIdx = parseInt(slider ? slider.value : '40') || 40;
+  const uGrid = result.response.u_grid;
+  const safeTIdx = Math.min(uGrid.length - 1, Math.max(0, tIdx));
+  const uSlice = uGrid[safeTIdx];
+  const Nx = uSlice.length;
+  const xIdx = Math.min(Nx - 1, Math.round(frac * (Nx - 1)));
+  const tempC = uSlice[xIdx];
+
+  showFieldTooltip(e, `${xM.toFixed(3)} m: ${tempC.toFixed(1)} °C`);
+}
+
+function handleProfileSvgHover(e) {
+  const result = STATE.lastFieldResult;
+  if (!result || !result.response) return;
+  const svg = document.getElementById('field-profile-svg');
+  if (!svg) return;
+  const rect = svg.getBoundingClientRect();
+  const svgX = ((e.clientX - rect.left) / rect.width) * 540;
+  const padLeft = 60;
+  const plotW = 455;
+  if (svgX < padLeft || svgX > padLeft + plotW) {
+    hideFieldTooltip();
+    return;
+  }
+  const frac = (svgX - padLeft) / plotW;
+  const L = result.barLengthM ?? 0.1;
+  const xM = frac * L;
+
+  const slider = document.getElementById('field-time-slider');
+  const tIdx = parseInt(slider ? slider.value : '40') || 40;
+  const uGrid = result.response.u_grid;
+  const safeTIdx = Math.min(uGrid.length - 1, Math.max(0, tIdx));
+  const uSlice = uGrid[safeTIdx];
+  const Nx = uSlice.length;
+  const xIdx = Math.min(Nx - 1, Math.round(frac * (Nx - 1)));
+  const tempC = uSlice[xIdx];
+
+  showFieldTooltip(e, `${xM.toFixed(3)} m: ${tempC.toFixed(1)} °C`);
+}
+
+function handleSpotSvgHover(e) {
+  const result = STATE.lastFieldResult;
+  if (!result || !result.response) return;
+  const svg = document.getElementById('field-spot-svg');
+  if (!svg) return;
+  const rect = svg.getBoundingClientRect();
+  const svgX = ((e.clientX - rect.left) / rect.width) * 540;
+  const padLeft = 60;
+  const plotW = 455;
+  if (svgX < padLeft || svgX > padLeft + plotW) {
+    hideFieldTooltip();
+    return;
+  }
+  const tFrac = (svgX - padLeft) / plotW;
+  const L = result.barLengthM ?? 0.1;
+  const spotSlider = document.getElementById('field-spot-slider');
+  const spotRatio = parseInt(spotSlider ? spotSlider.value : '50') || 50;
+  const spotFrac = Math.max(0, Math.min(1, spotRatio / 100.0));
+  const xM = spotFrac * L;
+
+  const uGrid = result.response.u_grid;
+  const Nt = uGrid.length;
+  const Nx = uGrid[0].length;
+  const safeTIdx = Math.min(Nt - 1, Math.round(tFrac * (Nt - 1)));
+  const spotColIdx = Math.min(Nx - 1, Math.round(spotFrac * (Nx - 1)));
+  const tempC = uGrid[safeTIdx][spotColIdx];
+
+  showFieldTooltip(e, `${xM.toFixed(3)} m: ${tempC.toFixed(1)} °C`);
 }
 
 function handleFieldCanvasHover(e) {
@@ -5173,6 +5375,7 @@ function handleFieldCanvasHover(e) {
   if (readout) {
     readout.textContent = `Position: ${realX} m, Time: ${realT} s → ${uVal} °C`;
   }
+  showFieldTooltip(e, `${realX} m: ${uVal} °C`);
 }
 
 // -------------------------------------------------------------------------------------------------

@@ -345,6 +345,8 @@ class FieldResponse(BaseModel):
     test_duration_s: Optional[float] = None
     boundary_temperature: Optional[float] = None
     initial_peak_temperature: Optional[float] = None
+    units: Optional[str] = Field("C", description="Units of u_grid ('C' or 'normalized')")
+    temperature_units: Optional[str] = Field("C", description="Explicit temperature units ('C' or 'normalized')")
 
 class PoissonGaussianSource(BaseModel):
     type: str = "gaussian"

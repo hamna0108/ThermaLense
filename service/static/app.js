@@ -5504,36 +5504,242 @@ async function executePoisson() {
     document.getElementById('poi-time-fno').textContent = data.timing_ms.fno_ms.toFixed(3);
     document.getElementById('poi-time-total').textContent = data.timing_ms.total_ms.toFixed(2);
 
-    document.getElementById('poi-err-lin').textContent = data.relative_errors.rel_l2_linear_vs_exact.toFixed(6);
-    document.getElementById('poi-err-fno').textContent = data.relative_errors.rel_l2_fno_vs_exact.toFixed(6);
+    document.getElementById('poi-err-lin').textContent = formatPoissonPercent(data.relative_errors.rel_l2_linear_vs_exact);
+    document.getElementById('poi-err-fno').textContent = formatPoissonPercent(data.relative_errors.rel_l2_fno_vs_exact);
 
     // Status Badges
-    const fnoErr = data.relative_errors.rel_l2_fno_vs_exact;
-    const fnoBadge = document.getElementById('poi-badge-fno');
-    if (fnoErr > 0.50) {
-      fnoBadge.className = 'badge badge-danger';
-      fnoBadge.textContent = 'Degraded (>50%)';
-    } else {
-      fnoBadge.className = 'badge badge-info';
-      fnoBadge.textContent = 'Typical case';
+    const linBadge = document.getElementById('poi-badge-lin');
+    if (linBadge) {
+      linBadge.className = 'badge badge-info';
+      linBadge.textContent = 'Simple baseline';
     }
 
-    // Render Canvas Heatmaps
-    draw2DGridCanvas('poi-canvas-exact', data.exact_field, false);
-    draw2DGridCanvas('poi-canvas-fno', data.fno_field, false);
-    draw2DGridCanvas('poi-canvas-lin', data.linear_field, false);
+    const fnoBadge = document.getElementById('poi-badge-fno');
+    if (fnoBadge) {
+      if (data.high_frequency_source || (sourcePayload.modes && (sourcePayload.modes[0][0] > 4 || sourcePayload.modes[0][1] > 4))) {
+        fnoBadge.className = 'badge badge-danger';
+        fnoBadge.textContent = 'AI model: outside its trained range';
+      } else {
+        fnoBadge.className = 'badge badge-success';
+        fnoBadge.textContent = 'AI model: inside its trained range';
+      }
+    }
 
-    // Compute error fields and draw diverging maps
+    // Compute global min and max across all three solution fields
+    let globalMin = Infinity;
+    let globalMax = -Infinity;
+    const allFields = [data.exact_field, data.fno_field, data.linear_field];
+    allFields.forEach(field => {
+      for (let r = 0; r < field.length; r++) {
+        for (let c = 0; c < field[r].length; c++) {
+          const v = field[r][c];
+          if (v < globalMin) globalMin = v;
+          if (v > globalMax) globalMax = v;
+        }
+      }
+    });
+
+    const hasNegative = globalMin < -1e-4;
+    const scaleMax = hasNegative ? Math.max(Math.abs(globalMin), Math.abs(globalMax), 1e-6) : Math.max(globalMax, 1e-6);
+
+    // Update solution colour bar labels
+    const scaleMinEl = document.getElementById('poi-scale-min');
+    const scaleMidEl = document.getElementById('poi-scale-mid');
+    const scaleMaxEl = document.getElementById('poi-scale-max');
+
+    if (hasNegative) {
+      if (scaleMinEl) scaleMinEl.textContent = `${(-scaleMax).toFixed(3)} (cooler than edges)`;
+      if (scaleMidEl) scaleMidEl.textContent = `0.000 (edges)`;
+      if (scaleMaxEl) scaleMaxEl.textContent = `+${scaleMax.toFixed(3)} (warmer than edges)`;
+    } else {
+      if (scaleMinEl) scaleMinEl.textContent = `0.000 (edges)`;
+      if (scaleMidEl) scaleMidEl.textContent = `+${(scaleMax / 2).toFixed(3)}`;
+      if (scaleMaxEl) scaleMaxEl.textContent = `+${scaleMax.toFixed(3)} (warmer than edges)`;
+    }
+
+    renderPoissonColorbar('poi-solution-colorbar', hasNegative);
+
+    // Render Canvas Heatmaps with identical shared scale
+    drawPoissonGridCanvas('poi-canvas-exact', data.exact_field, scaleMax, hasNegative);
+    drawPoissonGridCanvas('poi-canvas-fno', data.fno_field, scaleMax, hasNegative);
+    drawPoissonGridCanvas('poi-canvas-lin', data.linear_field, scaleMax, hasNegative);
+
+    // Compute difference fields and draw difference maps
     const errFno = diff2DGrids(data.fno_field, data.exact_field);
     const errLin = diff2DGrids(data.linear_field, data.exact_field);
-    draw2DGridCanvas('poi-canvas-err-fno', errFno, true);
-    draw2DGridCanvas('poi-canvas-err-lin', errLin, true);
 
-    document.getElementById('poi-json-dump').textContent = JSON.stringify({ request: payload, response: data }, null, 2);
+    let maxDiff = 0.0001;
+    [errFno, errLin].forEach(errGrid => {
+      for (let r = 0; r < errGrid.length; r++) {
+        for (let c = 0; c < errGrid[r].length; c++) {
+          if (errGrid[r][c] > maxDiff) maxDiff = errGrid[r][c];
+        }
+      }
+    });
+
+    // Update difference colour bar labels
+    const diffMinEl = document.getElementById('poi-diff-scale-min');
+    const diffMaxEl = document.getElementById('poi-diff-scale-max');
+    if (diffMinEl) diffMinEl.textContent = `0.0000 (exact match)`;
+    if (diffMaxEl) diffMaxEl.textContent = `+${maxDiff.toFixed(4)} (max difference)`;
+
+    renderPoissonDiffColorbar('poi-diff-colorbar');
+
+    drawPoissonDiffCanvas('poi-canvas-err-fno', errFno, maxDiff);
+    drawPoissonDiffCanvas('poi-canvas-err-lin', errLin, maxDiff);
+
+    const jsonDump = document.getElementById('poi-json-dump');
+    if (jsonDump) {
+      jsonDump.textContent = JSON.stringify({ request: payload, response: data }, null, 2);
+    }
 
   } catch (err) {
     stateContainer.innerHTML = `<div class="state-box error"><strong>Poisson Execution Error:</strong> ${err.message}</div>`;
   }
+}
+
+function formatPoissonPercent(err) {
+  if (typeof err !== 'number' || isNaN(err)) return '-';
+  const pct = err * 100;
+  if (pct === 0) return '0.0%';
+  if (pct < 0.001) return pct.toExponential(1) + '%';
+  if (pct < 0.1) return pct.toFixed(2) + '%';
+  return pct.toFixed(1) + '%';
+}
+
+function getPoissonSolutionRgb(normVal, isDiverging) {
+  if (isDiverging) {
+    // normVal in [-1, 1], centered at 0 (plate edge level)
+    const clamped = Math.max(-1, Math.min(1, normVal));
+    if (clamped < 0) {
+      // Cooler than edges: blue
+      const s = -clamped; // 0 to 1
+      const r = Math.round(245 - s * 220); // 245 -> 25
+      const g = Math.round(245 - s * 155); // 245 -> 90
+      const b = Math.round(245 - s * 25);  // 245 -> 220
+      return [r, g, b];
+    } else {
+      // Warmer than edges: red
+      const s = clamped; // 0 to 1
+      const r = Math.round(245 - s * 25);  // 245 -> 220
+      const g = Math.round(245 - s * 210); // 245 -> 35
+      const b = Math.round(245 - s * 210); // 245 -> 35
+      return [r, g, b];
+    }
+  } else {
+    // normVal in [0, 1]
+    const s = Math.max(0, Math.min(1, normVal));
+    const r = Math.round(245 - s * 25);
+    const g = Math.round(245 - s * 210);
+    const b = Math.round(245 - s * 210);
+    return [r, g, b];
+  }
+}
+
+function getPoissonDiffRgb(normVal) {
+  // normVal in [0, 1]: 0 is match (light), 1 is largest difference (burgundy/crimson)
+  const s = Math.max(0, Math.min(1, normVal));
+  const r = Math.round(250 - s * 50);  // 250 -> 200
+  const g = Math.round(250 - s * 220); // 250 -> 30
+  const b = Math.round(250 - s * 190); // 250 -> 60
+  return [r, g, b];
+}
+
+function renderPoissonColorbar(canvasId, isDiverging) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width || 300;
+  const h = canvas.height || 12;
+  const imgData = ctx.createImageData(w, h);
+  for (let px = 0; px < w; px++) {
+    const t = isDiverging ? (-1 + 2 * (px / (w - 1))) : (px / (w - 1));
+    const [r, g, b] = getPoissonSolutionRgb(t, isDiverging);
+    for (let py = 0; py < h; py++) {
+      const idx = (py * w + px) * 4;
+      imgData.data[idx] = r;
+      imgData.data[idx + 1] = g;
+      imgData.data[idx + 2] = b;
+      imgData.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+function renderPoissonDiffColorbar(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width || 300;
+  const h = canvas.height || 10;
+  const imgData = ctx.createImageData(w, h);
+  for (let px = 0; px < w; px++) {
+    const u = px / (w - 1);
+    const [r, g, b] = getPoissonDiffRgb(u);
+    for (let py = 0; py < h; py++) {
+      const idx = (py * w + px) * 4;
+      imgData.data[idx] = r;
+      imgData.data[idx + 1] = g;
+      imgData.data[idx + 2] = b;
+      imgData.data[idx + 3] = 255;
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+function drawPoissonGridCanvas(canvasId, grid, scaleMax, isDiverging) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !grid) return;
+  const ctx = canvas.getContext('2d');
+  const N = grid.length;
+  const w = canvas.width;
+  const h = canvas.height;
+  const imgData = ctx.createImageData(w, h);
+
+  for (let py = 0; py < h; py++) {
+    // In Cartesian coords, bottom of canvas is y=0, top is y=1
+    const yIdx = Math.min(N - 1, Math.max(0, Math.floor(((h - 1 - py) / h) * N)));
+    for (let px = 0; px < w; px++) {
+      const xIdx = Math.min(N - 1, Math.max(0, Math.floor((px / w) * N)));
+      const val = grid[xIdx][yIdx];
+      const norm = scaleMax > 1e-12 ? (val / scaleMax) : 0;
+      const [r, g, b] = getPoissonSolutionRgb(norm, isDiverging);
+      const idx = (py * w + px) * 4;
+      imgData.data[idx] = r;
+      imgData.data[idx + 1] = g;
+      imgData.data[idx + 2] = b;
+      imgData.data[idx + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+}
+
+function drawPoissonDiffCanvas(canvasId, errGrid, maxDiff) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !errGrid) return;
+  const ctx = canvas.getContext('2d');
+  const N = errGrid.length;
+  const w = canvas.width;
+  const h = canvas.height;
+  const imgData = ctx.createImageData(w, h);
+
+  for (let py = 0; py < h; py++) {
+    const yIdx = Math.min(N - 1, Math.max(0, Math.floor(((h - 1 - py) / h) * N)));
+    for (let px = 0; px < w; px++) {
+      const xIdx = Math.min(N - 1, Math.max(0, Math.floor((px / w) * N)));
+      const val = errGrid[xIdx][yIdx];
+      const norm = maxDiff > 1e-12 ? (val / maxDiff) : 0;
+      const [r, g, b] = getPoissonDiffRgb(norm);
+      const idx = (py * w + px) * 4;
+      imgData.data[idx] = r;
+      imgData.data[idx + 1] = g;
+      imgData.data[idx + 2] = b;
+      imgData.data[idx + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
 }
 
 function diff2DGrids(gA, gB) {
@@ -5566,7 +5772,6 @@ function draw2DGridCanvas(canvasId, grid, isErrorMap = false) {
   }
 
   for (let py = 0; py < h; py++) {
-    // Note: grid is [x][y], row is x, col is y
     const xIdx = Math.min(N - 1, Math.floor((py / h) * N));
     for (let px = 0; px < w; px++) {
       const yIdx = Math.min(N - 1, Math.floor((px / w) * N));

@@ -2105,3 +2105,47 @@ tr[id*="alpha"] td {
   opacity: 0.8;
 }
 
+/* Poisson Plate Maps & Colorbar */
+.poi-map-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-surface-raised, #fbf8f1);
+  padding: 0.75rem 0.5rem;
+  border-radius: var(--radius-sm, 4px);
+  border: 1px solid var(--rule-hairline, #d9d3c6);
+}
+
+.poi-map-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.poi-axis-label-y {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.poi-axis-label-x {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin-top: 0.35rem;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.poi-map-card canvas {
+  border-radius: 2px;
+  border: 1px solid var(--rule-hairline, #d9d3c6);
+  image-rendering: pixelated;
+}
+

@@ -160,7 +160,9 @@ def test_playwright_diagnose_real_units_and_baseline_conversion(live_server):
         page.click("#diag-submit-btn")
         page.wait_for_selector("#diag-result-panel", state="visible")
         f_title = page.locator("#diag-traffic-title").text_content()
-        assert "One sensor looks faulty: Sensor 3. Possible causes: stuck, offset or wrong scale." in f_title
+        assert "Reading #3 looks faulty (position 0.03 m, time 4.6 s). Possible causes: stuck, offset or wrong scale." in f_title
+        assert page.locator("#diag-goto-estimate-without-fault-btn").text_content() == "Estimate without reading 3"
+        assert page.locator("#diag-detector-scope-note").text_content() == "The detector is built for one or two isolated bad readings, not a sensor that is wrong for the whole test."
 
         # Class C: Change-Point (jump around 35 s)
         page.select_option("#diag-scenario-select", "C")

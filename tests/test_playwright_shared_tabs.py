@@ -190,22 +190,22 @@ def test_full_handoff_flow_1440(live_server):
 
         # Verdict: Faulty sensor
         verdict_text = page.locator("#diag-traffic-title").inner_text()
-        assert "One sensor looks faulty: Sensor 3" in verdict_text
+        assert "Reading #3 looks faulty (position 0.03 m, time 4.6 s)" in verdict_text
 
-        # Verify "Estimate without sensor 3" button is visible
+        # Verify "Estimate without reading 3" button is visible
         fault_handoff_btn = page.locator("#diag-goto-estimate-without-fault-btn")
         page.wait_for_selector("#diag-goto-estimate-without-fault-btn", state="visible")
-        assert fault_handoff_btn.inner_text() == "Estimate without sensor 3"
+        assert fault_handoff_btn.inner_text() == "Estimate without reading 3"
 
         save_and_copy_screenshot(page, "handoff_1440_step3_diagnose_fault.png")
 
-        # Click "Estimate without sensor 3"
+        # Click "Estimate without reading 3"
         fault_handoff_btn.click()
         assert "#estimate" in page.url
 
         # Verify note is visible on Estimate tab
         page.wait_for_selector("#est-removed-sensor-note", state="visible")
-        assert "Sensor 3 was removed from these readings." in page.locator("#est-removed-sensor-text").inner_text()
+        assert "Reading #3 was removed from these readings." in page.locator("#est-removed-sensor-text").inner_text()
 
         # Verify reading row was removed (9 rows remain)
         assert page.locator("#est-table-tbody tr").count() == 9

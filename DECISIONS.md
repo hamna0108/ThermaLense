@@ -248,6 +248,29 @@ This document records the foundational architectural decisions made across the D
 
 ---
 
+### Decision 13: Operator Diagnosis Verdict Clarification, Detector Single-Reading Scope, and Operational Limits (thermalens-v17)
+- **Context & Operational Feedback:**
+  Operator feedback identified four areas of potential confusion in the Diagnosis and Operational Limits interfaces:
+  1. *Reading vs Sensor Confusion:* Flagging "Sensor 3" implied the physical instrument channel was defective for the entire duration of the test, whereas the mathematical detector uses a point leave-one-out model that identifies a single corrupted reading.
+  2. *Single-Reading Scope Clarity:* The detector was not clearly distinguished from a persistent stuck-sensor detector.
+  3. *Plain Language Operational Limits:* The Limits page lacked plain, direct statements of the empirical failure modes identified in stress testing and demo evaluations.
+  4. *Benchmark vs Demo Separation:* On the Evidence page, the 7 demo scenario outcomes (which include harder cases such as 30% shifts and 3σ offsets) were not positioned directly alongside the official 800-run Monte Carlo statistical benchmark.
+- **Updates Made (Text-Only; Zero Model, Threshold, or Frozen Weight Changes):**
+  1. *Verdict F Wording:* Replaced `One sensor looks faulty: Sensor 3` with `Reading #3 looks faulty (position 0.03 m, time 4.6 s)` while retaining the possible causes (`Possible causes: stuck, offset or wrong scale.`). The hand-off button is renamed from `Estimate without sensor 3` to `Estimate without reading 3`.
+  2. *Detector Scope Statement:* Added explicit scope line in the "Show details" disclosure: *"The detector is built for one or two isolated bad readings, not a sensor that is wrong for the whole test."*
+  3. *Limits Page Plain Additions:* Documented plainly:
+     - (a) Small shifts in heat spread (e.g. 30%) are usually misread as a mid-test change (19/20 in our demo test).
+     - (b) Weak offsets (about 3 sigma) are found about 35% of the time.
+     - (c) Change times are located only on a 5 s grid between 5 s and 70 s of a 100 s test, and changes outside that window cannot be located.
+     - (d) Fault model = one or two corrupted readings, not a stuck sensor over time.
+     - (e) Reference run must be healthy.
+  4. *Evidence Page Side-by-Side Presentation:* Positioned the 7-scenario demo table directly next to the Real Benchmark Table (800 Monte Carlo runs across N=10, σ=0.01) in a 2-column `.grid-2` layout, labeled prominently with the badge `demo cases, not benchmark accuracy`.
+  5. *Chart Anti-Collision Resolution:* Added curve grouping for symmetric positions (`x=0.03, 0.07m`) and vertical separation of labels (upper above line, lower below line), confirming 0 label collisions at 1440px and 390px viewports.
+- **Status:** **Text-only documentation, HTML, and UI polish; frozen models, thresholds, and benchmark tables unchanged.**
+- **Evidence File:** `service/static/app.js`, `service/static/index.html`, `tests/test_playwright_diagnose.py`, `tests/test_playwright_shared_tabs.py`, `docs/ui_screenshots/diagnose_chart_1440px.png`, `docs/ui_screenshots/diagnose_chart_390px.png`.
+
+---
+
 ### Limitations & Reproducibility Notes
 
 1. **FNO Boundary Masking & Inference State (Mode 3 Reproducibility):**

@@ -3101,7 +3101,7 @@ function initDiagnoseWorkbench() {
       const noteEl = document.getElementById('est-removed-sensor-note');
       const noteText = document.getElementById('est-removed-sensor-text');
       if (noteEl && noteText) {
-        noteText.textContent = `Sensor ${fIdx} was removed from these readings.`;
+        noteText.textContent = `Reading #${fIdx} was removed from these readings.`;
         noteEl.style.display = 'flex';
       }
 
@@ -3296,15 +3296,15 @@ async function executeDiagnosis() {
     } else if (assignedClass === 'F') {
       banner.className = 'traffic-light-line amber';
       const fIdx = (data.faulty_sensor_idx !== undefined && data.faulty_sensor_idx !== null) ? data.faulty_sensor_idx : 1;
-      titleEl.textContent = `One sensor looks faulty: Sensor ${fIdx}. Possible causes: stuck, offset or wrong scale.`;
       
       const xRead = testData.x[fIdx] !== undefined ? testData.x[fIdx].toFixed(2) : '-';
       const tRead = testData.t[fIdx] !== undefined ? testData.t[fIdx].toFixed(1) : '-';
       const yRead = testData.y[fIdx] !== undefined ? testData.y[fIdx].toFixed(2) : '-';
-      specInfo.innerHTML = `Affected reading #${fIdx}: position ${xRead} m, time ${tRead} s (sensor read ${yRead} &deg;C).`;
+      titleEl.textContent = `Reading #${fIdx} looks faulty (position ${xRead} m, time ${tRead} s). Possible causes: stuck, offset or wrong scale.`;
+      specInfo.innerHTML = `Reading #${fIdx} registered ${yRead} &deg;C (position ${xRead} m, time ${tRead} s).`;
       if (gotoEstBtn) gotoEstBtn.style.display = 'none';
       if (gotoEstNoFaultBtn) {
-        gotoEstNoFaultBtn.textContent = `Estimate without sensor ${fIdx}`;
+        gotoEstNoFaultBtn.textContent = `Estimate without reading ${fIdx}`;
         gotoEstNoFaultBtn.style.display = 'inline-block';
       }
     } else if (assignedClass === 'C') {
@@ -3488,10 +3488,25 @@ function renderDiagnoseChart() {
   uniqueX.sort((a, b) => a - b);
   if (uniqueX.length === 0) uniqueX.push(Math.round((L / 2) * 1000) / 1000);
 
+  // Group positions that share identical spatial profiles sin(pi * x / L)
+  // (e.g. symmetric positions x=0.03m and x=0.07m produce identical cooling curves)
+  const curveGroups = [];
+  uniqueX.forEach(xVal => {
+    const sinVal = Math.sin(Math.PI * (xVal / L));
+    const existing = curveGroups.find(g => Math.abs(g.sinVal - sinVal) < 1e-4);
+    if (existing) {
+      existing.positions.push(xVal);
+    } else {
+      curveGroups.push({ sinVal, positions: [xVal] });
+    }
+  });
+
+  curveGroups.sort((a, b) => a.sinVal - b.sinVal);
+
   const numPts = 100;
-  const curvePaths = uniqueX.map((xVal) => {
-    const xNorm = xVal / L;
-    const isMid = Math.abs(xVal - L / 2) < 0.005 * L;
+  const numCurves = curveGroups.length;
+  const curveData = curveGroups.map((group, gIdx) => {
+    const isMid = group.positions.some(x => Math.abs(x - L / 2) < 0.005 * L);
     const strokeDash = isMid ? '' : 'stroke-dasharray="4 2"';
     const strokeW = isMid ? '2.5' : '1.8';
     const opacity = isMid ? '1.0' : '0.85';
@@ -3500,20 +3515,60 @@ function renderDiagnoseChart() {
     for (let i = 0; i <= numPts; i++) {
       const tCur = tMin + (i / numPts) * (tMax - tMin);
       const tNorm = tCur / T;
-      const uNorm = Math.sin(Math.PI * xNorm) * Math.exp(-alphaBaseNorm * (Math.PI ** 2) * tNorm);
+      const uNorm = group.sinVal * Math.exp(-alphaBaseNorm * (Math.PI ** 2) * tNorm);
       const yReal = Tb + deltaT * uNorm;
       pts.push(`${i === 0 ? 'M' : 'L'} ${scaleX(tCur)} ${scaleY(yReal)}`);
     }
 
-    const labelX = scaleX(tMax) - 4;
-    const lastY = Tb + deltaT * Math.sin(Math.PI * xNorm) * Math.exp(-alphaBaseNorm * (Math.PI ** 2) * (tMax / T));
-    const labelY = scaleY(lastY) - 5;
-    const labelSvg = uniqueX.length > 1
-      ? `<text x="${labelX}" y="${labelY}" text-anchor="end" fill="var(--primary-navy)" font-size="9" font-weight="600" opacity="0.85">x=${xVal.toFixed(2)}m</text>`
-      : '';
+    // Position label near the end of the test (tMax)
+    // For multiple curves: upper curve placed cleanly above line (-9px), lower curve placed below line (+15px)
+    const lastY = Tb + deltaT * group.sinVal * Math.exp(-alphaBaseNorm * (Math.PI ** 2) * (tMax / T));
+    const labelX = scaleX(tMax) - 18;
+    const isLowerCurve = (numCurves > 1 && gIdx === 0);
+    const rawLabelY = isLowerCurve ? (scaleY(lastY) + 15) : (scaleY(lastY) - 9);
+    const posLabel = group.positions.length > 1
+      ? `x=${group.positions.map(p => p.toFixed(2)).join(', ')}m`
+      : `x=${group.positions[0].toFixed(2)}m`;
 
+    return {
+      ptsD: pts.join(' '),
+      strokeDash,
+      strokeW,
+      opacity,
+      labelX,
+      labelY: rawLabelY,
+      posLabel
+    };
+  });
+
+  // Collision resolution for curve labels to guarantee zero vertical overlap
+  if (curveData.length > 1) {
+    curveData.sort((a, b) => a.labelY - b.labelY);
+    for (let iter = 0; iter < 6; iter++) {
+      let moved = false;
+      for (let i = 0; i < curveData.length - 1; i++) {
+        const gap = curveData[i + 1].labelY - curveData[i].labelY;
+        if (gap < 20) {
+          const shift = (20 - gap) / 2;
+          curveData[i].labelY -= shift;
+          curveData[i + 1].labelY += shift;
+          moved = true;
+        }
+      }
+      curveData.forEach(cd => {
+        if (cd.labelY < pad.top + 12) cd.labelY = pad.top + 12;
+        if (cd.labelY > pad.top + plotH - 6) cd.labelY = pad.top + plotH - 6;
+      });
+      if (!moved) break;
+    }
+  }
+
+  const curvePaths = curveData.map(cd => {
+    const labelSvg = uniqueX.length > 1
+      ? `<text x="${cd.labelX}" y="${cd.labelY}" text-anchor="end" fill="var(--primary-navy)" font-size="10.5" font-weight="700" paint-order="stroke fill" stroke="var(--bg-surface)" stroke-width="3" stroke-linejoin="round">${cd.posLabel}</text>`
+      : '';
     return `
-      <path d="${pts.join(' ')}" fill="none" stroke="var(--primary-navy)" stroke-width="${strokeW}" ${strokeDash} stroke-opacity="${opacity}"/>
+      <path d="${cd.ptsD}" fill="none" stroke="var(--primary-navy)" stroke-width="${cd.strokeW}" ${cd.strokeDash} stroke-opacity="${cd.opacity}"/>
       ${labelSvg}
     `;
   }).join('');

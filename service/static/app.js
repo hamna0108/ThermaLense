@@ -5418,17 +5418,20 @@ function setPoissonFamily(family) {
   const gaussBtn = document.getElementById('poi-family-gauss-btn');
   const sineControls = document.getElementById('poi-sine-controls');
   const gaussControls = document.getElementById('poi-gauss-controls');
+  const familyDesc = document.getElementById('poi-family-desc');
 
   if (family === 'sine') {
     if (sineBtn) sineBtn.classList.add('active');
     if (gaussBtn) gaussBtn.classList.remove('active');
     if (sineControls) sineControls.style.display = 'block';
     if (gaussControls) gaussControls.style.display = 'none';
+    if (familyDesc) familyDesc.textContent = 'Alternating warm and cool zones, used to check accuracy.';
   } else {
     if (gaussBtn) gaussBtn.classList.add('active');
     if (sineBtn) sineBtn.classList.remove('active');
     if (gaussControls) gaussControls.style.display = 'block';
     if (sineControls) sineControls.style.display = 'none';
+    if (familyDesc) familyDesc.textContent = 'Round heat sources you place on the plate.';
   }
 }
 
@@ -5608,19 +5611,20 @@ async function executePoisson() {
     const fnoErrPct = formatPoissonPercent(fnoErr);
 
     // (a) One-sentence summary generated from the numbers
+    const errorTuple = `(exact 0%, AI model ${fnoErrPct}, simple baseline ${linErrPct})`;
     const summaryEl = document.getElementById('poi-summary-text');
     if (summaryEl) {
       if (isSine) {
         if (data.high_frequency_source || fnoErr > 0.3) {
-          summaryEl.textContent = `The plate temperature varies across the pattern. The exact solver and simple baseline agree closely (errors 0%, ${linErrPct}), while the AI model has high error (${fnoErrPct}).`;
+          summaryEl.textContent = `The plate has warm and cool zones, as the pattern asks. The exact solver and simple baseline agree closely ${errorTuple}, while the AI model has high error.`;
         } else {
-          summaryEl.textContent = `The plate temperature varies across the pattern. All three methods agree closely (errors 0%, ${linErrPct}, ${fnoErrPct}).`;
+          summaryEl.textContent = `The plate has warm and cool zones, as the pattern asks. All three methods agree closely ${errorTuple}.`;
         }
       } else {
         if (fnoErr > 0.3 || linErr > 0.3) {
-          summaryEl.textContent = `The plate is warmest at the heater and cools toward the edges (errors 0%, ${linErrPct}, ${fnoErrPct}).`;
+          summaryEl.textContent = `The plate is warmest at the heater and cools toward the edges ${errorTuple}.`;
         } else {
-          summaryEl.textContent = `The plate is warmest at the heater and cools toward the edges. All three methods agree closely (errors 0%, ${linErrPct}, ${fnoErrPct}).`;
+          summaryEl.textContent = `The plate is warmest at the heater and cools toward the edges. All three methods agree closely ${errorTuple}.`;
         }
       }
     }

@@ -159,15 +159,19 @@ def test_poisson_smoke_wave_and_hotspots(live_server):
         assert "We solve it three ways and compare." in intro_text
         assert "Values are relative, not real degrees." in intro_text
 
-        # Check default shape is "Hot spots" and example is "Single center heat spot" (Requirement 1)
+        # Check default shape is "Heaters" and example is "Single center heat spot" (Requirement 1)
         gauss_btn = page.locator("#poi-family-gauss-btn")
         sine_btn = page.locator("#poi-family-sine-btn")
         assert "active" in gauss_btn.get_attribute("class")
         assert "active" not in sine_btn.get_attribute("class")
-        assert "Test pattern (has an exact answer)" in sine_btn.inner_text()
+        assert "Test pattern" in sine_btn.inner_text()
+        assert "Heaters" in gauss_btn.inner_text()
+        assert page.locator("#poi-family-desc").inner_text() == "Round heat sources you place on the plate."
 
         preset_select = page.locator("#poi-presets-select")
         assert preset_select.input_value() == "gauss_center"
+        preset_options = page.locator("#poi-presets-select option").all_inner_texts()
+        assert "Test pattern, 2 x 2 zones" in preset_options
         assert page.locator("#poi-gauss-controls").is_visible()
         assert not page.locator("#poi-sine-controls").is_visible()
 
@@ -200,7 +204,8 @@ def test_poisson_smoke_wave_and_hotspots(live_server):
         summary_text = page.locator("#poi-summary-text").inner_text()
         assert "The plate is warmest at the heater and cools toward the edges." in summary_text
         assert "All three methods agree closely" in summary_text
-        assert "errors 0%" in summary_text
+        assert "(exact 0%, AI model" in summary_text
+        assert "simple baseline" in summary_text
 
         # (b) Solution maps and shared colour bar
         assert page.locator("#poi-solution-colorbar").is_visible()
@@ -253,6 +258,7 @@ def test_poisson_smoke_wave_and_hotspots(live_server):
         assert not page.locator("#poi-gauss-controls").is_visible()
         assert "active" in sine_btn.get_attribute("class")
         assert "active" not in gauss_btn.get_attribute("class")
+        assert page.locator("#poi-family-desc").inner_text() == "Alternating warm and cool zones, used to check accuracy."
 
         # Check field help text for Test pattern
         m_help = page.locator("label[for='poi-mode-m'] + input + span.form-help").inner_text()
@@ -260,6 +266,11 @@ def test_poisson_smoke_wave_and_hotspots(live_server):
 
         page.click("#poi-submit-btn")
         page.wait_for_selector("#poi-result-panel", state="visible", timeout=15000)
+
+        # Requirement 2: Summary wording for Test pattern
+        summary_sine = page.locator("#poi-summary-text").inner_text()
+        assert "The plate has warm and cool zones, as the pattern asks." in summary_sine
+        assert "(exact 0%, AI model 2.9%, simple baseline 4.6%)" in summary_sine
 
         # Requirement 5: For sine wave with negative values, diverging scale used
         scale_min_div = page.locator("#poi-scale-min").inner_text()
@@ -310,11 +321,14 @@ def test_poisson_example_selection_and_form_sync(live_server):
         sine_controls = page.locator("#poi-sine-controls")
         gauss_controls = page.locator("#poi-gauss-controls")
 
+        desc = page.locator("#poi-family-desc")
+
         # 1. Default on open: gauss_center
         assert "active" in gauss_btn.get_attribute("class")
         assert "active" not in sine_btn.get_attribute("class")
         assert gauss_controls.is_visible()
         assert not sine_controls.is_visible()
+        assert desc.inner_text() == "Round heat sources you place on the plate."
 
         # 2. Select gauss_dual
         page.select_option("#poi-presets-select", "gauss_dual")
@@ -322,6 +336,7 @@ def test_poisson_example_selection_and_form_sync(live_server):
         assert "active" not in sine_btn.get_attribute("class")
         assert gauss_controls.is_visible()
         assert not sine_controls.is_visible()
+        assert desc.inner_text() == "Round heat sources you place on the plate."
 
         # 3. Select sine_low
         page.select_option("#poi-presets-select", "sine_low")
@@ -329,6 +344,7 @@ def test_poisson_example_selection_and_form_sync(live_server):
         assert "active" not in gauss_btn.get_attribute("class")
         assert sine_controls.is_visible()
         assert not gauss_controls.is_visible()
+        assert desc.inner_text() == "Alternating warm and cool zones, used to check accuracy."
 
         # 4. Select sine_high
         page.select_option("#poi-presets-select", "sine_high")
@@ -336,6 +352,7 @@ def test_poisson_example_selection_and_form_sync(live_server):
         assert "active" not in gauss_btn.get_attribute("class")
         assert sine_controls.is_visible()
         assert not gauss_controls.is_visible()
+        assert desc.inner_text() == "Alternating warm and cool zones, used to check accuracy."
 
         # 5. Direct button clicks switch family and sync controls
         gauss_btn.click()
@@ -343,11 +360,13 @@ def test_poisson_example_selection_and_form_sync(live_server):
         assert "active" not in sine_btn.get_attribute("class")
         assert gauss_controls.is_visible()
         assert not sine_controls.is_visible()
+        assert desc.inner_text() == "Round heat sources you place on the plate."
 
         sine_btn.click()
         assert "active" in sine_btn.get_attribute("class")
         assert "active" not in gauss_btn.get_attribute("class")
         assert sine_controls.is_visible()
         assert not gauss_controls.is_visible()
+        assert desc.inner_text() == "Alternating warm and cool zones, used to check accuracy."
 
         browser.close()

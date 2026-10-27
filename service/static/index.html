@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ThermaLens — Thermal PDE Inference &amp; Diagnostics Instrument</title>
   <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
-  <link rel="stylesheet" href="style.css?v=thermalens-v36">
+  <link rel="stylesheet" href="style.css?v=thermalens-v37">
 </head>
 <body>
 
@@ -1659,7 +1659,7 @@
         <details class="technical-details" style="margin-top: 0.35rem; margin-bottom: 0.75rem;">
           <summary class="technical-details-summary">Show details</summary>
           <div class="technical-details-body" style="padding-top: 0.35rem; font-size: 0.85rem; color: var(--text-muted);">
-            Stage 2 · 2D Poisson −∇²u = f on [0, 1]² with homogeneous Dirichlet boundaries, exact sparse LU vs FNO vs linear ridge baseline.
+            Stage 2 · 2D Poisson −∇²u = f on [0, 1]² with homogeneous Dirichlet boundaries, exact sparse LU vs FNO vs linear ridge baseline. (Heat source families: Heaters was previously 'Hot spots' / Gaussian sources; Test pattern was previously 'Test pattern (has an exact answer)' / 'Wave pattern' / harmonic sine modes).
           </div>
         </details>
       </div>
@@ -1691,9 +1691,10 @@
           <div class="form-group">
             <label class="form-label">Heat source shape</label>
             <div class="btn-group" style="width: 100%;">
-              <button type="button" class="btn btn-secondary btn-sm" id="poi-family-sine-btn">Test pattern (has an exact answer)</button>
-              <button type="button" class="btn btn-secondary btn-sm active" id="poi-family-gauss-btn">Hot spots</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="poi-family-sine-btn">Test pattern</button>
+              <button type="button" class="btn btn-secondary btn-sm active" id="poi-family-gauss-btn">Heaters</button>
             </div>
+            <div id="poi-family-desc" class="form-help" style="margin-top: 0.35rem;">Round heat sources you place on the plate.</div>
           </div>
 
           <div class="form-group">
@@ -1701,7 +1702,7 @@
             <select id="poi-presets-select" class="form-select">
               <option value="gauss_center" selected>Single center heat spot</option>
               <option value="gauss_dual">Dual heat spots</option>
-              <option value="sine_low">Test pattern 2x2 (typical)</option>
+              <option value="sine_low">Test pattern, 2 x 2 zones</option>
               <option value="sine_high">Test pattern 6x2 (high frequency)</option>
             </select>
           </div>
@@ -2668,6 +2669,6 @@
   <!-- Floating Field Tooltip for Strip and Line Charts -->
   <div id="field-hover-tooltip" style="position: fixed; display: none; pointer-events: none; z-index: 9999; background: rgba(15, 23, 42, 0.92); color: #ffffff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; box-shadow: 0 2px 6px rgba(0,0,0,0.3); white-space: nowrap;"></div>
 
-  <script src="app.js?v=thermalens-v36"></script>
+  <script src="app.js?v=thermalens-v37"></script>
 </body>
 </html>

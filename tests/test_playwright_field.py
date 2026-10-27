@@ -146,6 +146,27 @@ def test_field_smoke_steel_copper_and_wood(live_server):
         timing_text = page.locator("#field-timing-text").inner_text()
         assert "ms" in timing_text
 
+        # Verify speed note is displayed when Compare both is selected
+        speed_note = page.locator("#field-speed-note")
+        assert speed_note.is_visible(), "Speed note should be visible when Compare both is active"
+        assert "The AI model is not faster for a single picture" in speed_note.inner_text()
+
+        # Switch to Standard calculation -> speed note must hide
+        page.click("#field-method-solver-btn")
+        assert not speed_note.is_visible(), "Speed note must hide when Standard calculation is clicked"
+
+        # Re-run simulation with Standard calculation -> speed note remains hidden
+        page.click("#field-submit-btn")
+        page.wait_for_selector("#field-result-panel", state="visible")
+        assert not speed_note.is_visible(), "Speed note must remain hidden for Standard calculation result"
+
+        # Switch back to Compare both -> speed note displays again
+        page.click("#field-method-compare-btn")
+        assert speed_note.is_visible(), "Speed note must display when Compare both is clicked"
+        page.click("#field-submit-btn")
+        page.wait_for_selector("#field-result-panel", state="visible")
+        assert speed_note.is_visible(), "Speed note must be visible after Compare both simulation"
+
         # Verify on-screen relative difference matches /v1/field API directly
         api_steel = page.evaluate("""async () => {
             const res = await fetch('/v1/field', {

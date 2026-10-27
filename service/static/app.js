@@ -4596,12 +4596,20 @@ function initFieldWorkbench() {
 
   let activeMethod = 'compare';
 
+  function updateFieldSpeedNoteVisibility(method) {
+    const note = document.getElementById('field-speed-note') || document.querySelector('.field-speed-note');
+    if (note) {
+      note.style.display = (method === 'compare') ? 'block' : 'none';
+    }
+  }
+
   if (solverBtn) {
     solverBtn.addEventListener('click', () => {
       activeMethod = 'solver';
       solverBtn.classList.add('active');
       fnoBtn?.classList.remove('active');
       compBtn?.classList.remove('active');
+      updateFieldSpeedNoteVisibility('solver');
     });
   }
 
@@ -4611,6 +4619,7 @@ function initFieldWorkbench() {
       fnoBtn.classList.add('active');
       solverBtn?.classList.remove('active');
       compBtn?.classList.remove('active');
+      updateFieldSpeedNoteVisibility('fno');
     });
   }
 
@@ -4620,6 +4629,7 @@ function initFieldWorkbench() {
       compBtn.classList.add('active');
       solverBtn?.classList.remove('active');
       fnoBtn?.classList.remove('active');
+      updateFieldSpeedNoteVisibility('compare');
     });
   }
 
@@ -4932,6 +4942,7 @@ async function executeField(methodChoice) {
     const badgeEl = document.getElementById('field-method-badge');
     const diffBox = document.getElementById('field-rel-diff-box');
     const timingText = document.getElementById('field-timing-text');
+    const speedNote = document.getElementById('field-speed-note') || document.querySelector('.field-speed-note');
 
     if (data.method_used === 'compare' && data.relative_difference !== null) {
       if (badgeEl) badgeEl.textContent = 'Compare both';
@@ -4942,14 +4953,17 @@ async function executeField(methodChoice) {
       if (timingText) {
         timingText.textContent = `Standard: ${data.solver_timing_ms} ms | AI: ${data.fno_timing_ms} ms`;
       }
+      if (speedNote) speedNote.style.display = 'block';
     } else if (data.method_used === 'fno') {
       if (badgeEl) badgeEl.textContent = 'AI model';
       if (diffBox) diffBox.style.display = 'none';
       if (timingText) timingText.textContent = `${data.timing_ms} ms`;
+      if (speedNote) speedNote.style.display = 'none';
     } else {
       if (badgeEl) badgeEl.textContent = 'Standard calculation';
       if (diffBox) diffBox.style.display = 'none';
       if (timingText) timingText.textContent = `${data.timing_ms} ms`;
+      if (speedNote) speedNote.style.display = 'none';
     }
 
     // Normalised alpha in Show details

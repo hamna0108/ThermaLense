@@ -1535,6 +1535,10 @@ async def import_profile(request: Request, force: bool = False):
 # -------------------------------------------------------------------------------------------------
 from fastapi.staticfiles import StaticFiles
 
+REPORTS_DIR = os.path.join(REPO_ROOT, "reports")
+if os.path.exists(REPORTS_DIR):
+    app.mount("/reports", StaticFiles(directory=REPORTS_DIR), name="reports")
+
 STATIC_DIR = os.path.join(REPO_ROOT, "service", "static")
 if os.path.exists(STATIC_DIR):
     app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")

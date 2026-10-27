@@ -4181,6 +4181,26 @@ function initPlacementWorkbench() {
     });
   }
 
+  // Material guess dropdown sync with custom input
+  const matSelect = document.getElementById('place-material-select');
+  const matInput = document.getElementById('place-material-guess');
+  const matCustomWrap = document.getElementById('place-material-custom-wrap');
+
+  if (matSelect && matInput) {
+    matSelect.addEventListener('change', () => {
+      const opt = matSelect.selectedOptions[0];
+      if (matSelect.value === 'custom') {
+        if (matCustomWrap) matCustomWrap.style.display = 'flex';
+      } else {
+        if (matCustomWrap) matCustomWrap.style.display = 'none';
+        const alpha = opt ? opt.getAttribute('data-alpha') : null;
+        if (alpha) {
+          matInput.value = alpha;
+        }
+      }
+    });
+  }
+
   // Refine using Estimate fit
   const placeRefineBtn = document.getElementById('place-refine-btn');
   const placeRefineMsg = document.getElementById('place-refine-msg');
@@ -4188,9 +4208,14 @@ function initPlacementWorkbench() {
     placeRefineBtn.addEventListener('click', () => {
       const estRes = STATE.lastEstimateResult && STATE.lastEstimateResult.response;
       if (estRes && typeof estRes.alpha_hat === 'number' && !isNaN(estRes.alpha_hat) && estRes.alpha_hat > 0) {
-        const matInput = document.getElementById('place-material-guess');
         if (matInput) {
           matInput.value = estRes.alpha_hat.toExponential(3);
+        }
+        if (matSelect) {
+          matSelect.value = 'custom';
+        }
+        if (matCustomWrap) {
+          matCustomWrap.style.display = 'flex';
         }
         if (placeRefineMsg) {
           placeRefineMsg.innerHTML = `<span style="color: var(--badge-green-color, #15803d); font-weight: 600;">✓ Refined using Estimate α = ${estRes.alpha_hat.toExponential(3)} m²/s</span>`;
@@ -5437,6 +5462,28 @@ function initPoissonWorkbench() {
     if (!STATE.lastPoissonResult) return;
     downloadJson(STATE.lastPoissonResult, 'poisson_solution_grids.json');
   });
+
+  loadDeployedPoissonBenchmark();
+}
+
+async function loadDeployedPoissonBenchmark() {
+  try {
+    let res = await fetch('/reports/poisson_deployed_baseline_errors.json');
+    if (!res.ok) {
+      res = await fetch('reports/poisson_deployed_baseline_errors.json');
+    }
+    if (res.ok) {
+      const data = await res.json();
+      for (const [split, info] of Object.entries(data)) {
+        const el = document.getElementById(`poi-bench-deployed-${split}`);
+        if (el && typeof info.deployed_lin_l2_median_pct === 'number') {
+          el.textContent = `${info.deployed_lin_l2_median_pct.toFixed(2)}%`;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load deployed Poisson benchmark:', err);
+  }
 }
 
 async function executePoisson() {

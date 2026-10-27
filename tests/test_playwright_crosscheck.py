@@ -93,13 +93,9 @@ def test_crosscheck_case1_both_green(live_server):
         page.click("#est-submit-btn")
         page.wait_for_selector("#est-result-panel", state="visible", timeout=15000)
 
-        # Verify Estimate Cross-Check banner is visible
-        page.wait_for_selector("#est-crosscheck-banner", state="visible", timeout=5000)
-        est_banner = page.locator("#est-crosscheck-banner")
-        assert "green" in est_banner.get_attribute("class")
-        est_text = page.locator("#est-crosscheck-text").inner_text().strip()
-        expected_msg = "Estimate and Diagnose agree: the readings fit the heat model and match your healthy reference."
-        assert expected_msg in est_text
+        # Verify Cross-Check banner is removed from Estimate view completely
+        assert page.locator("#est-crosscheck-banner").count() == 0
+        assert page.locator("#est-goto-diagnose-btn").is_visible()
 
         # 2. Switch to Diagnose
         page.goto(f"{live_server}/#diagnose")
@@ -112,6 +108,7 @@ def test_crosscheck_case1_both_green(live_server):
         diag_banner = page.locator("#diag-crosscheck-banner")
         assert "green" in diag_banner.get_attribute("class")
         diag_text = page.locator("#diag-crosscheck-text").inner_text().strip()
+        expected_msg = "Estimate and Diagnose agree: the readings fit the heat model and match your healthy reference."
         assert expected_msg in diag_text
 
         # In Show details, the flagged note should NOT be displayed
@@ -181,33 +178,25 @@ def test_crosscheck_case2_estimate_green_diagnose_flags(live_server):
         expected_msg = "The readings fit a heat curve, but they differ from your healthy reference (reading #3 looks faulty). The estimate may be less reliable. Try Estimate without reading 3."
         assert expected_msg in diag_banner_text
 
-        # 2. Switch to Estimate and calculate
-        page.goto(f"{live_server}/#estimate")
+        # Test clicking the action button inside Diagnose banner: "Estimate without reading 3"
+        action_btn = page.locator("#diag-crosscheck-banner #crosscheck-remove-fault-btn")
+        page.wait_for_selector("#diag-crosscheck-banner #crosscheck-remove-fault-btn", state="visible")
+        action_btn.click()
+        time.sleep(0.5)
+
+        # Navigated to Estimate: verify reading #3 was removed (table now has 9 rows) and removed sensor note appears
+        assert page.locator("#est-table-tbody tr").count() == 9
+        assert page.locator("#est-removed-sensor-note").is_visible()
+        assert "Reading #3 was removed" in page.locator("#est-removed-sensor-text").inner_text()
+
+        # Run Estimate on the cleaned data
         page.wait_for_selector("#est-submit-btn", state="visible")
         page.click("#est-submit-btn")
         page.wait_for_selector("#est-result-panel", state="visible", timeout=15000)
 
-        # Estimate fits heat model (model_invalid is false)
-        est_traffic = page.locator("#est-traffic-title").inner_text()
-        assert "do not fit the heat model" not in est_traffic
-
-        # Check Estimate Cross-Check banner
-        page.wait_for_selector("#est-crosscheck-banner", state="visible", timeout=5000)
-        est_banner = page.locator("#est-crosscheck-banner")
-        assert "amber" in est_banner.get_attribute("class")
-        est_banner_text = est_banner.inner_text()
-        assert expected_msg in est_banner_text
-
-        # Test clicking the action button inside banner: "Estimate without reading 3"
-        action_btn = page.locator("#est-crosscheck-banner #crosscheck-remove-fault-btn")
-        page.wait_for_selector("#est-crosscheck-banner #crosscheck-remove-fault-btn", state="visible")
-        action_btn.click()
-        time.sleep(0.5)
-
-        # Verify reading #3 was removed (table now has 9 rows) and removed sensor note appears
-        assert page.locator("#est-table-tbody tr").count() == 9
-        assert page.locator("#est-removed-sensor-note").is_visible()
-        assert "Reading #3 was removed" in page.locator("#est-removed-sensor-text").inner_text()
+        # Verify Cross-Check banner is removed from Estimate view completely
+        assert page.locator("#est-crosscheck-banner").count() == 0
+        assert page.locator("#est-goto-diagnose-btn").is_visible()
 
         browser.close()
 
@@ -242,12 +231,10 @@ def test_crosscheck_case3_estimate_flagged_diagnose_green(live_server):
         est_title = page.locator("#est-traffic-title").inner_text()
         assert "your readings do not fit the heat model" in est_title
 
-        # Check Estimate Cross-Check banner
-        page.wait_for_selector("#est-crosscheck-banner", state="visible", timeout=5000)
-        est_banner = page.locator("#est-crosscheck-banner")
-        assert "amber" in est_banner.get_attribute("class")
+        # Check Estimate Cross-Check banner is removed
+        assert page.locator("#est-crosscheck-banner").count() == 0
+        assert page.locator("#est-goto-diagnose-btn").is_visible()
         expected_msg = "The readings match your reference but do not fit the heat model. Check your setup values (length, duration, temperatures)."
-        assert expected_msg in est_banner.inner_text()
 
         # 3. Check Diagnose page also displays Case 3 banner
         page.goto(f"{live_server}/#diagnose")

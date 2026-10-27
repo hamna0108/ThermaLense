@@ -229,8 +229,10 @@ def test_poisson_smoke_wave_and_hotspots(live_server):
         assert "Standard test (interpolation)" in disc_text
         assert "Rapid wave changes (high frequencies)" in disc_text
         bench_headers = [t.strip() for t in benchmark_disc.locator("thead th").all_text_contents()]
-        assert "Simple baseline (median rel L₂ error, %)" in bench_headers
+        assert "Simple baseline, full-precision fit (benchmark file)" in bench_headers
+        assert "Simple baseline as deployed (32-bit file)" in bench_headers
         assert "AI model (median rel L₂ error, %)" in bench_headers
+        assert "2.61%" in page.locator("#poi-bench-deployed-test_interp").all_text_contents()[0]
 
         # Verify Timing note
         timing_note = page.locator("#poi-timing-note")

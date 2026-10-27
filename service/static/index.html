@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ThermaLens — Thermal PDE Inference &amp; Diagnostics Instrument</title>
   <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
-  <link rel="stylesheet" href="style.css?v=thermalens-v33">
+  <link rel="stylesheet" href="style.css?v=thermalens-v34">
 </head>
 <body>
 
@@ -500,18 +500,19 @@
               <label class="radio-label">
                 <input type="radio" name="est-heating-profile" id="est-heat-sine" value="sine" checked>
                 <span>
-                  <strong>Hottest in the middle, cooler toward the ends (standard)</strong><br>
-                  <span class="text-muted" style="font-size: 0.82rem;">Standard heat diffusion profile; routes to fast neural surrogate.</span>
+                  <strong>The middle of the bar was hottest and the ends cooler. Fastest option.</strong>
                 </span>
               </label>
               <label class="radio-label">
                 <input type="radio" name="est-heating-profile" id="est-heat-constant" value="constant">
                 <span>
-                  <strong>Heated evenly</strong><br>
-                  <span class="text-muted" style="font-size: 0.82rem;">Constant starting temperature; routes to exact declared physics solver (verified 95% coverage).</span>
+                  <strong>The whole bar started at the same temperature. Slightly slower, uses an exact method.</strong>
                 </span>
               </label>
             </div>
+            <p class="text-muted" style="font-size: 0.82rem; margin-top: 0.4rem; margin-bottom: 0;">
+              Not sure? Choose 'Heated evenly' if you warmed the whole bar before starting.
+            </p>
           </div>
 
           <!-- Hidden compatibility elements for existing tests -->
@@ -561,11 +562,6 @@
               <span id="est-traffic-reasons" style="display: none;"></span>
             </div>
 
-            <!-- Plain Cross-check banner (shown when both an Estimate result and a healthy reference exist) -->
-            <div id="est-crosscheck-banner" class="crosscheck-banner" style="display: none;">
-              <span class="crosscheck-label">Cross-check:</span>
-              <span class="crosscheck-text" id="est-crosscheck-text"></span>
-            </div>
 
             <!-- Demo Mode Callout (shown only when running in demo mode) -->
             <div id="est-demo-callout" class="demo-mode-callout" style="display: none;"></div>
@@ -620,6 +616,9 @@
                     </tr>
                   </tbody>
                 </table>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; border-top: 1px solid var(--rule-subtle); padding-top: 0.5rem;">
+                  <strong>Routing details:</strong> Hottest in the middle routes to fast neural surrogate (mode3plus); Heated evenly routes to exact declared physics solver (verified 95% coverage).
+                </div>
 
                 <div id="est-badges-container" style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.75rem;"></div>
 
@@ -1194,19 +1193,32 @@
           </div>
 
           <div class="form-group">
-            <label for="place-material-guess" class="form-label" id="place-lbl-material-guess">Material guess (m&sup2;/s)</label>
-            <div class="input-suffix-wrap">
+            <label for="place-material-select" class="form-label" id="place-lbl-material-select">
+              What is the bar made of? (a rough guess is fine) <span class="text-muted" style="font-weight: normal; font-size: 0.85rem;">(Optional)</span>
+            </label>
+            <select id="place-material-select" class="form-control" style="margin-bottom: 0.45rem;">
+              <option value="not_sure" data-alpha="1e-5" selected>Not sure (typical)</option>
+              <option value="copper" data-alpha="1.11e-4">Copper</option>
+              <option value="aluminium" data-alpha="8.4e-5">Aluminium</option>
+              <option value="steel" data-alpha="1.3e-5">Steel</option>
+              <option value="glass" data-alpha="5.0e-7">Glass</option>
+              <option value="wood" data-alpha="1.3e-7">Wood</option>
+              <option value="custom">Custom</option>
+            </select>
+            <div class="input-suffix-wrap" id="place-material-custom-wrap" style="display: none; margin-bottom: 0.45rem;">
               <input type="text" id="place-material-guess" class="form-control mono" value="1e-5" placeholder="e.g. 1e-5">
               <span class="input-suffix">m&sup2;/s</span>
             </div>
-            <span class="form-help" id="place-material-guess-hint">Focused times assume a typical heat spread; adjust the material guess if you know it.</span>
+            <span class="form-help" id="place-material-guess-hint">This only decides when your focused readings are taken. It does not change your Estimate result; Estimate works out the heat spread from your readings alone.</span>
           </div>
 
           <!-- Optional refinement step using early readings fit -->
           <div class="card" id="place-refine-box" style="margin-top: -0.25rem; margin-bottom: 1.25rem; background: var(--bg-surface-raised); border: 1px dashed var(--rule-hairline); padding: 0.75rem 1rem;">
             <h3 style="margin-top: 0; font-size: 0.92rem;">Entered your first readings? Refine the focused times</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem;">
-              If you have entered your early readings into Estimate and computed a preliminary heat spread, you can sharpen your focused reading times using that estimate.
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem; line-height: 1.5;">
+              1. Take your early readings and enter them in Estimate.<br>
+              2. Press Estimate to get a first heat-spread value.<br>
+              3. Come back and press Refine to sharpen the focused times.
             </p>
             <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
               <button type="button" class="btn btn-secondary btn-sm" id="place-refine-btn">Refine using Estimate fit</button>
@@ -1810,7 +1822,8 @@
                       <tr>
                         <th>Test split</th>
                         <th class="text-right">Samples</th>
-                        <th class="text-right">Simple baseline (median rel L₂ error, %)</th>
+                        <th class="text-right">Simple baseline, full-precision fit (benchmark file)</th>
+                        <th class="text-right">Simple baseline as deployed (32-bit file)</th>
                         <th class="text-right">AI model (median rel L₂ error, %)</th>
                         <th>Winner</th>
                       </tr>
@@ -1820,6 +1833,7 @@
                         <td><strong>Standard test (interpolation)</strong></td>
                         <td class="text-right mono">200</td>
                         <td class="text-right mono">0.000004%</td>
+                        <td class="text-right mono" id="poi-bench-deployed-test_interp">2.61%</td>
                         <td class="text-right mono">3.3%</td>
                         <td><span class="badge badge-success">Simple baseline</span></td>
                       </tr>
@@ -1827,6 +1841,7 @@
                         <td><strong>Multiple heat spots (count variation)</strong></td>
                         <td class="text-right mono">200</td>
                         <td class="text-right mono">0.00001%</td>
+                        <td class="text-right mono" id="poi-bench-deployed-test_ood_count">1.12%</td>
                         <td class="text-right mono">2.8%</td>
                         <td><span class="badge badge-success">Simple baseline</span></td>
                       </tr>
@@ -1834,6 +1849,7 @@
                         <td><strong>Narrow heat spots (scale variation)</strong></td>
                         <td class="text-right mono">200</td>
                         <td class="text-right mono">0.06%</td>
+                        <td class="text-right mono" id="poi-bench-deployed-test_ood_narrow">4.68%</td>
                         <td class="text-right mono">9.0%</td>
                         <td><span class="badge badge-success">Simple baseline</span></td>
                       </tr>
@@ -1841,6 +1857,7 @@
                         <td><strong>Off-center near edges (boundary shift)</strong></td>
                         <td class="text-right mono">200</td>
                         <td class="text-right mono">0.0006%</td>
+                        <td class="text-right mono" id="poi-bench-deployed-test_ood_boundary">5.64%</td>
                         <td class="text-right mono">14.2%</td>
                         <td><span class="badge badge-success">Simple baseline</span></td>
                       </tr>
@@ -1848,6 +1865,7 @@
                         <td><strong>Rapid wave changes (high frequencies)</strong></td>
                         <td class="text-right mono">200</td>
                         <td class="text-right mono">1.5%</td>
+                        <td class="text-right mono" id="poi-bench-deployed-test_ood_highmodes">1.50%</td>
                         <td class="text-right mono">80.4%</td>
                         <td><span class="badge badge-success">Simple baseline</span></td>
                       </tr>
@@ -2616,6 +2634,6 @@
   <!-- Floating Field Tooltip for Strip and Line Charts -->
   <div id="field-hover-tooltip" style="position: fixed; display: none; pointer-events: none; z-index: 9999; background: rgba(15, 23, 42, 0.92); color: #ffffff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; box-shadow: 0 2px 6px rgba(0,0,0,0.3); white-space: nowrap;"></div>
 
-  <script src="app.js?v=thermalens-v33"></script>
+  <script src="app.js?v=thermalens-v34"></script>
 </body>
 </html>

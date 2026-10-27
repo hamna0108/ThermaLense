@@ -17,6 +17,21 @@ import pytest
 from playwright.sync_api import sync_playwright
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCREENSHOTS_DIR = os.path.join(REPO_ROOT, "reports", "screenshots")
+os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
+ARTIFACT_DIR = r"C:\Users\HP\.gemini\antigravity-ide\brain\acb0d46f-cc58-4de4-b39b-b47d6409ab04"
+
+def save_screenshot(page, filename):
+    filepath = os.path.join(SCREENSHOTS_DIR, filename)
+    page.evaluate("() => { const h = document.querySelector('.app-header'); if (h) h.style.position = 'relative'; }")
+    page.screenshot(path=filepath, full_page=True)
+    page.evaluate("() => { const h = document.querySelector('.app-header'); if (h) h.style.position = ''; }")
+    if os.path.isdir(ARTIFACT_DIR):
+        try:
+            import shutil
+            shutil.copy2(filepath, os.path.join(ARTIFACT_DIR, filename))
+        except Exception:
+            pass
 
 def find_free_port():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -75,7 +90,7 @@ def test_placement_middle_default_and_handoff_to_estimate(live_server):
     """Test that sensor position defaults to middle of bar, computes schedule, and transfers to Estimate."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        page = browser.new_page(viewport={"width": 1440, "height": 768})
         page.goto(f"{live_server}/#placement")
         page.wait_for_load_state("networkidle")
 
@@ -108,6 +123,9 @@ def test_placement_middle_default_and_handoff_to_estimate(live_server):
         # 3. Compute sampling schedule
         page.locator("#place-submit-btn").click()
         page.locator("#place-result-panel").wait_for(state="visible", timeout=10000)
+
+        # Capture desktop 1440px screenshot
+        save_screenshot(page, "placement_1440px.png")
 
         # 4. Check "How this works" explanation
         how_it_works = page.locator(".place-how-it-works")
@@ -158,6 +176,16 @@ def test_placement_middle_default_and_handoff_to_estimate(live_server):
             row_t = est_rows.nth(i).locator('input[placeholder="e.g. 10.0"]').input_value()
             assert row_x == "0.05"
             assert float(row_t) > 0
+
+        # Capture mobile 390px screenshot of placement
+        mob_context = browser.new_context(viewport={"width": 390, "height": 844})
+        mob_page = mob_context.new_page()
+        mob_page.goto(f"{live_server}/#placement")
+        mob_page.wait_for_load_state("networkidle")
+        mob_page.locator("#place-submit-btn").click()
+        mob_page.locator("#place-result-panel").wait_for(state="visible", timeout=10000)
+        save_screenshot(mob_page, "placement_390px.png")
+        mob_context.close()
 
         browser.close()
 
@@ -217,20 +245,40 @@ def test_placement_material_guess_and_refine_flow(live_server):
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
 
-        # 1. Open placement page and check material guess input + hint
+        # 1. Open placement page and check material dropdown + helper text
         page.goto(f"{live_server}/#placement")
         page.wait_for_load_state("networkidle")
 
+        mat_select = page.locator("#place-material-select")
+        assert mat_select.is_visible()
+        options = [o.strip() for o in mat_select.locator("option").all_inner_texts()]
+        assert "Not sure (typical)" in options
+        assert "Copper" in options
+        assert "Aluminium" in options
+        assert "Steel" in options
+        assert "Glass" in options
+        assert "Wood" in options
+        assert "Custom" in options
+        assert mat_select.input_value() == "not_sure"
+
+        lbl = page.locator("#place-lbl-material-select")
+        assert "what is the bar made of?" in lbl.inner_text().lower()
+        assert "optional" in lbl.inner_text().lower()
+
         mat_input = page.locator("#place-material-guess")
-        assert mat_input.is_visible()
         assert mat_input.input_value() == "1e-5"
 
         hint = page.locator("#place-material-guess-hint")
-        assert "Focused times assume a typical heat spread" in hint.inner_text()
-        assert "adjust the material guess if you know it" in hint.inner_text()
+        assert "This only decides when your focused readings are taken" in hint.inner_text()
+        assert "Estimate works out the heat spread from your readings alone" in hint.inner_text()
 
         refine_box = page.locator("#place-refine-box")
         assert refine_box.is_visible()
+        refine_text = refine_box.inner_text()
+        assert "1. Take your early readings and enter them in Estimate." in refine_text
+        assert "2. Press Estimate to get a first heat-spread value." in refine_text
+        assert "3. Come back and press Refine to sharpen the focused times." in refine_text
+
         refine_btn = page.locator("#place-refine-btn")
         refine_msg = page.locator("#place-refine-msg")
 
@@ -258,8 +306,10 @@ def test_placement_material_guess_and_refine_flow(live_server):
         refine_btn.click()
         page.wait_for_timeout(500)
 
-        # Confirm material guess was refined and schedule was re-computed
+        # Confirm material guess was refined, dropdown set to custom, and schedule was re-computed
         assert "✓ Refined using Estimate" in refine_msg.inner_text()
+        assert mat_select.input_value() == "custom"
+        assert mat_input.is_visible()
         refined_val = float(mat_input.input_value())
         assert refined_val > 0
         page.locator("#place-result-panel").wait_for(state="visible", timeout=10000)

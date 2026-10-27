@@ -85,10 +85,6 @@ def test_crosscheck_case1_both_green(live_server):
         page.click("#est-use-example-btn")
         time.sleep(0.3)
 
-        # Select default steel bar profile if not already selected
-        page.select_option("#est-profile-select", value="00000000-0000-4000-8000-000000000001")
-        time.sleep(0.3)
-
         # Click calculate on Estimate
         page.click("#est-submit-btn")
         page.wait_for_selector("#est-result-panel", state="visible", timeout=15000)
@@ -99,6 +95,9 @@ def test_crosscheck_case1_both_green(live_server):
 
         # 2. Switch to Diagnose
         page.goto(f"{live_server}/#diagnose")
+        page.wait_for_selector("#diag-profile-select", state="visible")
+        page.select_option("#diag-profile-select", value="00000000-0000-4000-8000-000000000001")
+        time.sleep(0.3)
         page.wait_for_selector("#diag-submit-btn", state="visible")
         page.click("#diag-submit-btn")
         page.wait_for_selector("#diag-result-panel", state="visible", timeout=15000)

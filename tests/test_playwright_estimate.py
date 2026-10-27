@@ -178,3 +178,57 @@ def test_playwright_real_units_estimate_all_four_methods(live_server):
         assert ci4[0] <= 1.0e-5 <= ci4[1], f"declared_physics CI {ci4} does not contain 1.0e-5"
 
         browser.close()
+
+def test_estimate_identical_regardless_of_diagnose_profile(live_server):
+    """Verify that with the same readings and setup, Estimate result is identical whichever profile is selected on Diagnose."""
+    port = live_server
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
+
+        # 1. On Estimate, click 'Use example' and run calculation
+        page.goto(f"http://127.0.0.1:{port}/#estimate")
+        page.wait_for_selector("#est-use-example-btn", state="visible")
+        page.click("#est-use-example-btn")
+        time.sleep(0.2)
+        page.click("#est-submit-btn")
+        page.wait_for_selector("#est-result-panel", state="visible", timeout=15000)
+        est_result_initial = page.locator("#est-plain-number").text_content().strip()
+        assert est_result_initial != "", "Estimate initial result should not be empty"
+
+        # 2. Go to Diagnose and select Demo 2: Aluminum rod (different length 0.2m, duration 50s)
+        page.goto(f"http://127.0.0.1:{port}/#diagnose")
+        page.wait_for_selector("#diag-profile-select", state="visible")
+        page.select_option("#diag-profile-select", value="00000000-0000-4000-8000-000000000002")
+        time.sleep(0.3)
+
+        # 3. Return to Estimate and calculate with same readings and setup
+        page.goto(f"http://127.0.0.1:{port}/#estimate")
+        page.wait_for_selector("#est-submit-btn", state="visible")
+        page.click("#est-submit-btn")
+        page.wait_for_selector("#est-result-panel", state="visible", timeout=15000)
+        est_result_profile2 = page.locator("#est-plain-number").text_content().strip()
+        assert est_result_profile2 == est_result_initial, f"Estimate result changed after selecting Aluminum rod on Diagnose: {est_result_profile2} vs {est_result_initial}"
+
+        # 4. Go to Diagnose and select Demo 1: Steel bar
+        page.goto(f"http://127.0.0.1:{port}/#diagnose")
+        page.wait_for_selector("#diag-profile-select", state="visible")
+        page.select_option("#diag-profile-select", value="00000000-0000-4000-8000-000000000001")
+        time.sleep(0.3)
+
+        # 5. Return to Estimate and calculate again
+        page.goto(f"http://127.0.0.1:{port}/#estimate")
+        page.wait_for_selector("#est-submit-btn", state="visible")
+        page.click("#est-submit-btn")
+        page.wait_for_selector("#est-result-panel", state="visible", timeout=15000)
+        est_result_profile1 = page.locator("#est-plain-number").text_content().strip()
+        assert est_result_profile1 == est_result_initial, f"Estimate result changed after selecting Steel bar on Diagnose: {est_result_profile1} vs {est_result_initial}"
+
+        # 6. Verify the optional shortcut 'Load a saved bar's setup' exists on Estimate
+        est_load_sel = page.locator("#est-load-setup-select")
+        assert est_load_sel.is_visible()
+        # Also verify the bar-profile card is completely removed from Estimate
+        assert page.locator("#est-profile-card").count() == 0
+        assert page.locator("#est-profile-select").count() == 0
+
+        browser.close()

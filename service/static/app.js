@@ -2311,6 +2311,11 @@ function clearDiagnoseResultState() {
   if (flaggedCrossCheckNote) flaggedCrossCheckNote.style.display = 'none';
   const diagCrossBanner = document.getElementById('diag-crosscheck-banner');
   if (diagCrossBanner) diagCrossBanner.style.display = 'none';
+  const heatSpreadEl = document.getElementById('diag-heat-spread-line');
+  if (heatSpreadEl) {
+    heatSpreadEl.textContent = '';
+    heatSpreadEl.style.display = 'none';
+  }
 }
 
 function syncSharedFields(...ids) {
@@ -2474,7 +2479,34 @@ function initDiagnoseWorkbench() {
       };
 
       renderOptions(diagProfileSelect);
-      renderOptions(estProfileSelect);
+      if (estProfileSelect) renderOptions(estProfileSelect);
+
+      const estLoadSetupSelect = document.getElementById('est-load-setup-select');
+      if (estLoadSetupSelect) {
+        estLoadSetupSelect.innerHTML = '<option value="">— Select a saved bar\'s setup —</option>';
+        if (demoProfiles.length > 0) {
+          const gDemo = document.createElement('optgroup');
+          gDemo.label = 'Demo Profiles';
+          demoProfiles.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.name} (${p.bar_length_m} m, ${p.row_count} readings)`;
+            gDemo.appendChild(opt);
+          });
+          estLoadSetupSelect.appendChild(gDemo);
+        }
+        if (savedProfiles.length > 0) {
+          const gSaved = document.createElement('optgroup');
+          gSaved.label = 'Your Saved Profiles';
+          savedProfiles.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = `${p.name} (${p.bar_length_m} m, ${p.row_count} readings)`;
+            gSaved.appendChild(opt);
+          });
+          estLoadSetupSelect.appendChild(gSaved);
+        }
+      }
 
       const targetId = selectedProfileId || (STATE.currentProfile ? STATE.currentProfile.id : null);
       if (targetId && profiles.some(p => p.id === targetId)) {
@@ -2577,23 +2609,12 @@ function initDiagnoseWorkbench() {
 
       updateProfileMetadataUI(profile);
 
-      // 1. Fill setup fields
+      // 1. Fill setup fields for Diagnose
       if (barLen) barLen.value = String(profile.bar_length_m);
       if (expDur) expDur.value = String(profile.test_duration_s);
       if (tempEdge) tempEdge.value = String(profile.boundary_temperature);
       if (tempPeak) tempPeak.value = String(profile.initial_peak_temperature);
       if (sigmaVal) sigmaVal.value = String(profile.sensor_accuracy || 0.5);
-
-      const estBar = document.getElementById('est-bar-length');
-      if (estBar) estBar.value = String(profile.bar_length_m);
-      const estDur = document.getElementById('est-experiment-time');
-      if (estDur) estDur.value = String(profile.test_duration_s);
-      const estEdge = document.getElementById('est-temp-edge');
-      if (estEdge) estEdge.value = String(profile.boundary_temperature);
-      const estPeak = document.getElementById('est-temp-peak');
-      if (estPeak) estPeak.value = String(profile.initial_peak_temperature);
-      const estSig = document.getElementById('est-sigma-val');
-      if (estSig) estSig.value = String(profile.sensor_accuracy || 0.5);
 
       // 2. Fill Diagnose reference table
       if (baseTbody && profile.readings && profile.readings.length > 0) {
@@ -2615,9 +2636,7 @@ function initDiagnoseWorkbench() {
       }
 
       checkProfileSetupDifferencesAndSuggestions();
-      if (typeof validateEstimateTable === 'function') validateEstimateTable();
       clearDiagnoseResultState();
-      clearEstimateResultState();
     } catch (err) {
       console.error('Error selecting bar profile:', err);
     }
@@ -2632,6 +2651,27 @@ function initDiagnoseWorkbench() {
   if (estProfileSelect) {
     estProfileSelect.addEventListener('change', (e) => {
       selectAndApplyProfile(e.target.value);
+    });
+  }
+  const estLoadSetupSelect = document.getElementById('est-load-setup-select');
+  if (estLoadSetupSelect) {
+    estLoadSetupSelect.addEventListener('change', (e) => {
+      const pId = e.target.value;
+      if (!pId) return;
+      const profile = (STATE.allProfiles || []).find(p => p.id === pId);
+      if (!profile) return;
+      const estBar = document.getElementById('est-bar-length');
+      if (estBar) estBar.value = String(profile.bar_length_m);
+      const estDur = document.getElementById('est-experiment-time');
+      if (estDur) estDur.value = String(profile.test_duration_s);
+      const estEdge = document.getElementById('est-temp-edge');
+      if (estEdge) estEdge.value = String(profile.boundary_temperature);
+      const estPeak = document.getElementById('est-temp-peak');
+      if (estPeak) estPeak.value = String(profile.initial_peak_temperature);
+      const estSig = document.getElementById('est-sigma-val');
+      if (estSig) estSig.value = String(profile.sensor_accuracy || 0.5);
+      if (typeof validateEstimateTable === 'function') validateEstimateTable();
+      clearEstimateResultState();
     });
   }
 
@@ -3392,6 +3432,15 @@ async function executeDiagnosis() {
       specInfo.innerHTML = `A physical transition or external thermal disturbance occurred around ${changeTimeStr} s into the test.`;
       if (gotoEstBtn) gotoEstBtn.style.display = 'inline-block';
       if (gotoEstNoFaultBtn) gotoEstNoFaultBtn.style.display = 'none';
+    }
+
+    // Heat spread comparison line (reference vs test)
+    const heatSpreadEl = document.getElementById('diag-heat-spread-line');
+    if (heatSpreadEl) {
+      const isNormalSpread = (assignedClass !== 'A');
+      const statusText = isNormalSpread ? 'within normal range' : 'different from normal';
+      heatSpreadEl.textContent = `Normal heat spread (reference): ${alphaBase} m^2/s. This test: ${alphaFit} m^2/s (${statusText}).`;
+      heatSpreadEl.style.display = 'block';
     }
 
     // Honesty Note Calibrated Range Check

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ThermaLens — Thermal PDE Inference &amp; Diagnostics Instrument</title>
   <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
-  <link rel="stylesheet" href="style.css?v=thermalens-v38">
+  <link rel="stylesheet" href="style.css?v=thermalens-v39">
 </head>
 <body>
 
@@ -357,40 +357,6 @@
       </div>
 
       <div class="estimate-single-col">
-        <!-- Bar Profile Selector (Shared Reference Library) -->
-        <div class="card bar-profile-card" id="est-profile-card" style="margin-bottom: 1rem; padding: 0.8rem 1rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <label for="est-profile-select" style="font-weight: 600; font-size: 0.88rem; color: var(--text-heading); margin-bottom: 0;">Bar profile</label>
-              <span id="est-profile-modified-badge" class="badge" style="display: none; font-size: 0.72rem; background: var(--accent-amber-bg); color: var(--accent-amber); border: 1px solid var(--accent-amber); padding: 0.1rem 0.4rem; border-radius: var(--radius-xs);">(modified)</span>
-            </div>
-            <div class="profile-actions" id="est-profile-actions" style="display: flex; gap: 0.35rem; align-items: center;">
-              <button type="button" class="btn btn-secondary btn-sm" id="est-profile-export-btn" title="Export profile as .zip" style="font-size: 0.75rem; padding: 0.18rem 0.5rem; display: none;">Export</button>
-              <button type="button" class="btn btn-secondary btn-sm" id="est-profile-import-btn" title="Import profile .zip or CSV+JSON" style="font-size: 0.75rem; padding: 0.18rem 0.5rem;">Import</button>
-              <input type="file" id="est-profile-file-input" accept=".zip,.json,.csv" style="display: none;">
-            </div>
-          </div>
-          <div style="margin-top: 0.4rem;">
-            <select id="est-profile-select" class="form-select" style="width: 100%; font-size: 0.85rem; padding: 0.35rem 0.55rem; border-radius: var(--radius-sm); border: 1px solid var(--rule-base);">
-              <option value="">— Select a bar profile —</option>
-            </select>
-          </div>
-          <div id="est-profile-meta-bar" style="display: none; margin-top: 0.4rem; font-size: 0.78rem; color: var(--text-muted); line-height: 1.4;"></div>
-          <!-- Warning banner if typed setup differs from selected profile -->
-          <div id="est-profile-diff-warn" class="traffic-light-line amber" style="display: none; margin-top: 0.5rem; font-size: 0.8rem; padding: 0.35rem 0.6rem; margin-bottom: 0;">
-            <span class="traffic-light-dot">▲</span>
-            <span id="est-profile-diff-msg">Setup differs from selected profile.</span>
-          </div>
-          <!-- Suggestion banner if typed setup matches an existing profile -->
-          <div id="est-profile-match-suggest" class="traffic-light-line blue" style="display: none; margin-top: 0.5rem; font-size: 0.8rem; padding: 0.35rem 0.6rem; margin-bottom: 0; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 0.4rem;">
-              <span class="traffic-light-dot">ⓘ</span>
-              <span id="est-profile-match-msg"></span>
-            </div>
-            <button type="button" class="btn btn-secondary btn-sm" id="est-profile-apply-match-btn" style="padding: 0.15rem 0.45rem; font-size: 0.74rem;">Apply profile</button>
-          </div>
-        </div>
-
         <!-- 1. Your readings -->
         <div class="card" id="est-readings-card">
           <div class="readings-toolbar">
@@ -448,6 +414,14 @@
         <div class="card" id="est-about-test-card">
           <h2 class="card-title">About your test</h2>
           
+          <!-- Optional shortcut: Load a saved bar's setup -->
+          <div style="margin-bottom: 0.85rem;">
+            <label for="est-load-setup-select" class="form-label" style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.25rem;">Load a saved bar's setup</label>
+            <select id="est-load-setup-select" class="form-select" style="max-width: 380px; font-size: 0.85rem; padding: 0.32rem 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--rule-base);">
+              <option value="">— Select a saved bar's setup —</option>
+            </select>
+          </div>
+
           <!-- Four REQUIRED fields in 2x2 grid (Always visible, no collapsed details) -->
           <div id="est-real-units-container">
             <div class="real-units-grid">
@@ -1001,6 +975,9 @@
             <!-- Specific Fault/Change/Readings details in plain language -->
             <div id="diag-specific-info" style="margin: 0.6rem 0; font-size: 0.92rem; line-height: 1.5; color: var(--text-normal);"></div>
 
+            <!-- Heat-spread comparison line (reference vs test) -->
+            <div id="diag-heat-spread-line" style="margin: 0.4rem 0 0.6rem 0; font-size: 0.88rem; color: var(--text-normal); line-height: 1.4;"></div>
+
             <!-- Plain Cross-check banner (shown when both a Diagnose result and a healthy reference exist) -->
             <div id="diag-crosscheck-banner" class="crosscheck-banner" style="display: none;">
               <span class="crosscheck-label">Cross-check:</span>
@@ -1038,6 +1015,7 @@
             <details class="disclosure technical-details-card" id="diag-details-disclosure" style="margin-top: 1rem;">
               <summary class="technical-details-summary">Show details</summary>
               <div class="technical-details-body" style="padding-top: 0.75rem;">
+                <p class="diag-reference-concept-note" style="margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--text-normal); line-height: 1.5;" id="diag-details-ref-concept-note">The reference defines what normal looks like. Estimate finds the heat spread from this test alone; Diagnose compares the test with your reference.</p>
                 <p class="diag-scope-note" style="margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--text-normal); line-height: 1.5;" id="diag-detector-scope-note">The detector is built for one or two isolated bad readings, not a sensor that is wrong for the whole test.</p>
                 <p class="diag-crosscheck-note" style="display: none; margin-bottom: 0.75rem; font-size: 0.85rem; color: var(--text-normal); line-height: 1.5;" id="diag-details-crosscheck-note">Estimate can still pass because it only checks that a smooth heat curve fits; Diagnose compares against your healthy reference.</p>
                 <div class="table-container" style="margin-bottom: 0.75rem;">
@@ -2658,6 +2636,6 @@
   <!-- Floating Field Tooltip for Strip and Line Charts -->
   <div id="field-hover-tooltip" style="position: fixed; display: none; pointer-events: none; z-index: 9999; background: rgba(15, 23, 42, 0.92); color: #ffffff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; box-shadow: 0 2px 6px rgba(0,0,0,0.3); white-space: nowrap;"></div>
 
-  <script src="app.js?v=thermalens-v38"></script>
+  <script src="app.js?v=thermalens-v39"></script>
 </body>
 </html>

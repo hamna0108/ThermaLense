@@ -140,6 +140,17 @@ def test_playwright_diagnose_real_units_and_baseline_conversion(live_server):
         assert "green" in banner_cls
         assert "Everything looks normal." in page.locator("#diag-traffic-title").text_content()
 
+        # Verify heat spread comparison line
+        assert page.locator("#diag-heat-spread-line").is_visible()
+        heat_line_h = page.locator("#diag-heat-spread-line").text_content()
+        assert "Normal heat spread (reference):" in heat_line_h
+        assert "This test:" in heat_line_h
+        assert "m^2/s" in heat_line_h
+        assert "(within normal range)" in heat_line_h
+
+        # Verify Show details concept note
+        assert page.locator("#diag-details-ref-concept-note").text_content() == "The reference defines what normal looks like. Estimate finds the heat spread from this test alone; Diagnose compares the test with your reference."
+
         # Verify Honesty Note is visible and links to evidence
         assert page.locator("#diag-honesty-note").is_visible()
         honesty_txt = page.locator("#diag-honesty-note").text_content()
@@ -154,6 +165,11 @@ def test_playwright_diagnose_real_units_and_baseline_conversion(live_server):
         banner_cls = page.locator("#diag-traffic-banner").get_attribute("class")
         assert "amber" in banner_cls
         assert "The material behaves differently from your reference run." in page.locator("#diag-traffic-title").text_content()
+        heat_line_a = page.locator("#diag-heat-spread-line").text_content()
+        assert "Normal heat spread (reference):" in heat_line_a
+        assert "This test:" in heat_line_a
+        assert "m^2/s" in heat_line_a
+        assert "(different from normal)" in heat_line_a
 
         # Class F: Sensor Fault (Sensor 3 stuck)
         page.select_option("#diag-scenario-select", "F_stuck")

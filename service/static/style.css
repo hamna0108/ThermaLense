@@ -657,6 +657,23 @@ code {
   gap: 0.4rem;
 }
 
+.btn-secondary.active,
+.btn-group .btn.active {
+  background-color: var(--primary-navy);
+  color: #ffffff;
+  border-color: var(--primary-navy);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="dark"] .btn-secondary.active,
+[data-theme="dark"] .btn-group .btn.active {
+  background-color: var(--accent-cyan);
+  color: #0f172a;
+  border-color: var(--accent-cyan);
+  font-weight: 600;
+}
+
 /* Booktabs Scientific Tables */
 .table-container {
   overflow-x: auto;

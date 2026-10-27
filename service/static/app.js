@@ -173,6 +173,12 @@ function handleRoute() {
 
   // Update cross-check banners when switching routes
   renderCrossCheckBanners();
+
+  // Run the default Poisson example automatically when the page opens so results show immediately
+  if (targetRoute === 'poisson' && !STATE.poissonAutoRunDone) {
+    STATE.poissonAutoRunDone = true;
+    executePoisson();
+  }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -319,7 +325,7 @@ function handleTryExample(action) {
     setTimeout(() => {
       const presetSelect = document.getElementById('poi-presets-select');
       if (presetSelect) {
-        presetSelect.value = 'sine_low';
+        presetSelect.value = 'gauss_center';
         presetSelect.dispatchEvent(new Event('change'));
       }
       const submitBtn = document.getElementById('poi-submit-btn');
@@ -5407,55 +5413,78 @@ function handleFieldCanvasHover(e) {
 // 7. Page 6: Stage 2 Poisson (-nabla^2 u = f)
 // -------------------------------------------------------------------------------------------------
 
-function initPoissonWorkbench() {
+function setPoissonFamily(family) {
   const sineBtn = document.getElementById('poi-family-sine-btn');
   const gaussBtn = document.getElementById('poi-family-gauss-btn');
   const sineControls = document.getElementById('poi-sine-controls');
   const gaussControls = document.getElementById('poi-gauss-controls');
+
+  if (family === 'sine') {
+    if (sineBtn) sineBtn.classList.add('active');
+    if (gaussBtn) gaussBtn.classList.remove('active');
+    if (sineControls) sineControls.style.display = 'block';
+    if (gaussControls) gaussControls.style.display = 'none';
+  } else {
+    if (gaussBtn) gaussBtn.classList.add('active');
+    if (sineBtn) sineBtn.classList.remove('active');
+    if (gaussControls) gaussControls.style.display = 'block';
+    if (sineControls) sineControls.style.display = 'none';
+  }
+}
+
+function initPoissonWorkbench() {
+  const sineBtn = document.getElementById('poi-family-sine-btn');
+  const gaussBtn = document.getElementById('poi-family-gauss-btn');
   const presetsSelect = document.getElementById('poi-presets-select');
   const submitBtn = document.getElementById('poi-submit-btn');
   const downloadBtn = document.getElementById('poi-download-btn');
 
   sineBtn.addEventListener('click', () => {
-    sineBtn.classList.add('active');
-    gaussBtn.classList.remove('active');
-    sineControls.style.display = 'block';
-    gaussControls.style.display = 'none';
+    setPoissonFamily('sine');
+    if (presetsSelect && presetsSelect.value.startsWith('gauss')) {
+      presetsSelect.value = 'sine_low';
+      presetsSelect.dispatchEvent(new Event('change'));
+    }
   });
 
   gaussBtn.addEventListener('click', () => {
-    gaussBtn.classList.add('active');
-    sineBtn.classList.remove('active');
-    gaussControls.style.display = 'block';
-    sineControls.style.display = 'none';
+    setPoissonFamily('gaussian');
+    if (presetsSelect && presetsSelect.value.startsWith('sine')) {
+      presetsSelect.value = 'gauss_center';
+      presetsSelect.dispatchEvent(new Event('change'));
+    }
   });
 
   presetsSelect.addEventListener('change', () => {
     const val = presetsSelect.value;
     if (val === 'sine_low') {
-      sineBtn.click();
+      setPoissonFamily('sine');
       document.getElementById('poi-mode-m').value = 2;
       document.getElementById('poi-mode-n').value = 2;
       document.getElementById('poi-mode-amp').value = 1.0;
     } else if (val === 'sine_high') {
-      sineBtn.click();
+      setPoissonFamily('sine');
       document.getElementById('poi-mode-m').value = 6;
       document.getElementById('poi-mode-n').value = 2;
       document.getElementById('poi-mode-amp').value = 1.0;
     } else if (val === 'gauss_center') {
-      gaussBtn.click();
+      setPoissonFamily('gaussian');
       document.getElementById('poi-gauss-cx').value = 0.5;
       document.getElementById('poi-gauss-cy').value = 0.5;
       document.getElementById('poi-gauss-amp').value = 1.0;
       document.getElementById('poi-gauss-sigma').value = 0.15;
     } else if (val === 'gauss_dual') {
-      gaussBtn.click();
+      setPoissonFamily('gaussian');
       document.getElementById('poi-gauss-cx').value = 0.3;
       document.getElementById('poi-gauss-cy').value = 0.3;
       document.getElementById('poi-gauss-amp').value = 1.0;
       document.getElementById('poi-gauss-sigma').value = 0.12;
     }
   });
+
+  // Default shape: Hot spots, default example: Single center heat spot
+  setPoissonFamily('gaussian');
+  presetsSelect.value = 'gauss_center';
 
   submitBtn.addEventListener('click', executePoisson);
   downloadBtn.addEventListener('click', () => {
@@ -5575,6 +5604,27 @@ async function executePoisson() {
     // Honesty Callout (Data-driven from errors on screen)
     const linErr = data.relative_errors.rel_l2_linear_vs_exact;
     const fnoErr = data.relative_errors.rel_l2_fno_vs_exact;
+    const linErrPct = formatPoissonPercent(linErr);
+    const fnoErrPct = formatPoissonPercent(fnoErr);
+
+    // (a) One-sentence summary generated from the numbers
+    const summaryEl = document.getElementById('poi-summary-text');
+    if (summaryEl) {
+      if (isSine) {
+        if (data.high_frequency_source || fnoErr > 0.3) {
+          summaryEl.textContent = `The plate temperature varies across the pattern. The exact solver and simple baseline agree closely (errors 0%, ${linErrPct}), while the AI model has high error (${fnoErrPct}).`;
+        } else {
+          summaryEl.textContent = `The plate temperature varies across the pattern. All three methods agree closely (errors 0%, ${linErrPct}, ${fnoErrPct}).`;
+        }
+      } else {
+        if (fnoErr > 0.3 || linErr > 0.3) {
+          summaryEl.textContent = `The plate is warmest at the heater and cools toward the edges (errors 0%, ${linErrPct}, ${fnoErrPct}).`;
+        } else {
+          summaryEl.textContent = `The plate is warmest at the heater and cools toward the edges. All three methods agree closely (errors 0%, ${linErrPct}, ${fnoErrPct}).`;
+        }
+      }
+    }
+
     const firstSentence = (fnoErr < linErr)
       ? "In this example the AI model is closer to the exact answer."
       : "In this example the simple baseline is closer.";
@@ -5585,22 +5635,32 @@ async function executePoisson() {
       honestyEl.textContent = `${firstSentence} ${secondSentence}`;
     }
 
-    // Compute global min and max across all three solution fields
-    let globalMin = Infinity;
-    let globalMax = -Infinity;
+    // Determine whether exact solution has negative values (diverging vs one-sided white-to-red)
+    let exactMin = Infinity;
+    let exactMax = -Infinity;
+    for (let r = 0; r < data.exact_field.length; r++) {
+      for (let c = 0; c < data.exact_field[r].length; c++) {
+        const v = data.exact_field[r][c];
+        if (v < exactMin) exactMin = v;
+        if (v > exactMax) exactMax = v;
+      }
+    }
+    const hasNegative = exactMin < -1e-5;
+
+    // One shared scale across the three maps: find maximum value
+    let globalMax = Math.max(exactMax, 1e-6);
     const allFields = [data.exact_field, data.fno_field, data.linear_field];
     allFields.forEach(field => {
       for (let r = 0; r < field.length; r++) {
         for (let c = 0; c < field[r].length; c++) {
           const v = field[r][c];
-          if (v < globalMin) globalMin = v;
           if (v > globalMax) globalMax = v;
+          if (hasNegative && -v > globalMax) globalMax = -v;
         }
       }
     });
 
-    const hasNegative = globalMin < -1e-4;
-    const scaleMax = hasNegative ? Math.max(Math.abs(globalMin), Math.abs(globalMax), 1e-6) : Math.max(globalMax, 1e-6);
+    const scaleMax = globalMax;
 
     // Update solution colour bar labels
     const scaleMinEl = document.getElementById('poi-scale-min');
@@ -5614,7 +5674,7 @@ async function executePoisson() {
     } else {
       if (scaleMinEl) scaleMinEl.textContent = `0.000 (edges)`;
       if (scaleMidEl) scaleMidEl.textContent = `+${(scaleMax / 2).toFixed(3)}`;
-      if (scaleMaxEl) scaleMaxEl.textContent = `+${scaleMax.toFixed(3)} (warmer than edges)`;
+      if (scaleMaxEl) scaleMaxEl.textContent = `+${scaleMax.toFixed(3)} (max)`;
     }
 
     renderPoissonColorbar('poi-solution-colorbar', hasNegative);
@@ -5687,11 +5747,11 @@ function getPoissonSolutionRgb(normVal, isDiverging) {
       return [r, g, b];
     }
   } else {
-    // normVal in [0, 1]
+    // normVal in [0, 1]: one-sided white to red scale
     const s = Math.max(0, Math.min(1, normVal));
-    const r = Math.round(245 - s * 25);
-    const g = Math.round(245 - s * 210);
-    const b = Math.round(245 - s * 210);
+    const r = Math.round(255 - s * 35);  // 255 -> 220
+    const g = Math.round(255 - s * 220); // 255 -> 35
+    const b = Math.round(255 - s * 220); // 255 -> 35
     return [r, g, b];
   }
 }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ThermaLens — Thermal PDE Inference &amp; Diagnostics Instrument</title>
   <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
-  <link rel="stylesheet" href="style.css?v=thermalens-v32">
+  <link rel="stylesheet" href="style.css?v=thermalens-v33">
 </head>
 <body>
 
@@ -1792,7 +1792,7 @@
 
             <!-- Honesty Note (Always Visible) -->
             <div id="poi-honesty-note" class="callout callout-info" style="margin: 0.65rem 0;">
-              <p style="margin: 0; font-size: 0.88rem; line-height: 1.45;">
+              <p style="margin: 0; font-size: 0.88rem; line-height: 1.45;" id="poi-honesty-text">
                 In this example the AI model is closer to the exact answer. Across our full test sets the simple baseline was as accurate or better on every test split.
               </p>
             </div>
@@ -1810,8 +1810,8 @@
                       <tr>
                         <th>Test split</th>
                         <th class="text-right">Samples</th>
-                        <th class="text-right">Simple baseline error</th>
-                        <th class="text-right">AI model error</th>
+                        <th class="text-right">Simple baseline (median rel L₂ error, %)</th>
+                        <th class="text-right">AI model (median rel L₂ error, %)</th>
                         <th>Winner</th>
                       </tr>
                     </thead>
@@ -1854,6 +1854,9 @@
                     </tbody>
                   </table>
                 </div>
+                <p class="text-muted" style="font-size: 0.78rem; margin-top: 0.5rem; margin-bottom: 0;">
+                  * Benchmark table values reflect 64-bit dual ridge regression fitted directly in memory (solving the linear PDE &minus;&nabla;&sup2;u = f to near machine precision, 10&minus;&sup8;). The disk-saved 32-bit checkpoint (<code>linear_baseline_poisson_v2.npz</code>) truncated dual weights to <code>float32</code>, yielding 2.6% median error on <code>test_interp</code> and 4.6% on the live Sine [2,2] query.
+                </p>
               </div>
             </details>
 
@@ -2613,6 +2616,6 @@
   <!-- Floating Field Tooltip for Strip and Line Charts -->
   <div id="field-hover-tooltip" style="position: fixed; display: none; pointer-events: none; z-index: 9999; background: rgba(15, 23, 42, 0.92); color: #ffffff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; box-shadow: 0 2px 6px rgba(0,0,0,0.3); white-space: nowrap;"></div>
 
-  <script src="app.js?v=thermalens-v32"></script>
+  <script src="app.js?v=thermalens-v33"></script>
 </body>
 </html>

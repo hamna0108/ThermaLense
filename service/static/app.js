@@ -5525,6 +5525,19 @@ async function executePoisson() {
       }
     }
 
+    // Honesty Callout (Data-driven from errors on screen)
+    const linErr = data.relative_errors.rel_l2_linear_vs_exact;
+    const fnoErr = data.relative_errors.rel_l2_fno_vs_exact;
+    const firstSentence = (fnoErr < linErr)
+      ? "In this example the AI model is closer to the exact answer."
+      : "In this example the simple baseline is closer.";
+    const secondSentence = "Across our full test sets the simple baseline was as accurate or better on every test split.";
+
+    const honestyEl = document.getElementById('poi-honesty-text') || document.querySelector('#poi-honesty-note p');
+    if (honestyEl) {
+      honestyEl.textContent = `${firstSentence} ${secondSentence}`;
+    }
+
     // Compute global min and max across all three solution fields
     let globalMin = Infinity;
     let globalMax = -Infinity;

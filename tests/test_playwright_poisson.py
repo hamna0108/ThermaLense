@@ -228,6 +228,9 @@ def test_poisson_smoke_wave_and_hotspots(live_server):
         assert "Show full benchmark" in disc_text
         assert "Standard test (interpolation)" in disc_text
         assert "Rapid wave changes (high frequencies)" in disc_text
+        bench_headers = [t.strip() for t in benchmark_disc.locator("thead th").all_text_contents()]
+        assert "Simple baseline (median rel L₂ error, %)" in bench_headers
+        assert "AI model (median rel L₂ error, %)" in bench_headers
 
         # Verify Timing note
         timing_note = page.locator("#poi-timing-note")
@@ -247,7 +250,8 @@ def test_poisson_smoke_wave_and_hotspots(live_server):
         assert page.locator("#poi-gauss-controls").is_visible()
         page.click("#poi-submit-btn")
         page.wait_for_selector("#poi-result-panel", state="visible")
-        # Ensure no errors occurred
+        # Ensure dynamic data-driven update on Gaussian where simple baseline is closer
+        assert "In this example the simple baseline is closer. Across our full test sets the simple baseline was as accurate or better on every test split." in honesty_note.inner_text()
         time.sleep(0.5)
 
         context.close()

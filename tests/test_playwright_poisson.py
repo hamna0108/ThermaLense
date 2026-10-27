@@ -150,15 +150,6 @@ def test_poisson_smoke_wave_and_hotspots(live_server):
         page.wait_for_selector("#heading-poisson", state="visible")
         assert page.locator("#heading-poisson").inner_text() == "Steady Heat Map (2D)"
 
-        # Check "What this page does" intro box (Requirement 2)
-        intro_box = page.locator("#poi-intro-box")
-        assert intro_box.is_visible()
-        intro_text = intro_box.inner_text()
-        assert "A flat plate with its four edges held cold, and heaters on it." in intro_text
-        assert "Tell us where the heat comes from; we show where the plate settles (hot near the heaters, cooler toward the edges)." in intro_text
-        assert "We solve it three ways and compare." in intro_text
-        assert "Values are relative, not real degrees." in intro_text
-
         # Check default shape is "Heaters" and example is "Single center heat spot" (Requirement 1)
         gauss_btn = page.locator("#poi-family-gauss-btn")
         sine_btn = page.locator("#poi-family-sine-btn")

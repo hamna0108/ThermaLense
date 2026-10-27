@@ -224,11 +224,70 @@ def test_estimate_identical_regardless_of_diagnose_profile(live_server):
         est_result_profile1 = page.locator("#est-plain-number").text_content().strip()
         assert est_result_profile1 == est_result_initial, f"Estimate result changed after selecting Steel bar on Diagnose: {est_result_profile1} vs {est_result_initial}"
 
-        # 6. Verify the optional shortcut 'Load a saved bar's setup' exists on Estimate
-        est_load_sel = page.locator("#est-load-setup-select")
-        assert est_load_sel.is_visible()
-        # Also verify the bar-profile card is completely removed from Estimate
+        # 6. Verify the bar-profile card is completely removed from Estimate, and loader is hidden
         assert page.locator("#est-profile-card").count() == 0
         assert page.locator("#est-profile-select").count() == 0
+        # est-load-setup-select is commented out per HIDDEN-UI directive
+        assert page.locator("#est-load-setup-select").count() == 0
+
+        browser.close()
+
+def test_estimate_mismatch_amber_note_and_result_readability(live_server):
+    """Verify amber note when setup and example readings disagree, and result readability with comparison."""
+    port = live_server
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
+
+        page.goto(f"http://127.0.0.1:{port}/#estimate")
+        page.wait_for_selector("#view-estimate.active")
+
+        # 1. Click 'Use example' -> fills table with default example readings (L=0.1, T=100, Tb=20, Tp=80)
+        page.click("#est-use-example-btn")
+        time.sleep(0.2)
+
+        # Mismatch note should NOT be visible when setup matches default example
+        assert not page.locator("#est-example-mismatch-note").is_visible()
+
+        # 2. Change Bar length to 0.2 m while table still has unedited default example readings
+        page.fill("#est-bar-length", "0.2")
+        time.sleep(0.1)
+
+        # Amber note must appear
+        assert page.locator("#est-example-mismatch-note").is_visible()
+        mismatch_text = page.locator("#est-example-mismatch-text").text_content()
+        assert "These readings were made for the default example bar (0.1 m, 100 s, 20 to 80 C). Replace them with your own readings before estimating." in mismatch_text
+
+        # 3. Calculate while mismatched -> Never present as trustworthy
+        page.click("#est-submit-btn")
+        page.wait_for_selector("#est-result-panel", state="visible")
+        banner_class = page.locator("#est-traffic-banner").get_attribute("class")
+        assert "green" not in banner_class, f"Mismatched estimate was presented as green/trustworthy: {banner_class}"
+        assert page.locator("#est-result-mismatch-note").is_visible()
+        res_note = page.locator("#est-result-mismatch-note").text_content()
+        assert "These readings were made for the default example bar (0.1 m, 100 s, 20 to 80 C). Replace them with your own readings before estimating." in res_note
+
+        # 4. Editing a reading in the table clears the amber note
+        page.fill("#est-readings-table tbody tr:first-child .cell-input[data-col='u']", "70.00")
+        time.sleep(0.1)
+        assert not page.locator("#est-example-mismatch-note").is_visible()
+
+        # 5. Reset to default example readings and default setup
+        page.click("#est-use-example-btn")
+        page.fill("#est-bar-length", "0.1")
+        time.sleep(0.1)
+        assert not page.locator("#est-example-mismatch-note").is_visible()
+
+        # 6. Calculate -> Result looks trustworthy & Result readability verified
+        page.click("#est-submit-btn")
+        page.wait_for_selector("#est-result-panel", state="visible")
+        banner_class = page.locator("#est-traffic-banner").get_attribute("class")
+        assert "green" in banner_class
+
+        num_text = page.locator("#est-plain-number").text_content()
+        assert "0.00001 m^2/s" in num_text
+
+        mat_text = page.locator("#est-material-comparison").text_content()
+        assert "For comparison (typical values): steel about 1.3e-5, aluminium about 8.4e-5, glass about 5e-7, wood about 1.3e-7 m^2/s." in mat_text
 
         browser.close()

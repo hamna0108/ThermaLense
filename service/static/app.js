@@ -370,6 +370,17 @@ function formatScientificReal(val, sigDigits = 2) {
   return `${mantissa} × 10${supExp}`;
 }
 
+function formatPlainDecimal(val, sigFigs = 2) {
+  if (val === null || val === undefined || isNaN(val)) return '-';
+  if (val === 0) return '0';
+  if (Math.abs(val) >= 1) return Number(val.toPrecision(sigFigs)).toString();
+  const order = Math.floor(Math.log10(Math.abs(val)));
+  const dec = Math.max(0, -order + sigFigs - 1);
+  let s = val.toFixed(dec);
+  s = s.replace(/(\.\d*?[1-9])0+$/, '$1');
+  return s;
+}
+
 function computeNiceAxis(minVal, maxVal, targetCount = 4) {
   const span = maxVal - minVal;
   if (span <= 0) return { min: minVal, max: maxVal + 1, ticks: [minVal, maxVal + 1] };
@@ -418,6 +429,42 @@ const DEFAULT_ESTIMATE_SCALED_ROWS = [
 ];
 
 const DEFAULT_ESTIMATE_EXAMPLE = DEFAULT_ESTIMATE_EXAMPLE_ROWS.map(r => `${r.x}, ${r.t}, ${r.u}`).join('\n');
+
+function isUneditedDefaultExampleReadings() {
+  const tbody = document.getElementById('est-table-tbody');
+  if (!tbody || tbody.children.length !== DEFAULT_ESTIMATE_EXAMPLE_ROWS.length) return false;
+  const rows = Array.from(tbody.children);
+  for (let i = 0; i < rows.length; i++) {
+    const inputs = rows[i].querySelectorAll('.cell-input');
+    if (!inputs || inputs.length < 3) return false;
+    const x = parseFloat(inputs[0].value);
+    const t = parseFloat(inputs[1].value);
+    const u = parseFloat(inputs[2].value);
+    const expected = DEFAULT_ESTIMATE_EXAMPLE_ROWS[i];
+    if (isNaN(x) || isNaN(t) || isNaN(u)) return false;
+    if (Math.abs(x - expected.x) > 1e-3 || Math.abs(t - expected.t) > 1e-3 || Math.abs(u - expected.u) > 1e-2) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function isDefaultExampleSetup() {
+  const L = parseFloat(document.getElementById('est-bar-length')?.value || '0.1');
+  const T = parseFloat(document.getElementById('est-experiment-time')?.value || '100');
+  const Tb = parseFloat(document.getElementById('est-temp-edge')?.value || '20');
+  const Tp = parseFloat(document.getElementById('est-temp-peak')?.value || '80');
+  return Math.abs(L - 0.1) < 1e-4 && Math.abs(T - 100.0) < 1e-4 && Math.abs(Tb - 20.0) < 1e-4 && Math.abs(Tp - 80.0) < 1e-4;
+}
+
+function checkEstimateExampleMismatch() {
+  const noteAboveTable = document.getElementById('est-example-mismatch-note');
+  const isMismatch = isUneditedDefaultExampleReadings() && !isDefaultExampleSetup();
+  if (noteAboveTable) {
+    noteAboveTable.style.display = isMismatch ? 'flex' : 'none';
+  }
+  return isMismatch;
+}
 
 // -------------------------------------------------------------------------------------------------
 // Shared Readings Across Tabs ("My readings")
@@ -650,6 +697,8 @@ function clearEstimateResultState() {
   if (stateContainer) stateContainer.innerHTML = '';
   const estCrossBanner = document.getElementById('est-crosscheck-banner');
   if (estCrossBanner) estCrossBanner.style.display = 'none';
+  const resMismatchNote = document.getElementById('est-result-mismatch-note');
+  if (resMismatchNote) resMismatchNote.style.display = 'none';
 }
 
 function validateEstimateTable() {
@@ -856,12 +905,14 @@ function initEstimateWorkbench() {
     barLengthInput.addEventListener('input', () => {
       validateEstimateTable();
       clearEstimateResultState();
+      checkEstimateExampleMismatch();
     });
   }
   if (expDurationInput) {
     expDurationInput.addEventListener('input', () => {
       validateEstimateTable();
       clearEstimateResultState();
+      checkEstimateExampleMismatch();
     });
   }
 
@@ -872,12 +923,14 @@ function initEstimateWorkbench() {
     tempPeakInput.addEventListener('input', () => {
       validateEstimateTable();
       clearEstimateResultState();
+      checkEstimateExampleMismatch();
     });
   }
   if (tempEdgeInput) {
     tempEdgeInput.addEventListener('input', () => {
       validateEstimateTable();
       clearEstimateResultState();
+      checkEstimateExampleMismatch();
     });
   }
 
@@ -1020,6 +1073,7 @@ function initEstimateWorkbench() {
       if (e.target.classList.contains('cell-input')) {
         validateEstimateTable();
         clearEstimateResultState();
+        checkEstimateExampleMismatch();
         syncSharedReadings('est');
       }
     });
@@ -1099,6 +1153,7 @@ function initEstimateWorkbench() {
         if (heatSine) heatSine.checked = true;
         setEstimateRows(DEFAULT_ESTIMATE_EXAMPLE_ROWS, 'use_example');
       }
+      checkEstimateExampleMismatch();
       STATE.isEstimateDemo = false;
       const note = document.getElementById('est-removed-sensor-note');
       if (note) note.style.display = 'none';
@@ -1573,12 +1628,13 @@ async function executeParameterEstimate() {
       if (sublineEl) sublineEl.textContent = 'The twin could not calculate a trustworthy heat spread from these readings.';
     } else if (isRealResult) {
       const alphaStr = formatScientificReal(alphaHat, 2);
+      const plainDec = formatPlainDecimal(alphaHat);
       const ciLoStr = formatScientificReal(ci95[0], 3);
       const ciHiStr = formatScientificReal(ci95[1], 3);
 
       if (labelEl) labelEl.textContent = 'Heat spread (α)';
-      if (numberEl) numberEl.innerHTML = `${alphaStr} <span style="font-size: 1.1rem; font-weight: 500; font-family: var(--font-sans); color: var(--text-muted);">m&sup2;/s</span>`;
-      if (headlineEl) headlineEl.innerHTML = `Heat spread (α): <strong>${alphaStr} m&sup2;/s</strong>`;
+      if (numberEl) numberEl.innerHTML = `${alphaStr} <span style="font-size: 1.1rem; font-weight: 500; font-family: var(--font-sans); color: var(--text-muted);">m&sup2;/s</span> <span id="est-decimal-value" class="mono" style="font-size: 1rem; font-weight: 400; color: var(--text-muted); margin-left: 0.4rem;">(${plainDec} m^2/s)</span>`;
+      if (headlineEl) headlineEl.innerHTML = `Heat spread (α): <strong>${alphaStr} m&sup2;/s (${plainDec} m^2/s)</strong>`;
       if (sublineEl) sublineEl.innerHTML = `Most likely between <strong>${ciLoStr}</strong> to <strong>${ciHiStr} m&sup2;/s</strong>`;
     } else {
       if (labelEl) labelEl.textContent = 'Heat spread (α)';
@@ -1587,7 +1643,19 @@ async function executeParameterEstimate() {
       if (sublineEl) sublineEl.innerHTML = `Most likely between <strong>${ci95[0].toFixed(3)}</strong> to <strong>${ci95[1].toFixed(3)}</strong>`;
     }
 
-    // Traffic-Light Line
+    const matComp = document.getElementById('est-material-comparison');
+    if (matComp) {
+      matComp.style.display = isRealResult ? 'block' : 'none';
+      matComp.textContent = 'For comparison (typical values): steel about 1.3e-5, aluminium about 8.4e-5, glass about 5e-7, wood about 1.3e-7 m^2/s.';
+    }
+
+    // Traffic-Light Line & Mismatch Check
+    const isMismatch = isUneditedDefaultExampleReadings() && !isDefaultExampleSetup();
+    const resMismatchNote = document.getElementById('est-result-mismatch-note');
+    if (resMismatchNote) {
+      resMismatchNote.style.display = isMismatch ? 'flex' : 'none';
+    }
+
     const banner = document.getElementById('est-traffic-banner');
     const bannerTitle = document.getElementById('est-traffic-title');
     let bannerLevel = 'green';
@@ -1596,6 +1664,9 @@ async function executeParameterEstimate() {
     if (flags.model_invalid) {
       bannerLevel = 'red';
       bannerText = "We can't give a reliable number: your readings do not fit the heat model";
+    } else if (isMismatch) {
+      bannerLevel = 'amber';
+      bannerText = 'Check this result: setup and example readings disagree';
     } else if (flags.out_of_range || flags.at_bound) {
       bannerLevel = 'amber';
       bannerText = 'Check this result: value is near the edge of the tested range';
@@ -2481,6 +2552,7 @@ function initDiagnoseWorkbench() {
       renderOptions(diagProfileSelect);
       if (estProfileSelect) renderOptions(estProfileSelect);
 
+      /* HIDDEN-UI: estimate bar setup loader (uncomment to restore)
       const estLoadSetupSelect = document.getElementById('est-load-setup-select');
       if (estLoadSetupSelect) {
         estLoadSetupSelect.innerHTML = '<option value="">— Select a saved bar\'s setup —</option>';
@@ -2507,6 +2579,7 @@ function initDiagnoseWorkbench() {
           estLoadSetupSelect.appendChild(gSaved);
         }
       }
+      */
 
       const targetId = selectedProfileId || (STATE.currentProfile ? STATE.currentProfile.id : null);
       if (targetId && profiles.some(p => p.id === targetId)) {
@@ -2653,6 +2726,7 @@ function initDiagnoseWorkbench() {
       selectAndApplyProfile(e.target.value);
     });
   }
+  /* HIDDEN-UI: estimate bar setup loader (uncomment to restore)
   const estLoadSetupSelect = document.getElementById('est-load-setup-select');
   if (estLoadSetupSelect) {
     estLoadSetupSelect.addEventListener('change', (e) => {
@@ -2672,8 +2746,10 @@ function initDiagnoseWorkbench() {
       if (estSig) estSig.value = String(profile.sensor_accuracy || 0.5);
       if (typeof validateEstimateTable === 'function') validateEstimateTable();
       clearEstimateResultState();
+      checkEstimateExampleMismatch();
     });
   }
+  */
 
   // Check differences and matching suggestions
   function checkProfileSetupDifferencesAndSuggestions() {

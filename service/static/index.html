@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ThermaLens — Thermal PDE Inference &amp; Diagnostics Instrument</title>
   <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
-  <link rel="stylesheet" href="style.css?v=thermalens-v39">
+  <link rel="stylesheet" href="style.css?v=thermalens-v40">
 </head>
 <body>
 
@@ -381,6 +381,12 @@
             <button type="button" class="btn btn-secondary btn-sm" id="est-undo-remove-sensor-btn" style="padding: 0.15rem 0.5rem; font-size: 0.8rem;">Undo</button>
           </div>
 
+          <!-- Note when custom setup differs from default example readings -->
+          <div id="est-example-mismatch-note" class="traffic-light-line amber" style="display: none; margin-bottom: 0.75rem;">
+            <span class="traffic-light-dot">▲</span>
+            <span id="est-example-mismatch-text">These readings were made for the default example bar (0.1 m, 100 s, 20 to 80 C). Replace them with your own readings before estimating.</span>
+          </div>
+
           <!-- Editable Table -->
           <div class="readings-table-wrap">
             <table class="readings-table" id="est-readings-table">
@@ -414,13 +420,15 @@
         <div class="card" id="est-about-test-card">
           <h2 class="card-title">About your test</h2>
           
-          <!-- Optional shortcut: Load a saved bar's setup -->
+          <!-- HIDDEN-UI: estimate bar setup loader (uncomment to restore) -->
+          <!--
           <div style="margin-bottom: 0.85rem;">
             <label for="est-load-setup-select" class="form-label" style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.25rem;">Load a saved bar's setup</label>
             <select id="est-load-setup-select" class="form-select" style="max-width: 380px; font-size: 0.85rem; padding: 0.32rem 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--rule-base);">
               <option value="">— Select a saved bar's setup —</option>
             </select>
           </div>
+          -->
 
           <!-- Four REQUIRED fields in 2x2 grid (Always visible, no collapsed details) -->
           <div id="est-real-units-container">
@@ -529,11 +537,22 @@
             <div class="result-subline" id="est-plain-subline">Most likely between 0.095 and 0.102</div>
             <span id="est-out-alpha" style="display: none;">-</span>
 
+            <!-- Material comparison line -->
+            <div id="est-material-comparison" style="margin-top: 0.35rem; margin-bottom: 0.65rem; font-size: 0.84rem; color: var(--text-muted); line-height: 1.4;">
+              For comparison (typical values): steel about 1.3e-5, aluminium about 8.4e-5, glass about 5e-7, wood about 1.3e-7 m^2/s.
+            </div>
+
             <!-- ONE Traffic-Light Line -->
             <div id="est-traffic-banner" class="traffic-light-line green">
               <span class="traffic-light-dot" id="est-traffic-icon">●</span>
               <span class="traffic-light-text" id="est-traffic-title">Result looks trustworthy</span>
               <span id="est-traffic-reasons" style="display: none;"></span>
+            </div>
+
+            <!-- Note next to result if setup and example readings disagree -->
+            <div id="est-result-mismatch-note" class="traffic-light-line amber" style="display: none; margin-top: 0.5rem;">
+              <span class="traffic-light-dot">▲</span>
+              <span>These readings were made for the default example bar (0.1 m, 100 s, 20 to 80 C). Replace them with your own readings before estimating.</span>
             </div>
 
 
@@ -2636,6 +2655,6 @@
   <!-- Floating Field Tooltip for Strip and Line Charts -->
   <div id="field-hover-tooltip" style="position: fixed; display: none; pointer-events: none; z-index: 9999; background: rgba(15, 23, 42, 0.92); color: #ffffff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; box-shadow: 0 2px 6px rgba(0,0,0,0.3); white-space: nowrap;"></div>
 
-  <script src="app.js?v=thermalens-v39"></script>
+  <script src="app.js?v=thermalens-v40"></script>
 </body>
 </html>

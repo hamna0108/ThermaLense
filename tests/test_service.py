@@ -60,6 +60,24 @@ def test_static_frontend_served(client):
     data = res_ev.json()
     assert "headline_findings" in data
 
+def test_reports_static_mount_isolated(client):
+    """Verify that only service/static/reports/poisson_deployed_baseline_errors.json is served,
+    and requests for any other reports/ files (e.g. screenshots) return 404."""
+    # Allowed deployed benchmark errors file
+    res_allowed = client.get("/reports/poisson_deployed_baseline_errors.json")
+    assert res_allowed.status_code == 200
+    assert "test_interp" in res_allowed.json()
+
+    # Requests to other files in repository reports/ return 404
+    res_screenshot = client.get("/reports/screenshots/placement_1440px.png")
+    assert res_screenshot.status_code == 404
+
+    res_doc = client.get("/reports/cleanup_plan.md")
+    assert res_doc.status_code == 404
+
+    res_nonexistent = client.get("/reports/anything_else.json")
+    assert res_nonexistent.status_code == 404
+
 # -------------------------------------------------------------------------------------------------
 # Health, Version, Metrics
 # -------------------------------------------------------------------------------------------------

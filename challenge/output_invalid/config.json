@@ -1,0 +1,16 @@
+{
+  "seed": 20260101,
+  "field": {
+    "method": "auto",
+    "Nx": 101,
+    "Nt": 201
+  },
+  "estimate": {
+    "mode": "mode3plus"
+  },
+  "diagnose": {
+    "simulated_reference_count": 25,
+    "simulated_reference_sigma": 0.01
+  }
+}
+

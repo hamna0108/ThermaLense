@@ -1,0 +1,5 @@
+boundary_family,description,alpha_true,num_episodes,noise_sigma,num_sensors,median_rel_error,mean_rel_error,coverage_95,elapsed_s
+unequal_ends,"Dirichlet 0.2 (left), Dirichlet 0.8 (right), u0=0.5",0.15,40,0.01,10,0.0795,0.089,0.925,1.48
+one_insulated,"Neumann 0 (left), Dirichlet 0 (right), u0=cos(0.5*pi*x)",0.1,40,0.01,10,0.0307,0.033,0.95,1.59
+mixed,"Dirichlet 1.0 (left), Neumann 0 (right), u0=0.0",0.08,40,0.01,10,0.0108,0.0144,0.975,1.49
+both_insulated,"Neumann 0 (left), Neumann 0 (right), u0=cos(pi*x)",0.12,40,0.01,10,0.0152,0.0162,0.975,1.51

@@ -19,19 +19,22 @@ def manufactured_source_2d(X, Y):
 class Poisson2DSolver:
     """
     Fast finite-difference 2D Poisson solver with prefactorized sparse direct solve.
-    Solves -nabla^2 u = f on [0, 1]^2 with u = 0 on boundary using standard 5-point stencil.
+    Solves -nabla^2 u = f on [x_min, x_max] x [y_min, y_max] with u = 0 on boundary using standard 5-point stencil.
+    Supports arbitrary resolutions (Nx, Ny).
     """
-    def __init__(self, N=64):
+    def __init__(self, N=64, Nx=None, Ny=None, domain_x=(0.0, 1.0), domain_y=(0.0, 1.0)):
         self.N = N
-        self.x = np.linspace(0, 1, N)
-        self.y = np.linspace(0, 1, N)
+        self.Nx = Nx if Nx is not None else N
+        self.Ny = Ny if Ny is not None else N
+        self.x = np.linspace(domain_x[0], domain_x[1], self.Nx)
+        self.y = np.linspace(domain_y[0], domain_y[1], self.Ny)
         self.X, self.Y = np.meshgrid(self.x, self.y, indexing='ij')
         self.dx = self.x[1] - self.x[0]
         self.dy = self.y[1] - self.y[0]
         self.h = self.dx
         
-        self.nx_int = N - 2
-        self.ny_int = N - 2
+        self.nx_int = self.Nx - 2
+        self.ny_int = self.Ny - 2
         self.n_int = self.nx_int * self.ny_int
         
         self._build_and_factorize()
@@ -53,26 +56,118 @@ class Poisson2DSolver:
         )
         self.lu_solve = spla.factorized(self.A)
 
-    def solve(self, f):
+    def solve(self, f, bc=None):
         """
-        Solve -nabla^2 u = f with u = 0 on boundary.
-        f: either callable f(X, Y) or ndarray of shape (N, N).
+        Solve -nabla^2 u = f with specified boundary conditions.
+        f: either callable f(X, Y) or ndarray of shape (Nx, Ny).
+        bc: optional dict specifying boundary conditions on edges:
+            {'x_min': ..., 'x_max': ..., 'y_min': ..., 'y_max': ...}
+            Each edge can specify {'type': 'dirichlet'|'neumann', 'value': ...}.
+            If bc is None, defaults to zero Dirichlet on all boundaries.
         Returns:
-            u: ndarray of shape (N, N) with u = 0 on boundary.
+            u: ndarray of shape (Nx, Ny) satisfying discrete PDE and boundary conditions.
         """
         if callable(f):
             f_grid = f(self.X, self.Y)
         else:
             f_grid = np.asarray(f)
-            if f_grid.shape != (self.N, self.N):
-                raise ValueError(f"f array shape {f_grid.shape} must match (N, N) = ({self.N}, {self.N})")
+            if f_grid.shape != (self.Nx, self.Ny):
+                raise ValueError(f"f array shape {f_grid.shape} must match (Nx, Ny) = ({self.Nx}, {self.Ny})")
         
-        b = f_grid[1:-1, 1:-1].flatten()
-        u_int = self.lu_solve(b)
-        
-        u = np.zeros((self.N, self.N), dtype=np.float64)
-        u[1:-1, 1:-1] = u_int.reshape((self.nx_int, self.ny_int))
-        return u
+        if bc is None or not bc:
+            b = f_grid[1:-1, 1:-1].flatten()
+            u_int = self.lu_solve(b)
+            u = np.zeros((self.Nx, self.Ny), dtype=np.float64)
+            u[1:-1, 1:-1] = u_int.reshape((self.nx_int, self.ny_int))
+            return u
+
+        def _get_bc(key, default_type='dirichlet', default_val=0.0):
+            spec = bc.get(key, {})
+            if isinstance(spec, dict):
+                return str(spec.get('type', default_type)).lower(), spec.get('value', default_val)
+            if isinstance(spec, (tuple, list)):
+                return str(spec[0]).lower(), spec[1]
+            return default_type, float(spec)
+
+        l_type, l_val = _get_bc('x_min', 'dirichlet', 0.0)
+        r_type, r_val = _get_bc('x_max', 'dirichlet', 0.0)
+        b_type, b_val = _get_bc('y_min', 'dirichlet', 0.0)
+        t_type, t_val = _get_bc('y_max', 'dirichlet', 0.0)
+
+        def _eval_bc(val, coords):
+            if callable(val):
+                return np.asarray(val(coords), dtype=float)
+            elif isinstance(val, (int, float)):
+                return np.full_like(coords, float(val), dtype=float)
+            else:
+                return np.asarray(val, dtype=float)
+
+        g_left = _eval_bc(l_val, self.y)
+        g_right = _eval_bc(r_val, self.y)
+        g_bottom = _eval_bc(b_val, self.x)
+        g_top = _eval_bc(t_val, self.x)
+
+        # 1. All-Dirichlet case (including arbitrary non-zero and unequal edges)
+        if l_type == 'dirichlet' and r_type == 'dirichlet' and b_type == 'dirichlet' and t_type == 'dirichlet':
+            rhs = f_grid[1:-1, 1:-1].copy()
+            rhs[0, :] += g_left[1:-1] / (self.dx**2)
+            rhs[-1, :] += g_right[1:-1] / (self.dx**2)
+            rhs[:, 0] += g_bottom[1:-1] / (self.dy**2)
+            rhs[:, -1] += g_top[1:-1] / (self.dy**2)
+
+            u_int = self.lu_solve(rhs.flatten())
+            u = np.zeros((self.Nx, self.Ny), dtype=np.float64)
+            u[1:-1, 1:-1] = u_int.reshape((self.nx_int, self.ny_int))
+            u[0, :] = g_left
+            u[-1, :] = g_right
+            u[:, 0] = g_bottom
+            u[:, -1] = g_top
+            return u
+
+        # 2. Neumann on x-edges, Dirichlet on y-edges
+        elif l_type == 'neumann' and r_type == 'neumann' and b_type == 'dirichlet' and t_type == 'dirichlet':
+            N_unk = self.Nx * self.ny_int
+            A_mat = sp.lil_matrix((N_unk, N_unk), dtype=float)
+            rhs = np.zeros(N_unk, dtype=float)
+
+            for i in range(self.Nx):
+                for j_int in range(self.ny_int):
+                    j = j_int + 1
+                    k = i * self.ny_int + j_int
+                    rhs[k] = f_grid[i, j]
+
+                    if j_int == 0:
+                        rhs[k] += g_bottom[i] / (self.dy**2)
+                    if j_int == self.ny_int - 1:
+                        rhs[k] += g_top[i] / (self.dy**2)
+
+                    diag_val = 2.0 / (self.dy**2) + 2.0 / (self.dx**2)
+                    A_mat[k, k] = diag_val
+
+                    if j_int > 0:
+                        A_mat[k, k - 1] = -1.0 / (self.dy**2)
+                    if j_int < self.ny_int - 1:
+                        A_mat[k, k + 1] = -1.0 / (self.dy**2)
+
+                    if i == 0:
+                        A_mat[k, (i + 1) * self.ny_int + j_int] = -2.0 / (self.dx**2)
+                        rhs[k] -= 2.0 * g_left[j] / self.dx
+                    elif i == self.Nx - 1:
+                        A_mat[k, (i - 1) * self.ny_int + j_int] = -2.0 / (self.dx**2)
+                        rhs[k] += 2.0 * g_right[j] / self.dx
+                    else:
+                        A_mat[k, (i - 1) * self.ny_int + j_int] = -1.0 / (self.dx**2)
+                        A_mat[k, (i + 1) * self.ny_int + j_int] = -1.0 / (self.dx**2)
+
+            u_sol = spla.spsolve(A_mat.tocsc(), rhs)
+            u = np.zeros((self.Nx, self.Ny), dtype=np.float64)
+            u[:, 1:-1] = u_sol.reshape((self.Nx, self.ny_int))
+            u[:, 0] = g_bottom
+            u[:, -1] = g_top
+            return u
+
+        else:
+            raise NotImplementedError(f"Unsupported 2D boundary combination: x=({l_type}, {r_type}), y=({b_type}, {t_type})")
 
     def compute_residual(self, u, f):
         """

@@ -1,0 +1,10 @@
+check_id,description,status,value
+CHK_M3_MEAN_MEDIAN_ERROR,Mode 3 Inversion Mean of Cell-Median Errors within 5% of frozen baseline (4 nominal interpolation cells),PASS,2.04% diff
+CHK_M3_COVERAGE_4CELL,Mode 3 95% CI Coverage within 2 percentage points of frozen 95.4% (4 nominal interpolation cells; all-90-cells grand mean is 88.2%),PASS,1.38 pts diff
+CHK_ANOMALY_REPRO_N10_SIG010,"Reproduction of frozen run (same seeds): Cell N=10, sigma=0.01 Confusion & Recalls",KNOWN LIMITATION (frozen 5.5%),"FAR:4.0%, H:96%, A:92%, F:84%, C:100%"
+CHK_ANOMALY_REPRO_N10_SIG050,"Reproduction of frozen run (same seeds): Cell N=10, sigma=0.05 Confusion & Recalls",KNOWN LIMITATION (frozen 7.5%),"FAR:8.0%, H:92%, A:100%, F:72%, C:44%"
+CHK_ANOMALY_REPRO_N20_SIG010,"Reproduction of frozen run (same seeds): Cell N=20, sigma=0.01 Confusion & Recalls",KNOWN LIMITATION (frozen 8.0%),"FAR:12.0%, H:88%, A:100%, F:88%, C:92%"
+CHK_ANOMALY_REPRO_N20_SIG050,"Reproduction of frozen run (same seeds): Cell N=20, sigma=0.05 Confusion & Recalls",KNOWN LIMITATION (frozen 5.0%),"FAR:8.0%, H:92%, A:100%, F:76%, C:64%"
+CHK_ANOMALY_REPRO_OVERALL_FAR,Reproduction of frozen run (same seeds): 4-Cell Aggregate Healthy FAR vs 5% target ceiling,KNOWN LIMITATION (frozen 6.5%),"8.0% [4.1, 15.0]% (frozen 6.5%)"
+CHK_ANOMALY_FRESH_OVERALL_FAR,"Fresh-seed anomaly run (new seed range, 100 episodes/class/cell): 4-Cell Aggregate Healthy FAR",KNOWN LIMITATION (frozen 6.5%),"3.0% [1.0, 8.4]% (repro 8.0%)"
+CHK_POISSON_OPERATOR,Poisson 2D FNO matches frozen table (<=5%) and Linear baseline rel L2 < 0.10,PASS,"test_interp FNO=0.0326 (froz 0.0334), Lin=0.0321"

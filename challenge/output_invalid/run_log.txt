@@ -1,0 +1,24 @@
+================================================================================
+THERMALENS CHALLENGE RUN LOG
+================================================================================
+Command Line      : C:\Users\HP\Desktop\Digital twin\challenge\run_challenge.py --cases challenge/invalid_cases.json --out challenge/output_invalid --seed 20260101 --config challenge/config.json
+Execution Seed    : 20260101
+Start Time (UTC)  : 2026-10-30T10:13:14Z
+End Time (UTC)    : 2026-10-30T10:13:23Z
+Elapsed Runtime   : 9.189s
+Total Cases       : 10
+Run Status        : COMPLETED
+Status Counts     : ok=0, ok_with_warnings=1, invalid_input=9
+
+--- Git Environment ---
+Git Commit (HEAD) : fa2f9494f608c3c092a0b99ff7e5f58e502e0885
+Working Tree      : Dirty (4 modified/untracked files)
+
+--- Python & Environment ---
+Python Version    : 3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]
+PyTorch Version   : 2.14.1+cpu
+NumPy Version     : 2.5.3
+SciPy Version     : 1.18.1
+FastAPI Version   : 0.156.8
+Pydantic Version  : 2.14.1
+================================================================================

@@ -1,0 +1,74 @@
+[
+  {
+    "case_id": "inv_01_missing_required_fields",
+    "x_coords": [0.5, 0.5, 0.5, 0.5],
+    "t_coords": [0.1, 0.3, 0.5, 0.7]
+  },
+  {
+    "case_id": "inv_02_mismatched_lengths",
+    "x_coords": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+    "t_coords": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+    "readings": [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05]
+  },
+  {
+    "case_id": "inv_03_non_finite_values",
+    "x_coords": [0.5, 0.5, 0.5, 0.5, 0.5],
+    "t_coords": [0.1, 0.3, 0.5, 0.7, 0.9],
+    "readings": [0.8, 0.6, "NaN", 0.3, 0.2]
+  },
+  {
+    "case_id": "inv_04_coordinate_outside_domain",
+    "L": 0.5,
+    "T": 2.0,
+    "x_coords": [0.2, 0.85, 0.3, 0.4, 0.25],
+    "t_coords": [0.2, 0.4, 0.6, 0.8, 1.0],
+    "readings": [0.8, 0.6, 0.5, 0.4, 0.3]
+  },
+  {
+    "case_id": "inv_05_equal_temperatures",
+    "T_boundary": 40.0,
+    "T_peak": 40.0,
+    "x_coords": [0.5, 0.5, 0.5, 0.5, 0.5],
+    "t_coords": [0.1, 0.3, 0.5, 0.7, 0.9],
+    "readings": [40.0, 40.0, 40.0, 40.0, 40.0]
+  },
+  {
+    "case_id": "inv_06_wild_temperature_units",
+    "T_boundary": 20.0,
+    "T_peak": 80.0,
+    "x_coords": [0.5, 0.5, 0.5, 0.5, 0.5],
+    "t_coords": [0.1, 0.3, 0.5, 0.7, 0.9],
+    "readings": [353.15, 333.15, 313.15, 303.15, 298.15]
+  },
+  {
+    "case_id": "inv_07_too_few_readings",
+    "x_coords": [0.5, 0.5],
+    "t_coords": [0.2, 0.6],
+    "readings": [0.75, 0.45]
+  },
+  {
+    "case_id": "inv_08_insufficient_reference",
+    "x_coords": [0.5, 0.5, 0.5, 0.5, 0.5],
+    "t_coords": [0.1, 0.3, 0.5, 0.7, 0.9],
+    "readings": [0.8, 0.6, 0.5, 0.4, 0.3],
+    "reference": {
+      "x_coords": [0.5, 0.5, 0.5, 0.5, 0.5],
+      "t_coords": [0.1, 0.3, 0.5, 0.7, 0.9],
+      "readings": [0.82, 0.61, 0.51, 0.41, 0.31]
+    }
+  },
+  {
+    "case_id": "inv_09_duplicate_sensor_reading",
+    "x_coords": [0.5, 0.5, 0.5, 0.5, 0.5],
+    "t_coords": [0.1, 0.3, 0.5, 0.3, 0.9],
+    "readings": [0.8, 0.6, 0.5, 0.59, 0.3]
+  },
+  {
+    "case_id": "inv_10_unknown_case_type",
+    "case_type": "navier_stokes",
+    "x_coords": [0.5, 0.5, 0.5, 0.5, 0.5],
+    "t_coords": [0.1, 0.3, 0.5, 0.7, 0.9],
+    "readings": [0.8, 0.6, 0.5, 0.4, 0.3]
+  }
+]
+

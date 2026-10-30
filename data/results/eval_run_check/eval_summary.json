@@ -1,0 +1,817 @@
+{
+  "timestamp": 1793355703.0668154,
+  "base_seed": 20260101,
+  "quick_mode": true,
+  "runtime_seconds": 61.56,
+  "overall_status": "PASS",
+  "checks": [
+    {
+      "check_id": "CHK_M3_MEAN_MEDIAN_ERROR",
+      "description": "Mode 3 Inversion Mean of Cell-Median Errors within 5% of frozen baseline (4 nominal interpolation cells)",
+      "status": "PASS",
+      "value": "2.04% diff"
+    },
+    {
+      "check_id": "CHK_M3_COVERAGE_4CELL",
+      "description": "Mode 3 95% CI Coverage within 2 percentage points of frozen 95.4% (4 nominal interpolation cells; all-90-cells grand mean is 88.2%)",
+      "status": "PASS",
+      "value": "1.38 pts diff"
+    },
+    {
+      "check_id": "CHK_ANOMALY_REPRO_N10_SIG010",
+      "description": "Reproduction of frozen run (same seeds): Cell N=10, sigma=0.01 Confusion & Recalls",
+      "status": "KNOWN LIMITATION (frozen 5.5%)",
+      "value": "FAR:4.0%, H:96%, A:92%, F:84%, C:100%"
+    },
+    {
+      "check_id": "CHK_ANOMALY_REPRO_N10_SIG050",
+      "description": "Reproduction of frozen run (same seeds): Cell N=10, sigma=0.05 Confusion & Recalls",
+      "status": "KNOWN LIMITATION (frozen 7.5%)",
+      "value": "FAR:8.0%, H:92%, A:100%, F:72%, C:44%"
+    },
+    {
+      "check_id": "CHK_ANOMALY_REPRO_N20_SIG010",
+      "description": "Reproduction of frozen run (same seeds): Cell N=20, sigma=0.01 Confusion & Recalls",
+      "status": "KNOWN LIMITATION (frozen 8.0%)",
+      "value": "FAR:12.0%, H:88%, A:100%, F:88%, C:92%"
+    },
+    {
+      "check_id": "CHK_ANOMALY_REPRO_N20_SIG050",
+      "description": "Reproduction of frozen run (same seeds): Cell N=20, sigma=0.05 Confusion & Recalls",
+      "status": "KNOWN LIMITATION (frozen 5.0%)",
+      "value": "FAR:8.0%, H:92%, A:100%, F:76%, C:64%"
+    },
+    {
+      "check_id": "CHK_ANOMALY_REPRO_OVERALL_FAR",
+      "description": "Reproduction of frozen run (same seeds): 4-Cell Aggregate Healthy FAR vs 5% target ceiling",
+      "status": "KNOWN LIMITATION (frozen 6.5%)",
+      "value": "8.0% [4.1, 15.0]% (frozen 6.5%)"
+    },
+    {
+      "check_id": "CHK_ANOMALY_FRESH_OVERALL_FAR",
+      "description": "Fresh-seed anomaly run (new seed range, 100 episodes/class/cell): 4-Cell Aggregate Healthy FAR",
+      "status": "KNOWN LIMITATION (frozen 6.5%)",
+      "value": "3.0% [1.0, 8.4]% (repro 8.0%)"
+    },
+    {
+      "check_id": "CHK_POISSON_OPERATOR",
+      "description": "Poisson 2D FNO matches frozen table (<=5%) and Linear baseline rel L2 < 0.10",
+      "status": "PASS",
+      "value": "test_interp FNO=0.0326 (froz 0.0334), Lin=0.0321"
+    }
+  ],
+  "details": {
+    "mode3": {
+      "results": [
+        {
+          "cell": "alpha=0.1_N=10_sig=0.01",
+          "alpha": 0.1,
+          "N": 10,
+          "sigma": 0.01,
+          "eval_med_err": 0.014513563445636285,
+          "frozen_med_err": 0.013609,
+          "err_diff_pct": 6.646803185905044,
+          "eval_cov": 98.0,
+          "frozen_cov": 95.0,
+          "cov_diff": 3.0
+        },
+        {
+          "cell": "alpha=0.1_N=20_sig=0.01",
+          "alpha": 0.1,
+          "N": 20,
+          "sigma": 0.01,
+          "eval_med_err": 0.009821356824083818,
+          "frozen_med_err": 0.009364,
+          "err_diff_pct": 4.884203588583677,
+          "eval_cov": 98.0,
+          "frozen_cov": 97.5,
+          "cov_diff": 0.5
+        },
+        {
+          "cell": "alpha=0.05_N=20_sig=0.01",
+          "alpha": 0.05,
+          "N": 20,
+          "sigma": 0.01,
+          "eval_med_err": 0.013801154881067784,
+          "frozen_med_err": 0.013571,
+          "err_diff_pct": 1.695931626636395,
+          "eval_cov": 97.0,
+          "frozen_cov": 93.0,
+          "cov_diff": 4.0
+        },
+        {
+          "cell": "alpha=0.2_N=20_sig=0.05",
+          "alpha": 0.2,
+          "N": 20,
+          "sigma": 0.05,
+          "eval_med_err": 0.040388270474711954,
+          "frozen_med_err": 0.040414,
+          "err_diff_pct": 0.06366488169299672,
+          "eval_cov": 94.0,
+          "frozen_cov": 96.0,
+          "cov_diff": 2.0
+        }
+      ],
+      "mean_eval_err": 0.01963108640637496,
+      "mean_froz_err": 0.0192395,
+      "err_diff_pct": 2.04,
+      "mean_eval_cov": 96.75,
+      "mean_froz_cov": 95.38,
+      "cov_diff_pts": 1.38,
+      "err_pass": true,
+      "cov_pass": true,
+      "next_cell_idx": 4
+    },
+    "anomaly": {
+      "repro": {
+        "suite_label": "reproduction of frozen run (same seeds)",
+        "episodes_per_class": 25,
+        "cells": [
+          {
+            "cell_id": "N10_SIG010",
+            "N": 10,
+            "sigma": 0.01,
+            "confusion_matrix": {
+              "H": {
+                "H": 24,
+                "A": 0,
+                "F": 0,
+                "C": 1
+              },
+              "A": {
+                "H": 0,
+                "A": 23,
+                "F": 0,
+                "C": 2
+              },
+              "F": {
+                "H": 1,
+                "A": 0,
+                "F": 21,
+                "C": 3
+              },
+              "C": {
+                "H": 0,
+                "A": 0,
+                "F": 0,
+                "C": 25
+              }
+            },
+            "eval_far_pct": 4.0,
+            "eval_far_ci": [
+              0.71,
+              19.54
+            ],
+            "frozen_far_pct": 5.5,
+            "frozen_far_ci": [
+              3.1,
+              9.58
+            ],
+            "far_status": "KNOWN LIMITATION (frozen 5.5%)",
+            "recalls": {
+              "H": 96.0,
+              "A": 92.0,
+              "F": 84.0,
+              "C": 100.0
+            },
+            "recalls_ci": {
+              "H": [
+                80.46,
+                99.29
+              ],
+              "A": [
+                75.03,
+                97.78
+              ],
+              "F": [
+                65.35,
+                93.6
+              ],
+              "C": [
+                86.68,
+                100.0
+              ]
+            },
+            "frozen_recalls": {
+              "H": 94.5,
+              "A": 97.0,
+              "F": 80.0,
+              "C": 94.0
+            },
+            "recalls_pass": {
+              "H": true,
+              "A": true,
+              "F": true,
+              "C": true
+            },
+            "all_recalls_pass": true,
+            "cell_status": "KNOWN LIMITATION (frozen 5.5%)"
+          },
+          {
+            "cell_id": "N10_SIG050",
+            "N": 10,
+            "sigma": 0.05,
+            "confusion_matrix": {
+              "H": {
+                "H": 23,
+                "A": 0,
+                "F": 2,
+                "C": 0
+              },
+              "A": {
+                "H": 0,
+                "A": 25,
+                "F": 0,
+                "C": 0
+              },
+              "F": {
+                "H": 6,
+                "A": 0,
+                "F": 18,
+                "C": 1
+              },
+              "C": {
+                "H": 12,
+                "A": 0,
+                "F": 2,
+                "C": 11
+              }
+            },
+            "eval_far_pct": 8.0,
+            "eval_far_ci": [
+              2.22,
+              24.97
+            ],
+            "frozen_far_pct": 7.5,
+            "frozen_far_ci": [
+              4.6,
+              12.0
+            ],
+            "far_status": "KNOWN LIMITATION (frozen 7.5%)",
+            "recalls": {
+              "H": 92.0,
+              "A": 100.0,
+              "F": 72.0,
+              "C": 44.0
+            },
+            "recalls_ci": {
+              "H": [
+                75.03,
+                97.78
+              ],
+              "A": [
+                86.68,
+                100.0
+              ],
+              "F": [
+                52.42,
+                85.72
+              ],
+              "C": [
+                26.67,
+                62.93
+              ]
+            },
+            "frozen_recalls": {
+              "H": 92.5,
+              "A": 93.0,
+              "F": 82.0,
+              "C": 51.0
+            },
+            "recalls_pass": {
+              "H": true,
+              "A": true,
+              "F": true,
+              "C": true
+            },
+            "all_recalls_pass": true,
+            "cell_status": "KNOWN LIMITATION (frozen 7.5%)"
+          },
+          {
+            "cell_id": "N20_SIG010",
+            "N": 20,
+            "sigma": 0.01,
+            "confusion_matrix": {
+              "H": {
+                "H": 22,
+                "A": 0,
+                "F": 0,
+                "C": 3
+              },
+              "A": {
+                "H": 0,
+                "A": 25,
+                "F": 0,
+                "C": 0
+              },
+              "F": {
+                "H": 2,
+                "A": 0,
+                "F": 22,
+                "C": 1
+              },
+              "C": {
+                "H": 0,
+                "A": 2,
+                "F": 0,
+                "C": 23
+              }
+            },
+            "eval_far_pct": 12.0,
+            "eval_far_ci": [
+              4.17,
+              29.96
+            ],
+            "frozen_far_pct": 8.0,
+            "frozen_far_ci": [
+              4.98,
+              12.6
+            ],
+            "far_status": "KNOWN LIMITATION (frozen 8.0%)",
+            "recalls": {
+              "H": 88.0,
+              "A": 100.0,
+              "F": 88.0,
+              "C": 92.0
+            },
+            "recalls_ci": {
+              "H": [
+                70.04,
+                95.83
+              ],
+              "A": [
+                86.68,
+                100.0
+              ],
+              "F": [
+                70.04,
+                95.83
+              ],
+              "C": [
+                75.03,
+                97.78
+              ]
+            },
+            "frozen_recalls": {
+              "H": 92.0,
+              "A": 100.0,
+              "F": 90.5,
+              "C": 92.0
+            },
+            "recalls_pass": {
+              "H": true,
+              "A": true,
+              "F": true,
+              "C": true
+            },
+            "all_recalls_pass": true,
+            "cell_status": "KNOWN LIMITATION (frozen 8.0%)"
+          },
+          {
+            "cell_id": "N20_SIG050",
+            "N": 20,
+            "sigma": 0.05,
+            "confusion_matrix": {
+              "H": {
+                "H": 23,
+                "A": 0,
+                "F": 0,
+                "C": 2
+              },
+              "A": {
+                "H": 0,
+                "A": 25,
+                "F": 0,
+                "C": 0
+              },
+              "F": {
+                "H": 5,
+                "A": 0,
+                "F": 19,
+                "C": 1
+              },
+              "C": {
+                "H": 7,
+                "A": 0,
+                "F": 2,
+                "C": 16
+              }
+            },
+            "eval_far_pct": 8.0,
+            "eval_far_ci": [
+              2.22,
+              24.97
+            ],
+            "frozen_far_pct": 5.0,
+            "frozen_far_ci": [
+              2.74,
+              8.96
+            ],
+            "far_status": "KNOWN LIMITATION (frozen 5.0%)",
+            "recalls": {
+              "H": 92.0,
+              "A": 100.0,
+              "F": 76.0,
+              "C": 64.0
+            },
+            "recalls_ci": {
+              "H": [
+                75.03,
+                97.78
+              ],
+              "A": [
+                86.68,
+                100.0
+              ],
+              "F": [
+                56.57,
+                88.5
+              ],
+              "C": [
+                44.52,
+                79.75
+              ]
+            },
+            "frozen_recalls": {
+              "H": 95.0,
+              "A": 99.5,
+              "F": 83.5,
+              "C": 59.0
+            },
+            "recalls_pass": {
+              "H": true,
+              "A": true,
+              "F": true,
+              "C": true
+            },
+            "all_recalls_pass": true,
+            "cell_status": "KNOWN LIMITATION (frozen 5.0%)"
+          }
+        ],
+        "overall_far_pct": 8.0,
+        "overall_far_ci": [
+          4.11,
+          15.0
+        ],
+        "overall_frozen_far": 6.5,
+        "overall_status": "KNOWN LIMITATION (frozen 6.5%)"
+      },
+      "fresh": {
+        "suite_label": "fresh-seed anomaly run (new seed range, 100 episodes/class/cell)",
+        "episodes_per_class": 25,
+        "cells": [
+          {
+            "cell_id": "N10_SIG010",
+            "N": 10,
+            "sigma": 0.01,
+            "confusion_matrix": {
+              "H": {
+                "H": 24,
+                "A": 0,
+                "F": 1,
+                "C": 0
+              },
+              "A": {
+                "H": 0,
+                "A": 21,
+                "F": 2,
+                "C": 2
+              },
+              "F": {
+                "H": 4,
+                "A": 0,
+                "F": 21,
+                "C": 0
+              },
+              "C": {
+                "H": 1,
+                "A": 0,
+                "F": 0,
+                "C": 24
+              }
+            },
+            "eval_far_pct": 4.0,
+            "eval_far_ci": [
+              0.71,
+              19.54
+            ],
+            "frozen_far_pct": 5.5,
+            "frozen_far_ci": [
+              3.1,
+              9.58
+            ],
+            "far_status": "KNOWN LIMITATION (frozen 5.5%)",
+            "recalls": {
+              "H": 96.0,
+              "A": 84.0,
+              "F": 84.0,
+              "C": 96.0
+            },
+            "recalls_ci": {
+              "H": [
+                80.46,
+                99.29
+              ],
+              "A": [
+                65.35,
+                93.6
+              ],
+              "F": [
+                65.35,
+                93.6
+              ],
+              "C": [
+                80.46,
+                99.29
+              ]
+            },
+            "frozen_recalls": {
+              "H": 94.5,
+              "A": 97.0,
+              "F": 80.0,
+              "C": 94.0
+            },
+            "recalls_pass": {
+              "H": true,
+              "A": false,
+              "F": true,
+              "C": true
+            },
+            "all_recalls_pass": false,
+            "cell_status": "KNOWN LIMITATION (frozen 5.5%)"
+          },
+          {
+            "cell_id": "N10_SIG050",
+            "N": 10,
+            "sigma": 0.05,
+            "confusion_matrix": {
+              "H": {
+                "H": 25,
+                "A": 0,
+                "F": 0,
+                "C": 0
+              },
+              "A": {
+                "H": 0,
+                "A": 24,
+                "F": 0,
+                "C": 1
+              },
+              "F": {
+                "H": 4,
+                "A": 0,
+                "F": 21,
+                "C": 0
+              },
+              "C": {
+                "H": 11,
+                "A": 1,
+                "F": 1,
+                "C": 12
+              }
+            },
+            "eval_far_pct": 0.0,
+            "eval_far_ci": [
+              0.0,
+              13.32
+            ],
+            "frozen_far_pct": 7.5,
+            "frozen_far_ci": [
+              4.6,
+              12.0
+            ],
+            "far_status": "KNOWN LIMITATION (frozen 7.5%)",
+            "recalls": {
+              "H": 100.0,
+              "A": 96.0,
+              "F": 84.0,
+              "C": 48.0
+            },
+            "recalls_ci": {
+              "H": [
+                86.68,
+                100.0
+              ],
+              "A": [
+                80.46,
+                99.29
+              ],
+              "F": [
+                65.35,
+                93.6
+              ],
+              "C": [
+                30.03,
+                66.5
+              ]
+            },
+            "frozen_recalls": {
+              "H": 92.5,
+              "A": 93.0,
+              "F": 82.0,
+              "C": 51.0
+            },
+            "recalls_pass": {
+              "H": true,
+              "A": true,
+              "F": true,
+              "C": true
+            },
+            "all_recalls_pass": true,
+            "cell_status": "KNOWN LIMITATION (frozen 7.5%)"
+          },
+          {
+            "cell_id": "N20_SIG010",
+            "N": 20,
+            "sigma": 0.01,
+            "confusion_matrix": {
+              "H": {
+                "H": 25,
+                "A": 0,
+                "F": 0,
+                "C": 0
+              },
+              "A": {
+                "H": 0,
+                "A": 25,
+                "F": 0,
+                "C": 0
+              },
+              "F": {
+                "H": 4,
+                "A": 0,
+                "F": 21,
+                "C": 0
+              },
+              "C": {
+                "H": 0,
+                "A": 0,
+                "F": 0,
+                "C": 25
+              }
+            },
+            "eval_far_pct": 0.0,
+            "eval_far_ci": [
+              0.0,
+              13.32
+            ],
+            "frozen_far_pct": 8.0,
+            "frozen_far_ci": [
+              4.98,
+              12.6
+            ],
+            "far_status": "KNOWN LIMITATION (frozen 8.0%)",
+            "recalls": {
+              "H": 100.0,
+              "A": 100.0,
+              "F": 84.0,
+              "C": 100.0
+            },
+            "recalls_ci": {
+              "H": [
+                86.68,
+                100.0
+              ],
+              "A": [
+                86.68,
+                100.0
+              ],
+              "F": [
+                65.35,
+                93.6
+              ],
+              "C": [
+                86.68,
+                100.0
+              ]
+            },
+            "frozen_recalls": {
+              "H": 92.0,
+              "A": 100.0,
+              "F": 90.5,
+              "C": 92.0
+            },
+            "recalls_pass": {
+              "H": true,
+              "A": true,
+              "F": true,
+              "C": true
+            },
+            "all_recalls_pass": true,
+            "cell_status": "KNOWN LIMITATION (frozen 8.0%)"
+          },
+          {
+            "cell_id": "N20_SIG050",
+            "N": 20,
+            "sigma": 0.05,
+            "confusion_matrix": {
+              "H": {
+                "H": 23,
+                "A": 0,
+                "F": 0,
+                "C": 2
+              },
+              "A": {
+                "H": 0,
+                "A": 25,
+                "F": 0,
+                "C": 0
+              },
+              "F": {
+                "H": 4,
+                "A": 0,
+                "F": 20,
+                "C": 1
+              },
+              "C": {
+                "H": 9,
+                "A": 0,
+                "F": 1,
+                "C": 15
+              }
+            },
+            "eval_far_pct": 8.0,
+            "eval_far_ci": [
+              2.22,
+              24.97
+            ],
+            "frozen_far_pct": 5.0,
+            "frozen_far_ci": [
+              2.74,
+              8.96
+            ],
+            "far_status": "KNOWN LIMITATION (frozen 5.0%)",
+            "recalls": {
+              "H": 92.0,
+              "A": 100.0,
+              "F": 80.0,
+              "C": 60.0
+            },
+            "recalls_ci": {
+              "H": [
+                75.03,
+                97.78
+              ],
+              "A": [
+                86.68,
+                100.0
+              ],
+              "F": [
+                60.87,
+                91.14
+              ],
+              "C": [
+                40.74,
+                76.6
+              ]
+            },
+            "frozen_recalls": {
+              "H": 95.0,
+              "A": 99.5,
+              "F": 83.5,
+              "C": 59.0
+            },
+            "recalls_pass": {
+              "H": true,
+              "A": true,
+              "F": true,
+              "C": true
+            },
+            "all_recalls_pass": true,
+            "cell_status": "KNOWN LIMITATION (frozen 5.0%)"
+          }
+        ],
+        "overall_far_pct": 3.0,
+        "overall_far_ci": [
+          1.03,
+          8.45
+        ],
+        "overall_frozen_far": 6.5,
+        "overall_status": "KNOWN LIMITATION (frozen 6.5%)"
+      }
+    },
+    "poisson": {
+      "splits": [
+        {
+          "split": "test_interp",
+          "eval_fno_l2": 0.03257576376199722,
+          "frozen_fno_l2": 0.033425360918045,
+          "fno_diff_pct": 2.54,
+          "fno_pass": true,
+          "eval_lin_l2": 0.0321270152926445,
+          "lin_pass": true
+        },
+        {
+          "split": "test_ood_narrow",
+          "eval_fno_l2": 0.08933286368846893,
+          "frozen_fno_l2": 0.0900192186236381,
+          "fno_diff_pct": 0.76,
+          "fno_pass": true,
+          "eval_lin_l2": 0.046238526701927185,
+          "lin_pass": true
+        }
+      ],
+      "overall_pass": true
+    }
+  }
+}

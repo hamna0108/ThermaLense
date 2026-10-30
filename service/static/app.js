@@ -1446,6 +1446,38 @@ function generateEstimateSample() {
   setEstimateRows(rows, 'seed_change');
 }
 
+// Helper to translate FastAPI/Pydantic validation errors or service refusals into plain-words English
+function formatApiErrorMessage(data, fallback = 'The server rejected the request due to an input validation error.') {
+  if (!data) return fallback;
+  if (typeof data === 'string') return data;
+  if (data.message && typeof data.message === 'string') return data.message;
+  if (typeof data.detail === 'string') return data.detail;
+  if (data.detail && typeof data.detail.message === 'string') return data.detail.message;
+  if (Array.isArray(data.detail)) {
+    const list = data.detail.map(err => {
+      let field = '';
+      if (Array.isArray(err.loc)) {
+        const parts = err.loc.filter(p => p !== 'body');
+        if (parts.length > 0) field = parts.join('.');
+      }
+      let rawMsg = err.msg || 'Invalid input';
+      if (typeof rawMsg === 'string' && rawMsg.startsWith('Value error, ')) {
+        rawMsg = rawMsg.replace('Value error, ', '');
+      }
+      return field ? `${field}: ${rawMsg}` : rawMsg;
+    });
+    return list.filter(Boolean).join('; ') || fallback;
+  }
+  if (Array.isArray(data.errors)) {
+    return data.errors.join('; ');
+  }
+  if (typeof data.detail === 'object' && data.detail !== null) {
+    if (data.detail.msg) return data.detail.msg;
+    return Object.entries(data.detail).map(([k, v]) => `${k}: ${v}`).join('; ');
+  }
+  return fallback;
+}
+
 async function executeParameterEstimate() {
   const stateContainer = document.getElementById('est-state-container');
   const resultPanel = document.getElementById('est-result-panel');
@@ -1464,8 +1496,8 @@ async function executeParameterEstimate() {
     return;
   }
 
-  if (validCount < 3) {
-    const msg = 'Please enter at least 3 readings to calculate.';
+  if (validCount < 4) {
+    const msg = 'Please enter at least 4 readings to calculate.';
     if (validationMsg) validationMsg.textContent = msg;
     if (stateContainer) {
       stateContainer.innerHTML = `<div class="state-box error"><strong>Input Error:</strong> ${msg}</div>`;
@@ -1566,8 +1598,8 @@ async function executeParameterEstimate() {
     console.log("Estimate response data:", JSON.stringify(data));
 
     if (!res.ok) {
-      const errCode = data.error_code || (data.detail && data.detail.error_code) || 'ERROR';
-      const msg = data.message || (data.detail && data.detail.message) || (typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
+      const errCode = data.error_code || (data.detail && data.detail.error_code) || (res.status === 422 ? 'VALIDATION_ERROR' : 'ERROR');
+      const msg = formatApiErrorMessage(data, 'The estimation service rejected the inputs due to an invalid format or missing values.');
       console.warn("Estimate request failed:", errCode, msg);
       if (stateContainer) {
         stateContainer.innerHTML = `
@@ -1586,6 +1618,10 @@ async function executeParameterEstimate() {
       if (numberEl) numberEl.textContent = 'No reliable result';
       if (headlineEl) headlineEl.innerHTML = '<strong>No reliable result</strong>';
       if (sublineEl) sublineEl.textContent = msg;
+      const banner = document.getElementById('est-traffic-banner');
+      const bannerTitle = document.getElementById('est-traffic-title');
+      if (banner) banner.className = 'traffic-light-line red';
+      if (bannerTitle) bannerTitle.textContent = msg;
       return;
     }
 
@@ -3394,7 +3430,7 @@ async function executeDiagnosis() {
   }
 
   // Validate test table
-  const testVal = validateDiagnoseTable(testTbody, testMsg, L, T, 3);
+  const testVal = validateDiagnoseTable(testTbody, testMsg, L, T, 4);
   if (!testVal.valid) {
     stateContainer.innerHTML = `<div class="state-box error">${testVal.error}</div>`;
     return;
@@ -3428,8 +3464,8 @@ async function executeDiagnosis() {
     };
 
     if (!res.ok) {
-      const errCode = data.error_code || (data.detail && data.detail.error_code) || 'REFUSAL';
-      const msg = data.message || (data.detail && data.detail.message) || JSON.stringify(data.detail);
+      const errCode = data.error_code || (data.detail && data.detail.error_code) || (res.status === 422 ? 'VALIDATION_ERROR' : 'REFUSAL');
+      const msg = formatApiErrorMessage(data, 'The diagnosis service rejected the inputs due to an invalid format or missing values.');
       stateContainer.innerHTML = `
         <div class="state-box refusal">
           <div style="font-weight: 700; margin-bottom: 0.3rem;">Service Refusal (${errCode})</div>
@@ -3444,6 +3480,8 @@ async function executeDiagnosis() {
         const title = document.getElementById('diag-traffic-title');
         if (title) title.textContent = msg;
       }
+      const specInfo = document.getElementById('diag-specific-info');
+      if (specInfo) specInfo.textContent = `Diagnosis was refused: ${msg}`;
       return;
     }
 

@@ -77,7 +77,6 @@ To confirm that these changes introduced zero side-effects or performance regres
    - Mentor 2-observation inversion: $|\hat{\alpha} - 0.10| = 1.2 \times 10^{-5}$
    - Poisson zero Dirichlet & Neumann benchmarks: Relative $L^2$ error $< 2.1 \times 10^{-4}$
 3. **Full Pytest Suite (`pytest tests -q`)**:
-   - **108 passed**, 1 failed, 1 skipped.
-   - In `tests/test_playwright_shared_tabs.py`: `test_full_handoff_flow_390` PASSED. `test_full_handoff_flow_1440` timed out at line 241 waiting for `#field-canvas` to be visible because `#field-canvas` is located inside the collapsible disclosure element `<details id="field-heatmap-disclosure">` ("Show full heat map"), which is closed by default. Under the prompt instructions, web UI code was kept untouched.
-   - All 108 unit tests, numerical solver tests, physics invariants, and FastAPI service endpoints passed with 100% success.
+   - In `tests/test_playwright_shared_tabs.py`: both `test_full_handoff_flow_1440` and `test_full_handoff_flow_390` PASS (updated test opens `<details id="field-heatmap-disclosure">` before awaiting `#field-canvas`).
+   - All unit tests, numerical solver tests, physics invariants, and FastAPI service endpoints pass with 100% success.
 

@@ -134,7 +134,7 @@ This document records the foundational architectural decisions made across the D
 
 ### Decision 7: Poisson Round 2: v2 Frozen
 - **Options Tried:**
-  1. *Poisson v2 (Frozen Baseline):* FNO-2D (modes 16, width 32, 4 layers, ~466k params) trained on Poisson v2 dataset with $L_2 + 0.1 H^1$ loss.
+  1. *Poisson v2 (Frozen Baseline):* FNO-2D (`modes1=12, modes2=12`, width 32, 4 layers, 1,188,353 complex/scalar tensor elements / 2,368,001 real float parameters; previously misstated as modes 16, ~466k params) trained on Poisson v2 dataset with $L_2 + 0.1 H^1$ loss.
   2. *Poisson v3 (Colab 5-Seed Retraining Study):* FNO-2D retrained across 5 seeds (42, 43, 44, 45, 46) on GPU (Tesla T4) with extended training budget (up to 300 epochs, patience 25, delta 1e-4) to test whether scaling training epochs and testing seed sensitivity unlocks $\ge 2\times$ error reduction on validation/interpolation and closes OOD failure modes.
 - **Option Selected:** Poisson v2 frozen (`models/fno2d_poisson_v2.pt` retained as official final model; v3 rejected).
 - **Why:**

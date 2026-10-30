@@ -238,6 +238,8 @@ def test_full_handoff_flow_1440(live_server):
         # Compute field
         page.click("#field-submit-btn")
         page.wait_for_selector("#field-result-panel", state="visible", timeout=15000)
+        # Open heatmap disclosure before waiting for canvas
+        page.click("#field-heatmap-disclosure summary")
         page.wait_for_selector("#field-canvas", state="visible")
 
         save_and_copy_screenshot(page, "handoff_1440_step4_field.png")

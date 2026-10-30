@@ -603,10 +603,11 @@ code {
 }
 
 .form-help {
+  display: block;
   font-size: 0.78rem;
   color: var(--text-dim);
-  margin-top: 0.25rem;
-  line-height: 1.4;
+  margin-top: 0.2rem;
+  line-height: 1.2;
 }
 
 /* Buttons */
@@ -2133,6 +2134,57 @@ tr[id*="alpha"] td {
   border: 1px solid var(--rule-hairline, #d9d3c6);
 }
 
+.poi-map-card h4, .poi-panel-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 0.45rem;
+  text-align: center;
+  line-height: 1.25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.poi-map-card-large {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.poi-map-card-large .poi-panel-title {
+  font-size: 0.95rem;
+  height: auto;
+  min-height: auto;
+  margin-bottom: 0.5rem;
+}
+
+.poi-check-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 0.35rem;
+  text-align: center;
+  height: 2.35rem;
+  min-height: 2.35rem;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.poi-plate-caption {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+  text-align: center;
+  display: block;
+}
+
 .poi-map-frame {
   display: flex;
   align-items: center;
@@ -2164,5 +2216,55 @@ tr[id*="alpha"] td {
   border-radius: 2px;
   border: 1px solid var(--rule-hairline, #d9d3c6);
   image-rendering: pixelated;
+}
+
+.poi-view-group {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.poi-view-btn {
+  padding: 0.38rem 0.8rem;
+  font-size: 0.83rem;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 1px solid var(--rule-hairline, #d0d7de);
+  background: var(--bg-surface-raised, #ffffff);
+  color: var(--text-main, #24292f);
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.poi-view-btn:hover {
+  background: var(--bg-subtle, #f3f4f6);
+  border-color: var(--rule-subtle, #cbd5e1);
+}
+
+.poi-view-btn.active {
+  background: var(--accent-burgundy, #8b1e2d) !important;
+  color: #ffffff !important;
+  border-color: var(--accent-burgundy, #8b1e2d) !important;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.poi-compare-title {
+  height: 2.35rem;
+  min-height: 2.35rem;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .poi-compare-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 

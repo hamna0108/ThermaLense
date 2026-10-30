@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ThermaLens — Thermal PDE Inference &amp; Diagnostics Instrument</title>
   <meta name="description" content="Production-grade physical parameter estimation, multi-hypothesis sensor anomaly diagnostics, and neural operator PDE inference.">
-  <link rel="stylesheet" href="style.css?v=thermalens-v41">
+  <link rel="stylesheet" href="style.css?v=thermalens-v45">
 </head>
 <body>
 
@@ -1720,12 +1720,12 @@
               <div class="form-group">
                 <label for="poi-gauss-cx" class="form-label">Center X</label>
                 <input type="number" id="poi-gauss-cx" class="form-control mono" value="0.5" min="0.0" max="1.0" step="0.05">
-                <span class="form-help">Where the heater sits (0 = left or bottom edge, 1 = right or top edge, 0.5 = middle)</span>
+                <span class="form-help">0 = left or bottom edge, 1 = right or top edge</span>
               </div>
               <div class="form-group">
                 <label for="poi-gauss-cy" class="form-label">Center Y</label>
                 <input type="number" id="poi-gauss-cy" class="form-control mono" value="0.5" min="0.0" max="1.0" step="0.05">
-                <span class="form-help">Where the heater sits (0 = left or bottom edge, 1 = right or top edge, 0.5 = middle)</span>
+                <span class="form-help">0 = left or bottom edge, 1 = right or top edge</span>
               </div>
             </div>
             <div class="grid-2">
@@ -1736,9 +1736,12 @@
               </div>
               <div class="form-group">
                 <label for="poi-gauss-sigma" class="form-label">Width</label>
-                <input type="number" id="poi-gauss-sigma" class="form-control mono" value="0.15" step="0.02" min="0.01">
+                <input type="number" id="poi-gauss-sigma" class="form-control mono" value="0.15" step="0.01" min="0.04">
                 <span class="form-help">How spread out the heat is (small = sharp spot, large = broad)</span>
               </div>
+            </div>
+            <div id="poi-narrow-warning" class="callout callout-warning" style="display: none; margin-top: 0.6rem; margin-bottom: 0.35rem; padding: 0.5rem 0.75rem; font-size: 0.82rem; line-height: 1.35;">
+              This heater is narrower than the AI model was trained on, so its answer may be wrong. The exact answer is still correct.
             </div>
           </div>
 
@@ -1765,7 +1768,10 @@
 
         <!-- Poisson Output Card -->
         <div class="card" id="poisson-results-card">
-          <h2 class="card-title" style="margin-top: 0;">Three solvers compared</h2>
+          <h2 class="card-title" style="margin-top: 0;">Plate temperature</h2>
+          <p id="poi-card-intro" class="text-muted" style="margin-top: -0.25rem; margin-bottom: 0.85rem; font-size: 0.88rem; line-height: 1.4;">
+            Top-down view of the plate. White is cold (edges stay at 0), red is hot. The hottest spot is where your heater is.
+          </p>
 
           <div id="poi-state-container">
             <div class="state-box">
@@ -1774,129 +1780,178 @@
           </div>
 
           <div id="poi-result-panel" style="display: none;">
-            <!-- (a) One-sentence Summary Callout -->
-            <div id="poi-summary-callout" class="callout callout-info" style="margin-bottom: 0.85rem;">
-              <p id="poi-summary-text" style="margin: 0; font-size: 0.88rem; line-height: 1.45; font-weight: 500;">
-                The plate is warmest at the heater and cools toward the edges. All three methods agree closely.
-              </p>
+
+            <!-- View Buttons: Segmented row above plates -->
+            <div id="poi-view-selector" class="poi-view-group" role="tablist" aria-label="Plate temperature views" style="display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem;">
+              <button type="button" class="btn btn-sm poi-view-btn active" id="poi-view-btn-result" data-view="result" role="tab" aria-selected="true">Result</button>
+              <button type="button" class="btn btn-sm poi-view-btn" id="poi-view-btn-fno" data-view="fno" role="tab" aria-selected="false">AI model</button>
+              <button type="button" class="btn btn-sm poi-view-btn" id="poi-view-btn-lin" data-view="lin" role="tab" aria-selected="false">Simple baseline</button>
+              <button type="button" class="btn btn-sm poi-view-btn" id="poi-view-btn-compare" data-view="compare" role="tab" aria-selected="false">Compare</button>
             </div>
 
-            <!-- (b) Solution Maps Section with Labelled Colour Bar -->
-            <div style="margin-bottom: 0.75rem;">
-              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
-                <h3 style="font-size: 0.95rem; margin: 0;">Steady plate temperature</h3>
-                <span class="text-muted" style="font-size: 0.75rem;">Shared scale across all three calculations</span>
+            <!-- Single Views (Result, AI model, Simple baseline) -->
+            <div id="poi-single-view" style="margin-bottom: 1.25rem;">
+              <div class="poi-map-card poi-map-card-large" style="max-width: 420px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; align-items: center;">
+                <h4 id="poi-single-title" class="poi-panel-title" style="font-size: 0.95rem; font-weight: 600; margin-top: 0; margin-bottom: 0.5rem; text-align: center;">Exact answer</h4>
+                
+                <div class="poi-map-frame" style="width: 100%; max-width: 280px;">
+                  <span class="poi-axis-label-y">Position up the plate</span>
+                  <canvas id="poi-canvas-single" class="heatmap-canvas" style="width: 280px; height: 280px; max-width: 100%; aspect-ratio: 1;" width="280" height="280"></canvas>
+                </div>
+                <span class="poi-axis-label-x">Position across the plate</span>
+
+                <!-- Shared colour bar directly under the plate -->
+                <div class="colorbar-container" style="width: 100%; max-width: 280px; margin-top: 0.75rem; margin-bottom: 0.35rem;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                    <span id="poi-scale-min" class="mono">0.000 (edges)</span>
+                    <span id="poi-scale-mid" class="mono">+0.003</span>
+                    <span id="poi-scale-max" class="mono">+0.012 (warmer than edges)</span>
+                  </div>
+                  <canvas id="poi-solution-colorbar" height="12" style="width: 100%; height: 12px; border-radius: 3px; display: block; border: 1px solid var(--rule-hairline);"></canvas>
+                </div>
+
+                <!-- Hottest Point line for that method -->
+                <p id="poi-hottest-point" style="margin: 0.35rem 0 0.2rem 0; font-size: 0.84rem; color: var(--text-muted); font-family: var(--font-mono); text-align: center;">
+                  Hottest point: +0.027 at (0.50, 0.50) in plate units
+                </p>
+
+                <!-- Caption: for Result "Exact solver (the reference answer)"; for AI/Baseline "X% different from the exact answer" -->
+                <p id="poi-single-caption" class="poi-plate-caption mono" style="font-size: 0.82rem; color: var(--text-muted); margin: 0.2rem 0 0 0; text-align: center;">
+                  Exact solver (the reference answer)
+                </p>
+
+                <!-- Amber note when AI model error is above 50% -->
+                <div id="poi-single-amber-warning" class="callout callout-warning" style="display: none; margin-top: 0.75rem; width: 100%; max-width: 320px; padding: 0.5rem 0.75rem;">
+                  <p style="margin: 0; font-size: 0.82rem; line-height: 1.35; color: var(--text-main);">
+                    The AI model is not reliable for this input.
+                  </p>
+                </div>
               </div>
-              <div class="colorbar-container" style="margin-bottom: 0.85rem;">
+            </div>
+
+            <!-- Compare View: Three plates side by side, then Difference from exact, then results table -->
+            <div id="poi-compare-view" style="display: none; margin-bottom: 1.25rem;">
+              
+              <!-- Shared colour bar for the compare plates -->
+              <div class="colorbar-container" style="max-width: 440px; margin: 0 auto 0.85rem auto;">
                 <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">
-                  <span id="poi-scale-min" class="mono">0.000 (edges)</span>
-                  <span id="poi-scale-mid" class="mono">+0.006</span>
-                  <span id="poi-scale-max" class="mono">+0.012 (warmer than edges)</span>
+                  <span id="poi-compare-scale-min" class="mono">0.000 (edges)</span>
+                  <span id="poi-compare-scale-mid" class="mono">+0.003</span>
+                  <span id="poi-compare-scale-max" class="mono">+0.012 (warmer than edges)</span>
                 </div>
-                <canvas id="poi-solution-colorbar" height="12" style="width: 100%; height: 12px; border-radius: 3px; display: block; border: 1px solid var(--rule-hairline);"></canvas>
+                <canvas id="poi-compare-colorbar" height="12" style="width: 100%; height: 12px; border-radius: 3px; display: block; border: 1px solid var(--rule-hairline);"></canvas>
               </div>
-              <div class="grid-3" style="gap: 0.75rem;">
-                <div class="poi-map-card">
-                  <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.45rem; text-align: center;">Exact answer</h4>
-                  <div class="poi-map-frame">
-                    <span class="poi-axis-label-y">Position up the plate</span>
-                    <canvas id="poi-canvas-exact" class="heatmap-canvas" style="width: 170px; height: 170px; max-width: 100%; aspect-ratio: 1;" width="170" height="170"></canvas>
-                  </div>
-                  <span class="poi-axis-label-x">Position across the plate</span>
-                </div>
-                <div class="poi-map-card">
-                  <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.45rem; text-align: center;">AI model's answer</h4>
-                  <div class="poi-map-frame">
-                    <span class="poi-axis-label-y">Position up the plate</span>
-                    <canvas id="poi-canvas-fno" class="heatmap-canvas" style="width: 170px; height: 170px; max-width: 100%; aspect-ratio: 1;" width="170" height="170"></canvas>
-                  </div>
-                  <span class="poi-axis-label-x">Position across the plate</span>
-                </div>
-                <div class="poi-map-card">
-                  <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.45rem; text-align: center;">Simple baseline's answer</h4>
-                  <div class="poi-map-frame">
-                    <span class="poi-axis-label-y">Position up the plate</span>
-                    <canvas id="poi-canvas-lin" class="heatmap-canvas" style="width: 170px; height: 170px; max-width: 100%; aspect-ratio: 1;" width="170" height="170"></canvas>
-                  </div>
-                  <span class="poi-axis-label-x">Position across the plate</span>
-                </div>
-              </div>
-            </div>
 
-            <!-- Difference from Exact Maps Section -->
-            <div style="margin-top: 1rem; margin-bottom: 1rem; border-top: 1px solid var(--rule-hairline); padding-top: 0.85rem;">
-              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
-                <h3 style="font-size: 0.95rem; margin: 0;">Difference from exact</h3>
-                <span class="text-muted" style="font-size: 0.75rem;">Absolute difference |model &minus; exact|</span>
-              </div>
-              <div class="colorbar-container" style="margin-bottom: 0.85rem; max-width: 420px;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">
-                  <span id="poi-diff-scale-min" class="mono">0.0000 (exact match)</span>
-                  <span id="poi-diff-scale-max" class="mono">+0.0050 (max difference)</span>
-                </div>
-                <canvas id="poi-diff-colorbar" height="10" style="width: 100%; height: 10px; border-radius: 3px; display: block; border: 1px solid var(--rule-hairline);"></canvas>
-              </div>
-              <div class="grid-2" style="gap: 0.75rem;">
+              <!-- Three plates side by side with equal-height titles -->
+              <div class="poi-compare-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; max-width: 540px; margin: 0 auto 1.25rem auto;">
                 <div class="poi-map-card">
-                  <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.45rem; text-align: center; color: var(--accent-burgundy);">AI model: difference from exact</h4>
+                  <h4 class="poi-compare-title" style="font-size: 0.85rem; font-weight: 600; margin-top: 0; margin-bottom: 0.35rem; text-align: center; height: 2.35rem; min-height: 2.35rem; line-height: 1.2; display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box;">Exact answer</h4>
                   <div class="poi-map-frame">
                     <span class="poi-axis-label-y">Position up the plate</span>
-                    <canvas id="poi-canvas-err-fno" class="heatmap-canvas" style="width: 170px; height: 170px; max-width: 100%; aspect-ratio: 1;" width="170" height="170"></canvas>
+                    <canvas id="poi-canvas-exact" class="heatmap-canvas" style="width: 160px; height: 160px; max-width: 100%; aspect-ratio: 1;" width="160" height="160"></canvas>
                   </div>
                   <span class="poi-axis-label-x">Position across the plate</span>
+                  <span class="poi-plate-caption mono" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.35rem; text-align: center;">Reference</span>
                 </div>
                 <div class="poi-map-card">
-                  <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.45rem; text-align: center; color: var(--accent-burgundy);">Simple baseline: difference from exact</h4>
+                  <h4 class="poi-compare-title" style="font-size: 0.85rem; font-weight: 600; margin-top: 0; margin-bottom: 0.35rem; text-align: center; height: 2.35rem; min-height: 2.35rem; line-height: 1.2; display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box;">AI model's answer</h4>
                   <div class="poi-map-frame">
                     <span class="poi-axis-label-y">Position up the plate</span>
-                    <canvas id="poi-canvas-err-lin" class="heatmap-canvas" style="width: 170px; height: 170px; max-width: 100%; aspect-ratio: 1;" width="170" height="170"></canvas>
+                    <canvas id="poi-canvas-fno" class="heatmap-canvas" style="width: 160px; height: 160px; max-width: 100%; aspect-ratio: 1;" width="160" height="160"></canvas>
                   </div>
                   <span class="poi-axis-label-x">Position across the plate</span>
+                  <span id="poi-caption-fno" class="poi-plate-caption mono" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.35rem; text-align: center;">Error vs exact: 2.2%</span>
+                </div>
+                <div class="poi-map-card">
+                  <h4 class="poi-compare-title" style="font-size: 0.85rem; font-weight: 600; margin-top: 0; margin-bottom: 0.35rem; text-align: center; height: 2.35rem; min-height: 2.35rem; line-height: 1.2; display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box;">Simple baseline's answer</h4>
+                  <div class="poi-map-frame">
+                    <span class="poi-axis-label-y">Position up the plate</span>
+                    <canvas id="poi-canvas-lin" class="heatmap-canvas" style="width: 160px; height: 160px; max-width: 100%; aspect-ratio: 1;" width="160" height="160"></canvas>
+                  </div>
+                  <span class="poi-axis-label-x">Position across the plate</span>
+                  <span id="poi-caption-lin" class="poi-plate-caption mono" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.35rem; text-align: center;">Error vs exact: 1.2%</span>
                 </div>
               </div>
-            </div>
 
-            <!-- (c) Errors and Timings Summary Table -->
-            <div class="table-container" style="margin: 0.75rem 0 0.35rem 0;">
-              <table class="booktabs">
-                <thead>
-                  <tr>
-                    <th>Calculation</th>
-                    <th class="text-right">Error vs exact (%)</th>
-                    <th class="text-right">Time taken (ms)</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td><strong>Exact solver (reference)</strong></td>
-                    <td class="text-right mono">0.0% (reference)</td>
-                    <td class="text-right mono" id="poi-time-exact">-</td>
-                    <td><span class="badge badge-success">Reference</span></td>
-                  </tr>
-                  <tr>
-                    <td><strong>Simple baseline (linear model)</strong></td>
-                    <td class="text-right mono" id="poi-err-lin">-</td>
-                    <td class="text-right mono" id="poi-time-lin">-</td>
-                    <td><span class="badge badge-info" id="poi-badge-lin">Simple baseline</span></td>
-                  </tr>
-                  <tr>
-                    <td><strong>AI model (neural network)</strong></td>
-                    <td class="text-right mono" id="poi-err-fno">-</td>
-                    <td class="text-right mono" id="poi-time-fno">-</td>
-                    <td><span class="badge badge-info" id="poi-badge-fno">AI model: inside its trained range</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+              <!-- Difference from Exact Maps Section -->
+              <div style="margin-top: 1.25rem; margin-bottom: 1rem; border-top: 1px solid var(--rule-hairline); padding-top: 0.85rem;">
+                <p class="text-muted" style="font-size: 0.84rem; line-height: 1.45; margin-top: 0; margin-bottom: 0.85rem;">
+                  White means a match and red means a bigger difference. The differences are tiny compared with the plate temperature.
+                </p>
 
-            <!-- Timing footnote moved into Show details -->
-            <details id="poi-timing-details" class="technical-details" style="margin: 0.25rem 0 0.75rem 0;">
-              <summary class="technical-details-summary">Show details</summary>
-              <div class="technical-details-body" style="font-size: 0.8rem; color: var(--text-muted); padding-top: 0.35rem;">
-                Timings show end-to-end server calculation (including array extraction, solving, and boundary packing). The offline benchmark isolates the core numerical solve loop on pre-allocated vectors (0.5 ms exact solve; 10.9 ms if rebuilt from scratch).
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem;">
+                  <h4 style="font-size: 0.9rem; margin: 0; font-weight: 600;">Difference from exact</h4>
+                  <span class="text-muted" style="font-size: 0.75rem;">Absolute difference |model &minus; exact|</span>
+                </div>
+                <div class="colorbar-container" style="margin-bottom: 0.85rem; max-width: 420px;">
+                  <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+                    <span id="poi-diff-scale-min" class="mono">0.0000 (exact match)</span>
+                    <span id="poi-diff-scale-max" class="mono">+0.0050 (max difference)</span>
+                  </div>
+                  <canvas id="poi-diff-colorbar" height="10" style="width: 100%; height: 10px; border-radius: 3px; display: block; border: 1px solid var(--rule-hairline);"></canvas>
+                </div>
+                <div class="grid-2" style="gap: 0.75rem;">
+                  <div class="poi-map-card">
+                    <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.45rem; text-align: center; color: var(--accent-burgundy);">AI model: difference from exact</h4>
+                    <div class="poi-map-frame">
+                      <span class="poi-axis-label-y">Position up the plate</span>
+                      <canvas id="poi-canvas-err-fno" class="heatmap-canvas" style="width: 170px; height: 170px; max-width: 100%; aspect-ratio: 1;" width="170" height="170"></canvas>
+                    </div>
+                    <span class="poi-axis-label-x">Position across the plate</span>
+                  </div>
+                  <div class="poi-map-card">
+                    <h4 style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.45rem; text-align: center; color: var(--accent-burgundy);">Simple baseline: difference from exact</h4>
+                    <div class="poi-map-frame">
+                      <span class="poi-axis-label-y">Position up the plate</span>
+                      <canvas id="poi-canvas-err-lin" class="heatmap-canvas" style="width: 170px; height: 170px; max-width: 100%; aspect-ratio: 1;" width="170" height="170"></canvas>
+                    </div>
+                    <span class="poi-axis-label-x">Position across the plate</span>
+                  </div>
+                </div>
               </div>
-            </details>
+
+              <!-- Results Table: Calculation, Error vs exact, Time taken, Status -->
+              <div class="table-container" style="margin: 1rem 0 0.5rem 0;">
+                <table class="booktabs">
+                  <thead>
+                    <tr>
+                      <th>Calculation</th>
+                      <th class="text-right">Error vs exact (%)</th>
+                      <th class="text-right">Time taken (ms)</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Exact solver (reference)</strong></td>
+                      <td class="text-right mono">0.0% (reference)</td>
+                      <td class="text-right mono" id="poi-time-exact">-</td>
+                      <td><span class="badge badge-success">Reference</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>Simple baseline (linear model)</strong></td>
+                      <td class="text-right mono" id="poi-err-lin">-</td>
+                      <td class="text-right mono" id="poi-time-lin">-</td>
+                      <td><span class="badge badge-info" id="poi-badge-lin">Simple baseline</span></td>
+                    </tr>
+                    <tr>
+                      <td><strong>AI model (neural network)</strong></td>
+                      <td class="text-right mono" id="poi-err-fno">-</td>
+                      <td class="text-right mono" id="poi-time-fno">-</td>
+                      <td><span class="badge badge-info" id="poi-badge-fno">AI model: inside its trained range</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Timing footnote in Show details -->
+              <details id="poi-timing-details" class="technical-details" style="margin: 0.25rem 0 0.75rem 0;">
+                <summary class="technical-details-summary">Show details</summary>
+                <div class="technical-details-body" style="font-size: 0.8rem; color: var(--text-muted); padding-top: 0.35rem;">
+                  Timings show end-to-end server calculation (including array extraction, solving, and boundary packing). The offline benchmark isolates the core numerical solve loop on pre-allocated vectors (0.5 ms exact solve; 10.9 ms if rebuilt from scratch).
+                </div>
+              </details>
+            </div>
 
             <!-- (d) Honesty Note (Always Visible) -->
             <div id="poi-honesty-note" class="callout callout-info" style="margin: 0.65rem 0;">
@@ -2655,6 +2710,6 @@
   <!-- Floating Field Tooltip for Strip and Line Charts -->
   <div id="field-hover-tooltip" style="position: fixed; display: none; pointer-events: none; z-index: 9999; background: rgba(15, 23, 42, 0.92); color: #ffffff; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; box-shadow: 0 2px 6px rgba(0,0,0,0.3); white-space: nowrap;"></div>
 
-  <script src="app.js?v=thermalens-v41"></script>
+  <script src="app.js?v=thermalens-v45"></script>
 </body>
 </html>

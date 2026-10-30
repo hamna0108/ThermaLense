@@ -173,12 +173,6 @@ function handleRoute() {
 
   // Update cross-check banners when switching routes
   renderCrossCheckBanners();
-
-  // Run the default Poisson example automatically when the page opens so results show immediately
-  if (targetRoute === 'poisson' && !STATE.poissonAutoRunDone) {
-    STATE.poissonAutoRunDone = true;
-    executePoisson();
-  }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -5558,6 +5552,7 @@ function setPoissonFamily(family) {
   const sineControls = document.getElementById('poi-sine-controls');
   const gaussControls = document.getElementById('poi-gauss-controls');
   const familyDesc = document.getElementById('poi-family-desc');
+  const narrowNote = document.getElementById('poi-narrow-warning');
 
   if (family === 'sine') {
     if (sineBtn) sineBtn.classList.add('active');
@@ -5565,12 +5560,18 @@ function setPoissonFamily(family) {
     if (sineControls) sineControls.style.display = 'block';
     if (gaussControls) gaussControls.style.display = 'none';
     if (familyDesc) familyDesc.textContent = 'Alternating warm and cool zones, used to check accuracy.';
+    if (narrowNote) narrowNote.style.display = 'none';
   } else {
     if (gaussBtn) gaussBtn.classList.add('active');
     if (sineBtn) sineBtn.classList.remove('active');
     if (gaussControls) gaussControls.style.display = 'block';
     if (sineControls) sineControls.style.display = 'none';
     if (familyDesc) familyDesc.textContent = 'Round heat sources you place on the plate.';
+    if (narrowNote) {
+      const sigmaInput = document.getElementById('poi-gauss-sigma');
+      const s = parseFloat(sigmaInput ? sigmaInput.value : '0.15');
+      narrowNote.style.display = (!isNaN(s) && s < 0.08) ? 'block' : 'none';
+    }
   }
 }
 
@@ -5580,6 +5581,35 @@ function initPoissonWorkbench() {
   const presetsSelect = document.getElementById('poi-presets-select');
   const submitBtn = document.getElementById('poi-submit-btn');
   const downloadBtn = document.getElementById('poi-download-btn');
+  const sigmaInput = document.getElementById('poi-gauss-sigma');
+  const narrowNote = document.getElementById('poi-narrow-warning');
+
+  function updateNarrowWarning() {
+    if (!sigmaInput || !narrowNote) return;
+    const isSine = document.getElementById('poi-family-sine-btn') &&
+                   document.getElementById('poi-family-sine-btn').classList.contains('active');
+    if (isSine) {
+      narrowNote.style.display = 'none';
+      return;
+    }
+    const s = parseFloat(sigmaInput.value);
+    if (!isNaN(s) && s < 0.08) {
+      narrowNote.style.display = 'block';
+    } else {
+      narrowNote.style.display = 'none';
+    }
+  }
+
+  if (sigmaInput) {
+    sigmaInput.addEventListener('input', updateNarrowWarning);
+    sigmaInput.addEventListener('change', () => {
+      let s = parseFloat(sigmaInput.value);
+      if (isNaN(s) || s < 0.04) {
+        sigmaInput.value = '0.04';
+      }
+      updateNarrowWarning();
+    });
+  }
 
   sineBtn.addEventListener('click', () => {
     setPoissonFamily('sine');
@@ -5622,11 +5652,22 @@ function initPoissonWorkbench() {
       document.getElementById('poi-gauss-amp').value = 1.0;
       document.getElementById('poi-gauss-sigma').value = 0.12;
     }
+    updateNarrowWarning();
   });
 
   // Default shape: Hot spots, default example: Single center heat spot
   setPoissonFamily('gaussian');
   presetsSelect.value = 'gauss_center';
+
+  // Segmented view buttons: Result, AI model, Simple baseline, Compare
+  ['result', 'fno', 'lin', 'compare'].forEach(v => {
+    const btn = document.getElementById(`poi-view-btn-${v}`);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        switchPoissonView(v);
+      });
+    }
+  });
 
   submitBtn.addEventListener('click', executePoisson);
   downloadBtn.addEventListener('click', () => {
@@ -5682,7 +5723,16 @@ async function executePoisson() {
     const cx = parseFloat(document.getElementById('poi-gauss-cx').value) || 0.5;
     const cy = parseFloat(document.getElementById('poi-gauss-cy').value) || 0.5;
     const amp = parseFloat(document.getElementById('poi-gauss-amp').value) || 1.0;
-    const s = parseFloat(document.getElementById('poi-gauss-sigma').value) || 0.15;
+    const sigmaInput = document.getElementById('poi-gauss-sigma');
+    let s = parseFloat(sigmaInput ? sigmaInput.value : '0.15');
+    if (isNaN(s) || s < 0.04) {
+      s = 0.04;
+      if (sigmaInput) sigmaInput.value = '0.04';
+    }
+    const narrowNote = document.getElementById('poi-narrow-warning');
+    if (narrowNote) {
+      narrowNote.style.display = (s < 0.08) ? 'block' : 'none';
+    }
     sourcePayload = {
       type: 'gaussian',
       centers: [[cx, cy]],
@@ -5749,23 +5799,14 @@ async function executePoisson() {
     const linErrPct = formatPoissonPercent(linErr);
     const fnoErrPct = formatPoissonPercent(fnoErr);
 
-    // (a) One-sentence summary generated from the numbers
-    const errorTuple = `(exact 0%, AI model ${fnoErrPct}, simple baseline ${linErrPct})`;
-    const summaryEl = document.getElementById('poi-summary-text');
-    if (summaryEl) {
-      if (isSine) {
-        if (data.high_frequency_source || fnoErr > 0.3) {
-          summaryEl.textContent = `The plate has warm and cool zones, as the pattern asks. The exact solver and simple baseline agree closely ${errorTuple}, while the AI model has high error.`;
-        } else {
-          summaryEl.textContent = `The plate has warm and cool zones, as the pattern asks. All three methods agree closely ${errorTuple}.`;
-        }
-      } else {
-        if (fnoErr > 0.3 || linErr > 0.3) {
-          summaryEl.textContent = `The plate is warmest at the heater and cools toward the edges ${errorTuple}.`;
-        } else {
-          summaryEl.textContent = `The plate is warmest at the heater and cools toward the edges. All three methods agree closely ${errorTuple}.`;
-        }
-      }
+    // Captions in Compare view
+    const captionFno = document.getElementById('poi-caption-fno');
+    if (captionFno) {
+      captionFno.textContent = `Error vs exact: ${fnoErrPct}`;
+    }
+    const captionLin = document.getElementById('poi-caption-lin');
+    if (captionLin) {
+      captionLin.textContent = `Error vs exact: ${linErrPct}`;
     }
 
     const firstSentence = (fnoErr < linErr)
@@ -5804,25 +5845,38 @@ async function executePoisson() {
     });
 
     const scaleMax = globalMax;
+    lastPoissonData = data;
+    lastPoissonScaleMax = scaleMax;
+    lastPoissonHasNegative = hasNegative;
 
-    // Update solution colour bar labels
+    // Update single view colour bar labels
     const scaleMinEl = document.getElementById('poi-scale-min');
     const scaleMidEl = document.getElementById('poi-scale-mid');
     const scaleMaxEl = document.getElementById('poi-scale-max');
 
-    if (hasNegative) {
-      if (scaleMinEl) scaleMinEl.textContent = `${(-scaleMax).toFixed(3)} (cooler than edges)`;
-      if (scaleMidEl) scaleMidEl.textContent = `0.000 (edges)`;
-      if (scaleMaxEl) scaleMaxEl.textContent = `+${scaleMax.toFixed(3)} (warmer than edges)`;
-    } else {
-      if (scaleMinEl) scaleMinEl.textContent = `0.000 (edges)`;
-      if (scaleMidEl) scaleMidEl.textContent = `+${(scaleMax / 2).toFixed(3)}`;
-      if (scaleMaxEl) scaleMaxEl.textContent = `+${scaleMax.toFixed(3)} (max)`;
-    }
+    // Update compare view colour bar labels
+    const compScaleMinEl = document.getElementById('poi-compare-scale-min');
+    const compScaleMidEl = document.getElementById('poi-compare-scale-mid');
+    const compScaleMaxEl = document.getElementById('poi-compare-scale-max');
+
+    const minText = hasNegative ? `${(-scaleMax).toFixed(3)} (cooler than edges)` : '0.000 (edges)';
+    const midVal = scaleMax * 0.25;
+    const dec = scaleMax < 0.005 ? 4 : 3;
+    const midText = hasNegative ? '0.000 (edges)' : `+${midVal.toFixed(dec)}`;
+    const maxText = hasNegative ? `+${scaleMax.toFixed(3)} (warmer than edges)` : `+${scaleMax.toFixed(dec)} (max)`;
+
+    if (scaleMinEl) scaleMinEl.textContent = minText;
+    if (scaleMidEl) scaleMidEl.textContent = midText;
+    if (scaleMaxEl) scaleMaxEl.textContent = maxText;
+
+    if (compScaleMinEl) compScaleMinEl.textContent = minText;
+    if (compScaleMidEl) compScaleMidEl.textContent = midText;
+    if (compScaleMaxEl) compScaleMaxEl.textContent = maxText;
 
     renderPoissonColorbar('poi-solution-colorbar', hasNegative);
+    renderPoissonColorbar('poi-compare-colorbar', hasNegative);
 
-    // Render Canvas Heatmaps with identical shared scale
+    // Render Canvas Heatmaps with identical shared scale in Compare view
     drawPoissonGridCanvas('poi-canvas-exact', data.exact_field, scaleMax, hasNegative);
     drawPoissonGridCanvas('poi-canvas-fno', data.fno_field, scaleMax, hasNegative);
     drawPoissonGridCanvas('poi-canvas-lin', data.linear_field, scaleMax, hasNegative);
@@ -5851,6 +5905,9 @@ async function executePoisson() {
     drawPoissonDiffCanvas('poi-canvas-err-fno', errFno, maxDiff);
     drawPoissonDiffCanvas('poi-canvas-err-lin', errLin, maxDiff);
 
+    // Display current selected view without recomputing
+    switchPoissonView(currentPoissonView);
+
     const jsonDump = document.getElementById('poi-json-dump');
     if (jsonDump) {
       jsonDump.textContent = JSON.stringify({ request: payload, response: data }, null, 2);
@@ -5859,6 +5916,112 @@ async function executePoisson() {
   } catch (err) {
     stateContainer.innerHTML = `<div class="state-box error"><strong>Poisson Execution Error:</strong> ${err.message}</div>`;
   }
+}
+
+let lastPoissonData = null;
+let lastPoissonScaleMax = 1.0;
+let lastPoissonHasNegative = false;
+let currentPoissonView = 'result';
+
+function switchPoissonView(viewName) {
+  currentPoissonView = viewName;
+
+  ['result', 'fno', 'lin', 'compare'].forEach(v => {
+    const btn = document.getElementById(`poi-view-btn-${v}`);
+    if (btn) {
+      if (v === viewName) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+      } else {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-selected', 'false');
+      }
+    }
+  });
+
+  if (!lastPoissonData) return;
+
+  const singleView = document.getElementById('poi-single-view');
+  const compareView = document.getElementById('poi-compare-view');
+
+  if (viewName === 'compare') {
+    if (singleView) singleView.style.display = 'none';
+    if (compareView) compareView.style.display = 'block';
+  } else {
+    if (compareView) compareView.style.display = 'none';
+    if (singleView) singleView.style.display = 'block';
+    renderPoissonSingleView(viewName);
+  }
+}
+
+function renderPoissonSingleView(viewName) {
+  if (!lastPoissonData) return;
+  const data = lastPoissonData;
+  const scaleMax = lastPoissonScaleMax;
+  const hasNegative = lastPoissonHasNegative;
+
+  let field = data.exact_field;
+  let title = 'Exact answer';
+  let caption = 'Exact solver (the reference answer)';
+  let showAmber = false;
+
+  const linErr = data.relative_errors.rel_l2_linear_vs_exact;
+  const fnoErr = data.relative_errors.rel_l2_fno_vs_exact;
+  const linErrPct = formatPoissonPercent(linErr);
+  const fnoErrPct = formatPoissonPercent(fnoErr);
+
+  if (viewName === 'fno') {
+    field = data.fno_field;
+    title = "AI model's answer";
+    caption = `${fnoErrPct} different from the exact answer`;
+    showAmber = (fnoErr > 0.50);
+  } else if (viewName === 'lin') {
+    field = data.linear_field;
+    title = "Simple baseline's answer";
+    caption = `${linErrPct} different from the exact answer`;
+    showAmber = false;
+  } else {
+    // result (exact solver)
+    field = data.exact_field;
+    title = 'Exact answer';
+    caption = 'Exact solver (the reference answer)';
+    showAmber = false;
+  }
+
+  const titleEl = document.getElementById('poi-single-title');
+  if (titleEl) titleEl.textContent = title;
+
+  const captionEl = document.getElementById('poi-single-caption');
+  if (captionEl) captionEl.textContent = caption;
+
+  const amberEl = document.getElementById('poi-single-amber-warning');
+  if (amberEl) {
+    amberEl.style.display = showAmber ? 'block' : 'none';
+  }
+
+  // Compute hottest point for THIS method
+  let maxVal = -Infinity;
+  let maxX = 0, maxY = 0;
+  const Ngrid = field.length;
+  for (let r = 0; r < Ngrid; r++) {
+    for (let c = 0; c < field[r].length; c++) {
+      const v = field[r][c];
+      if (v > maxVal) {
+        maxVal = v;
+        maxX = r / (Ngrid - 1);
+        maxY = c / (Ngrid - 1);
+      }
+    }
+  }
+  const hottestEl = document.getElementById('poi-hottest-point');
+  if (hottestEl) {
+    const valStr = (maxVal >= 0 ? '+' : '') + maxVal.toFixed(maxVal < 0.005 ? 4 : 3);
+    const unitStr = (data.units || data.temperature_units) ? ` ${data.units || data.temperature_units}` : ' in plate units';
+    hottestEl.textContent = `Hottest point: ${valStr} at (${maxX.toFixed(2)}, ${maxY.toFixed(2)})${unitStr}`;
+  }
+
+  // Render the single large plate canvas
+  drawPoissonGridCanvas('poi-canvas-single', field, scaleMax, hasNegative);
 }
 
 function formatPoissonPercent(err) {
@@ -5875,23 +6038,25 @@ function getPoissonSolutionRgb(normVal, isDiverging) {
     // normVal in [-1, 1], centered at 0 (plate edge level)
     const clamped = Math.max(-1, Math.min(1, normVal));
     if (clamped < 0) {
-      // Cooler than edges: blue
-      const s = -clamped; // 0 to 1
+      // Cooler than edges: blue with square-root mapping
+      const s = Math.sqrt(-clamped); // 0 to 1
       const r = Math.round(245 - s * 220); // 245 -> 25
       const g = Math.round(245 - s * 155); // 245 -> 90
       const b = Math.round(245 - s * 25);  // 245 -> 220
       return [r, g, b];
     } else {
-      // Warmer than edges: red
-      const s = clamped; // 0 to 1
+      // Warmer than edges: red with square-root mapping
+      const s = Math.sqrt(clamped); // 0 to 1
       const r = Math.round(245 - s * 25);  // 245 -> 220
       const g = Math.round(245 - s * 210); // 245 -> 35
       const b = Math.round(245 - s * 210); // 245 -> 35
       return [r, g, b];
     }
   } else {
-    // normVal in [0, 1]: one-sided white to red scale
-    const s = Math.max(0, Math.min(1, normVal));
+    // normVal in [0, 1]: one-sided white to red scale with square-root mapping
+    // for enhanced low-end sensitivity (so a peak of +0.009 and diffuse edges are clearly visible)
+    const clamped = Math.max(0, Math.min(1, normVal));
+    const s = Math.sqrt(clamped);
     const r = Math.round(255 - s * 35);  // 255 -> 220
     const g = Math.round(255 - s * 220); // 255 -> 35
     const b = Math.round(255 - s * 220); // 255 -> 35
@@ -5916,8 +6081,20 @@ function renderPoissonColorbar(canvasId, isDiverging) {
   const h = canvas.height || 12;
   const imgData = ctx.createImageData(w, h);
   for (let px = 0; px < w; px++) {
-    const t = isDiverging ? (-1 + 2 * (px / (w - 1))) : (px / (w - 1));
-    const [r, g, b] = getPoissonSolutionRgb(t, isDiverging);
+    const fraction = px / (w - 1);
+    let r, g, b;
+    if (isDiverging) {
+      const t = -1 + 2 * fraction;
+      [r, g, b] = getPoissonSolutionRgb(t, true);
+    } else {
+      // In square-root space, the visual gradient transitions linearly in s from 0 to 1
+      // which corresponds to physical values scaleMax * s^2
+      // At fraction = 0.5, s = 0.5, corresponding to scaleMax * 0.25 (the midpoint label)
+      const s = fraction;
+      r = Math.round(255 - s * 35);
+      g = Math.round(255 - s * 220);
+      b = Math.round(255 - s * 220);
+    }
     for (let py = 0; py < h; py++) {
       const idx = (py * w + px) * 4;
       imgData.data[idx] = r;

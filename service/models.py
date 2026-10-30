@@ -363,6 +363,9 @@ class PoissonGaussianSource(BaseModel):
                 raise ValueError(f"Each center must have exactly 2 coordinates [x, y] (received {c})")
             if not (0.0 <= c[0] <= 1.0 and 0.0 <= c[1] <= 1.0):
                 raise ValueError(f"Center coordinates must lie in [0, 1] (received {c})")
+        for s in self.sigmas:
+            if s < 0.04:
+                raise ValueError(f"Heater width {s} is below minimum allowable width (0.04, ~2.5 grid cells at N=64)")
         return self
 
 class PoissonSineSource(BaseModel):

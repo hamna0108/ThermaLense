@@ -168,7 +168,7 @@ def test_poisson_smoke_wave_and_hotspots(live_server):
 
         # Check field help text for Hot spots (Requirement 6)
         cx_help = page.locator("label[for='poi-gauss-cx'] + input + span.form-help").inner_text()
-        assert "Where the heater sits (0 = left or bottom edge, 1 = right or top edge, 0.5 = middle)" in cx_help
+        assert "0 = left or bottom edge, 1 = right or top edge" in cx_help
         amp_help = page.locator("label[for='poi-gauss-amp'] + input + span.form-help").inner_text()
         assert "How powerful the heater is" in amp_help
         sigma_help = page.locator("label[for='poi-gauss-sigma'] + input + span.form-help").inner_text()
@@ -185,60 +185,125 @@ def test_poisson_smoke_wave_and_hotspots(live_server):
         assert "Pre-factorized direct solver initialized at 64" in grid_details.inner_text()
         more_opts.click()  # close back
 
-        # Requirement 1: Results show automatically on page open without clicking submit!
+        # Verify results do not show on start; only when Show steady temperature is clicked
+        assert not page.locator("#poi-result-panel").is_visible()
+        assert "Configure the heat source and click" in page.locator("#poi-state-container").inner_text()
+        page.click("#poi-submit-btn")
         page.wait_for_selector("#poi-result-panel", state="visible", timeout=15000)
 
-        # Requirement 3: Right panel order verification
-        # (a) One-sentence summary generated from the numbers
-        summary_callout = page.locator("#poi-summary-callout")
-        assert summary_callout.is_visible()
-        summary_text = page.locator("#poi-summary-text").inner_text()
-        assert "The plate is warmest at the heater and cools toward the edges." in summary_text
-        assert "All three methods agree closely" in summary_text
-        assert "(exact 0%, AI model" in summary_text
-        assert "simple baseline" in summary_text
+        # Requirement: Card title and intro line
+        assert page.locator("#poisson-results-card .card-title").inner_text() == "Plate temperature"
+        assert "Top-down view of the plate. White is cold (edges stay at 0), red is hot. The hottest spot is where your heater is." in page.locator("#poi-card-intro").inner_text()
 
-        # (b) Solution maps and shared colour bar
+        # (a) Segmented View Buttons
+        btn_result = page.locator("#poi-view-btn-result")
+        btn_fno = page.locator("#poi-view-btn-fno")
+        btn_lin = page.locator("#poi-view-btn-lin")
+        btn_compare = page.locator("#poi-view-btn-compare")
+
+        assert btn_result.is_visible()
+        assert btn_fno.is_visible()
+        assert btn_lin.is_visible()
+        assert btn_compare.is_visible()
+
+        # Result is selected by default and visually active
+        assert "active" in btn_result.get_attribute("class")
+        assert btn_result.get_attribute("aria-selected") == "true"
+        assert "active" not in btn_fno.get_attribute("class")
+
+        # (b) Single view for Result (Exact solver)
+        single_view = page.locator("#poi-single-view")
+        compare_view = page.locator("#poi-compare-view")
+        assert single_view.is_visible()
+        assert not compare_view.is_visible()
+
+        assert "exact answer" in page.locator("#poi-single-title").inner_text().lower()
+        single_box = page.locator("#poi-canvas-single").bounding_box()
+        assert single_box["width"] >= 240, f"Expected single canvas to be large, got {single_box['width']}"
         assert page.locator("#poi-solution-colorbar").is_visible()
-        assert page.locator("h4", has_text="Exact answer").is_visible()
-        assert page.locator("h4", has_text="AI model's answer").is_visible()
-        assert page.locator("h4", has_text="Simple baseline's answer").is_visible()
 
-        # Requirement 5: For non-negative exact solution, one-sided white-to-red scale with maximum labelled
+        hottest_text = page.locator("#poi-hottest-point").inner_text()
+        assert "Hottest point:" in hottest_text
+        assert "in plate units" in hottest_text
+
+        caption_text = page.locator("#poi-single-caption").inner_text()
+        assert caption_text == "Exact solver (the reference answer)"
+        assert not page.locator("#poi-single-amber-warning").is_visible()
+
+        # Requirement: For non-negative exact solution, one-sided white-to-red scale with maximum labelled
         scale_min_text = page.locator("#poi-scale-min").inner_text()
         scale_max_text = page.locator("#poi-scale-max").inner_text()
         assert "0.000 (edges)" in scale_min_text
         assert "(max)" in scale_max_text
 
-        # Difference maps
-        assert page.locator("h3", has_text="Difference from exact").is_visible()
+        # (c) Test switching to AI model single view without recomputing
+        btn_fno.click()
+        assert "active" in btn_fno.get_attribute("class")
+        assert "active" not in btn_result.get_attribute("class")
+        assert "ai model" in page.locator("#poi-single-title").inner_text().lower()
+        assert "different from the exact answer" in page.locator("#poi-single-caption").inner_text()
+        assert "Hottest point:" in page.locator("#poi-hottest-point").inner_text()
+
+        # (d) Test switching to Simple baseline single view without recomputing
+        btn_lin.click()
+        assert "active" in btn_lin.get_attribute("class")
+        assert "simple baseline" in page.locator("#poi-single-title").inner_text().lower()
+        assert "different from the exact answer" in page.locator("#poi-single-caption").inner_text()
+        assert "Hottest point:" in page.locator("#poi-hottest-point").inner_text()
+
+        # (e) Test switching to Compare view
+        btn_compare.click()
+        assert "active" in btn_compare.get_attribute("class")
+        assert not single_view.is_visible()
+        assert compare_view.is_visible()
+
+        # Three plates side by side with equal-height titles
+        box_exact = page.locator("#poi-canvas-exact").bounding_box()
+        box_fno = page.locator("#poi-canvas-fno").bounding_box()
+        box_lin = page.locator("#poi-canvas-lin").bounding_box()
+        assert abs(box_exact["y"] - box_fno["y"]) < 1.0, f"Compare Exact ({box_exact['y']}) and FNO ({box_fno['y']}) misaligned"
+        assert abs(box_exact["y"] - box_lin["y"]) < 1.0, f"Compare Exact ({box_exact['y']}) and Lin ({box_lin['y']}) misaligned"
+
+        # Plain line above difference maps
+        assert "White means a match and red means a bigger difference. The differences are tiny compared with the plate temperature." in compare_view.inner_text()
+
+        # Difference maps inside Compare view
+        assert page.get_by_role("heading", name="Difference from exact", exact=True).is_visible()
         assert page.locator("#poi-diff-colorbar").is_visible()
         assert page.locator("h4", has_text="AI model: difference from exact").is_visible()
         assert page.locator("h4", has_text="Simple baseline: difference from exact").is_visible()
 
-        # (c) Accuracy table
-        table_headers = page.locator("#poi-result-panel table").first.locator("thead th").all_inner_texts()
+        # Results table inside Compare view
+        table_headers = compare_view.locator("table").first.locator("thead th").all_inner_texts()
         assert "Calculation" in table_headers
         assert "Error vs exact (%)" in table_headers
         assert "Time taken (ms)" in table_headers
 
-        rows_text = page.locator("#poi-result-panel table").first.locator("tbody").inner_text()
+        rows_text = compare_view.locator("table").first.locator("tbody").inner_text()
         assert "Exact solver (reference)" in rows_text
         assert "Simple baseline (linear model)" in rows_text
         assert "AI model (neural network)" in rows_text
 
-        # Timing note in Show details under table
+        # Collapsed section "Accuracy check (for experts)" has been removed
+        assert page.locator("#poi-accuracy-details").count() == 0
+
+        # Timing note in Show details
         timing_details = page.locator("#poi-timing-details")
         assert timing_details.is_visible()
-        timing_details.locator("summary").click()
+        timing_details.locator("> summary").click()
         assert "Timings show end-to-end server calculation" in timing_details.inner_text()
 
-        # (d) Honesty note
+        # Switch back to Result
+        btn_result.click()
+        assert single_view.is_visible()
+        assert not compare_view.is_visible()
+
+        # (e) Honesty note
         honesty_note = page.locator("#poi-honesty-note")
         assert honesty_note.is_visible()
         assert "Across our full test sets the simple baseline was as accurate or better on every test split." in honesty_note.inner_text()
 
-        # (e) Collapsible full benchmark disclosure
+        # (f) Collapsible full benchmark disclosure
         benchmark_disc = page.locator("#poi-benchmark-disclosure")
         assert benchmark_disc.is_visible()
         assert not benchmark_disc.evaluate("el => el.open")  # collapsed by default
@@ -258,19 +323,19 @@ def test_poisson_smoke_wave_and_hotspots(live_server):
         page.click("#poi-submit-btn")
         page.wait_for_selector("#poi-result-panel", state="visible", timeout=15000)
 
-        # Requirement 2: Summary wording for Test pattern
-        summary_sine = page.locator("#poi-summary-text").inner_text()
-        assert "The plate has warm and cool zones, as the pattern asks." in summary_sine
-        assert "(exact 0%, AI model 2.9%, simple baseline 4.6%)" in summary_sine
-
-        # Requirement 5: For sine wave with negative values, diverging scale used
+        # Requirement: For sine wave with negative values, diverging scale used
         scale_min_div = page.locator("#poi-scale-min").inner_text()
         assert "(cooler than edges)" in scale_min_div
 
-        # PIXEL CHECK on diverging solution: both warm and cool lobes present
+        # PIXEL CHECK on diverging solution: both warm and cool lobes present in single view
+        stats_single = check_canvas_warm_and_cool(page, "poi-canvas-single")
+
+        # In Compare view, check all 3 compare canvases
+        page.click("#poi-view-btn-compare")
         stats_exact = check_canvas_warm_and_cool(page, "poi-canvas-exact")
         stats_fno = check_canvas_warm_and_cool(page, "poi-canvas-fno")
         stats_lin = check_canvas_warm_and_cool(page, "poi-canvas-lin")
+        page.click("#poi-view-btn-result")
 
         # Save 1440px screenshot
         save_screenshot(page, "poisson_1440px.png")
@@ -286,7 +351,8 @@ def test_poisson_smoke_wave_and_hotspots(live_server):
 
         mobile_page.goto(f"{live_server}/#poisson", wait_until="networkidle")
         mobile_page.wait_for_selector("#heading-poisson", state="visible")
-        # Results show automatically on mobile too!
+        # Click submit to display results on mobile
+        mobile_page.click("#poi-submit-btn")
         mobile_page.wait_for_selector("#poi-result-panel", state="visible", timeout=15000)
         time.sleep(0.5)
 
@@ -359,5 +425,68 @@ def test_poisson_example_selection_and_form_sync(live_server):
         assert sine_controls.is_visible()
         assert not gauss_controls.is_visible()
         assert desc.inner_text() == "Alternating warm and cool zones, used to check accuracy."
+
+        browser.close()
+
+
+def test_poisson_width_limits_and_alignment(live_server):
+    """Test width minimum (0.04), amber warning note, shortened help text, and plate alignment."""
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
+
+        page.goto(f"{live_server}/#poisson", wait_until="networkidle")
+        page.wait_for_selector("#heading-poisson", state="visible")
+        page.click("#poi-submit-btn")
+        page.wait_for_selector("#poi-result-panel", state="visible", timeout=15000)
+
+        # 1. Helper text for Center X and Center Y
+        cx_help = page.locator("label[for='poi-gauss-cx'] + input + span.form-help").inner_text()
+        cy_help = page.locator("label[for='poi-gauss-cy'] + input + span.form-help").inner_text()
+        assert cx_help == "0 = left or bottom edge, 1 = right or top edge"
+        assert cy_help == "0 = left or bottom edge, 1 = right or top edge"
+
+        # 2. Panel alignment: in Compare view, the three plates have aligned top positions
+        page.click("#poi-view-btn-compare")
+        box_exact = page.locator("#poi-canvas-exact").bounding_box()
+        box_fno = page.locator("#poi-canvas-fno").bounding_box()
+        box_lin = page.locator("#poi-canvas-lin").bounding_box()
+        assert abs(box_exact["y"] - box_fno["y"]) < 1.0, f"Exact ({box_exact['y']}) and FNO ({box_fno['y']}) misaligned"
+        assert abs(box_exact["y"] - box_lin["y"]) < 1.0, f"Exact ({box_exact['y']}) and Lin ({box_lin['y']}) misaligned"
+        page.click("#poi-view-btn-result")
+
+        # 3. Width input minimum attribute
+        sigma_input = page.locator("#poi-gauss-sigma")
+        assert sigma_input.get_attribute("min") == "0.04"
+
+        # 4. Input below 0.04 is clamped to 0.04 and triggers the amber warning note
+        sigma_input.fill("0.01")
+        page.click("#poi-submit-btn")
+        page.wait_for_selector("#poi-result-panel", state="visible", timeout=15000)
+
+        assert sigma_input.input_value() == "0.04"
+        amber_note = page.locator("#poi-narrow-warning")
+        assert amber_note.is_visible()
+        assert "This heater is narrower than the AI model was trained on, so its answer may be wrong. The exact answer is still correct." in amber_note.inner_text()
+
+        # 5. Setting width back to normal training range (>= 0.08) hides amber warning
+        sigma_input.fill("0.15")
+        page.click("#poi-submit-btn")
+        page.wait_for_selector("#poi-result-panel", state="visible", timeout=15000)
+        assert not amber_note.is_visible()
+
+        # 6. Check AI view shows amber note when error > 50% (sine_high has > 60% error)
+        page.select_option("#poi-presets-select", "sine_high")
+        page.click("#poi-submit-btn")
+        page.wait_for_selector("#poi-result-panel", state="visible", timeout=15000)
+
+        page.click("#poi-view-btn-fno")
+        ai_warning = page.locator("#poi-single-amber-warning")
+        assert ai_warning.is_visible()
+        assert "The AI model is not reliable for this input." in ai_warning.inner_text()
+
+        # Switch back to Result and verify amber note is hidden
+        page.click("#poi-view-btn-result")
+        assert not ai_warning.is_visible()
 
         browser.close()

@@ -18,7 +18,7 @@ $$\frac{\partial u}{\partial t} = \alpha \frac{\partial^2 u}{\partial x^2}, \qua
 Governed by:
 $$-\nabla^2 u(x, y) = -\left(\frac{\partial^2 u}{\partial x^2} + \frac{\partial^2 u}{\partial y^2}\right) = f(x, y), \quad (x, y) \in [0, 1]^2$$
 - **Boundary Conditions:** Homogeneous Dirichlet $u|_{\partial\Omega} = 0$.
-- **Source Distributions:** Gaussian radial mixtures $f(x, y) = \sum_{k=1}^K A_k \exp\left(-\frac{(x - x_k)^2 + (y - y_k)^2}{2\sigma_k^2}\right)$, high-frequency sinusoidal Fourier modes, and single manufactured benchmarks.
+- **Source Distributions:** Gaussian radial mixtures $f(x, y) = \sum_{k=1}^K A_k \exp\left(-\frac{(x - x_k)^2 + (y - y_k)^2}{2\sigma_k^2}\right)$, high-frequency sinusoidal Fourier modes, and single manufactured benchmarks.wqes
 - **Forward Operator Objective:** Learn mapping $\mathcal{G}_\theta: f \mapsto u$ using FNO-2D with zero-boundary enforcement, evaluated against classical direct sparse LU factorization and dual linear ridge regression.
 
 ## Core Capabilities

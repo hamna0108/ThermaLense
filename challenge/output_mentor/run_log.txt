@@ -3,16 +3,16 @@ THERMALENS CHALLENGE RUN LOG
 ================================================================================
 Command Line      : C:\Users\HP\Desktop\Digital twin\challenge\run_challenge.py --cases challenge/cases_mentor.jsonl --out challenge/output_mentor --seed 20260101 --config challenge/config.json --check-repro
 Execution Seed    : 20260101
-Start Time (UTC)  : 2026-10-30T10:40:05Z
-End Time (UTC)    : 2026-10-30T10:40:17Z
-Elapsed Runtime   : 12.078s
-Total Cases       : 22
+Start Time (UTC)  : 2026-10-30T11:41:59Z
+End Time (UTC)    : 2026-10-30T11:42:20Z
+Elapsed Runtime   : 21.405s
+Total Cases       : 26
 Run Status        : COMPLETED
-Status Counts     : ok=12, ok_with_warnings=9, invalid_input=1
+Status Counts     : ok=15, ok_with_warnings=10, invalid_input=1
 
 --- Git Environment ---
-Git Commit (HEAD) : fa2f9494f608c3c092a0b99ff7e5f58e502e0885
-Working Tree      : Dirty (5 modified/untracked files)
+Git Commit (HEAD) : 52da77a8a5383862fa54ea0538042f714e49450a
+Working Tree      : Dirty (25 modified/untracked files)
 
 --- Python & Environment ---
 Python Version    : 3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]

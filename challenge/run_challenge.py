@@ -1129,13 +1129,15 @@ def run_heat_case(case: Dict[str, Any], config: Dict[str, Any], app_context: Dic
             field_rel_l2 = None
 
     # ---------------------------------------------------------------------------------------------
-    # Stage 3: Diagnosis (3-Branch Reference Logic)
+    # Stage 3: Diagnosis (3-Branch Reference Logic with LOSO and Class A Refinement)
     # ---------------------------------------------------------------------------------------------
     t0_diag = time.perf_counter()
 
     verdict = "-"
     faulty_idx = None
+    faulty_sensor_x = None
     diag_note = None
+    diag_resp = None
 
     if reference is not None and isinstance(reference, dict):
         base_obj = BaselineData(
@@ -1213,15 +1215,191 @@ def run_heat_case(case: Dict[str, Any], config: Dict[str, Any], app_context: Dic
             verdict = "H"
             faulty_idx = None
 
-    t_diag_ms = round((time.perf_counter() - t0_diag) * 1000.0, 2)
-    timing_breakdown["diagnose_ms"] = t_diag_ms
-    timing_breakdown["total_ms"] = round(t_est_ms + t_field_ms + t_diag_ms, 2)
+    # Compute goodness-of-fit (reduced chi2) for single-diffusivity fit
+    alpha_local_fit = alpha_hat if (alpha_hat is not None and alpha_hat > 0) else (alpha_nominal or 0.10)
+    _, _, u_fit_field = solve_heat_1d_general(
+        Nx=grid_nx, Nt=grid_nt, alpha=alpha_local_fit, u0_fn=u0_fn,
+        bc_left=bc_left, bc_right=bc_right, domain_x=domain_x, domain_t=domain_t
+    )
+    if has_physical_scale and T_boundary is not None and T_peak is not None and abs(T_peak - T_boundary) > 1e-7:
+        u_fit_field = u_fit_field * (T_peak - T_boundary) + T_boundary
 
-    # Fault exclusion re-estimation
+    tg_eval = np.linspace(domain_t[0], domain_t[1], grid_nt)
+    xg_eval = np.linspace(domain_x[0], domain_x[1], grid_nx)
+    interp_fit = RegularGridInterpolator((tg_eval, xg_eval), u_fit_field, method="linear", bounds_error=False, fill_value=None)
+    preds_fit = interp_fit(np.column_stack([t_coords, x_coords]))
+    resids_fit = np.asarray(readings) - preds_fit
+    sig_eff = sigma if (sigma is not None and sigma > 0) else max(1.4826 * float(np.median(np.abs(resids_fit - np.median(resids_fit)))), 0.01)
+    chi2_red_single = float(np.sum((resids_fit / sig_eff) ** 2) / max(1, len(readings) - 1))
+
+    # Refinement 1: Class A vs Class C continuous shift check
+    # If change_time is at lower search boundary (<=0.05 or <= min(t)) and single-diffusivity fit is good (<2.0),
+    # the shift has been present from t=0 (constant shift across whole test = Class A).
+    if verdict == "C" and diag_resp is not None:
+        c_time = getattr(diag_resp, "change_time", None)
+        if c_time is not None and (c_time <= 0.05 or c_time <= min(t_coords) + 1e-4):
+            if chi2_red_single < 2.0:
+                verdict = "A"
+                case_notes.append(
+                    f"Diagnose verdict refined from C to A: detected change-time t_c={c_time} is at lower boundary "
+                    f"and single-diffusivity fit has reduced chi2={chi2_red_single:.2f} < 2.0 (constant shift from t=0)."
+                )
+
+    # Refinement 2: Leave-One-Sensor-Out (LOSO) for whole-sensor corruption
+    sensor_groups = {}
+    for idx, (x, t, y) in enumerate(zip(x_coords, t_coords, readings)):
+        ux = round(float(x), 4)
+        sensor_groups.setdefault(ux, []).append(idx)
+
     alpha_hat_excluding_faulty = None
     ci95_excluding_faulty = None
-    if verdict == "F" and faulty_idx is not None and isinstance(faulty_idx, int):
+
+    # Check for multi-reading sensor setup (at least 3 unique sensor locations and at least one sensor with >= 2 readings)
+    # Only run LOSO if goodness of fit is poor (chi2_red_single > 2.0) or cascade already flagged a fault
+    if len(sensor_groups) >= 3 and any(len(idxs) >= 2 for idxs in sensor_groups.values()):
+        if chi2_red_single > 2.0 or verdict == "F":
+            best_candidate = None
+            min_chi2_cand = chi2_red_single
+
+            for ux, idx_list in sensor_groups.items():
+                if len(idx_list) < 2:
+                    continue
+                if len(readings) - len(idx_list) < 4:
+                    continue
+                x_rem = [x for i, x in enumerate(x_coords) if i not in idx_list]
+                t_rem = [t for i, t in enumerate(t_coords) if i not in idx_list]
+                y_rem = [y for i, y in enumerate(readings) if i not in idx_list]
+
+                a_cand, ci_cand, _ = _estimate_alpha_helper(
+                    x_coords=x_rem, t_coords=t_rem, readings=y_rem, sigma=sigma,
+                    is_zero_bc=is_zero_bc, is_sin_ic=is_sin_ic, is_std_domain=is_std_domain,
+                    L=L, T=T, T_boundary=T_boundary, T_peak=T_peak, truth_alpha=truth_alpha,
+                    u0_fn=u0_fn, bc_left=bc_left, bc_right=bc_right, domain_x=domain_x, domain_t=domain_t,
+                    grid_nx=grid_nx, grid_nt=grid_nt, mode=config.get("mode", "mode3plus")
+                )
+                if a_cand is None or a_cand <= 0:
+                    continue
+
+                _, _, u_cand_field = solve_heat_1d_general(
+                    Nx=grid_nx, Nt=grid_nt, alpha=a_cand, u0_fn=u0_fn,
+                    bc_left=bc_left, bc_right=bc_right, domain_x=domain_x, domain_t=domain_t
+                )
+                if has_physical_scale and T_boundary is not None and T_peak is not None and abs(T_peak - T_boundary) > 1e-7:
+                    u_cand_field = u_cand_field * (T_peak - T_boundary) + T_boundary
+
+                interp_cand = RegularGridInterpolator((tg_eval, xg_eval), u_cand_field, method="linear", bounds_error=False, fill_value=None)
+                preds_rem = interp_cand(np.column_stack([t_rem, x_rem]))
+                chi2_cand = float(np.sum(((np.asarray(y_rem) - preds_rem) / sig_eff) ** 2) / max(1, len(y_rem) - 1))
+
+                # Removed sensor residuals under a_cand
+                x_m = [x for i, x in enumerate(x_coords) if i in idx_list]
+                t_m = [t for i, t in enumerate(t_coords) if i in idx_list]
+                y_m = [y for i, y in enumerate(readings) if i in idx_list]
+                preds_m = interp_cand(np.column_stack([t_m, x_m]))
+                res_m = np.asarray(y_m) - preds_m
+                chi2_removed = float(np.mean((res_m / sig_eff) ** 2))
+
+                # Condition (a): LOSO may flag a sensor only if remaining data fit a single healthy alpha well
+                # (chi2_cand < 2.0) AND the removed sensor's own residuals are the large ones.
+                # If removing a sensor does not give a good fit, do NOT flag F.
+                is_improvement = (
+                    (chi2_cand < 2.0) and
+                    (chi2_cand < 0.6 * chi2_red_single) and
+                    (chi2_removed > 3.0) and
+                    (chi2_removed > 2.0 * chi2_cand)
+                )
+                if is_improvement and chi2_cand < min_chi2_cand:
+                    min_chi2_cand = chi2_cand
+                    best_candidate = {
+                        "ux": ux,
+                        "idx_list": idx_list,
+                        "alpha_hat": a_cand,
+                        "ci95": ci_cand,
+                        "chi2": chi2_cand,
+                        "chi2_removed": chi2_removed
+                    }
+
+            if best_candidate is not None:
+                verdict = "F"
+                faulty_sensor_x = best_candidate["ux"]
+                faulty_idx = best_candidate["idx_list"][0]
+                alpha_hat_excluding_faulty = best_candidate["alpha_hat"]
+                ci95_excluding_faulty = best_candidate["ci95"]
+                case_notes.append(
+                    f"Whole sensor fault detected at x={faulty_sensor_x} across {len(best_candidate['idx_list'])} readings via LOSO; "
+                    f"chi2_red dropped from {chi2_red_single:.2f} to {best_candidate['chi2']:.2f}."
+                )
+
+    # Refinement 3: Regime-consistency check (Condition b)
+    # Fit alpha separately on early and late readings (split by time).
+    # If the two estimates differ by more than their combined 95% intervals and no single sensor explains the misfit,
+    # report verdict C with the estimated change time.
+    if verdict != "F" and len(readings) >= 8:
+        u_times = sorted(list(set(round(float(t), 5) for t in t_coords)))
+        if len(u_times) >= 3:
+            best_regime_split = None
+            max_z_diff = 0.0
+
+            for t_s in u_times[1:-1]:
+                early_mask = [round(float(t), 5) <= t_s for t in t_coords]
+                late_mask = [round(float(t), 5) > t_s for t in t_coords]
+                if sum(early_mask) < 4 or sum(late_mask) < 4:
+                    continue
+
+                x_e = [x for i, x in enumerate(x_coords) if early_mask[i]]
+                t_e = [t for i, t in enumerate(t_coords) if early_mask[i]]
+                y_e = [y for i, y in enumerate(readings) if early_mask[i]]
+
+                x_l = [x for i, x in enumerate(x_coords) if late_mask[i]]
+                t_l = [t for i, t in enumerate(t_coords) if late_mask[i]]
+                y_l = [y for i, y in enumerate(readings) if late_mask[i]]
+
+                a_e, ci_e, _ = _estimate_alpha_helper(
+                    x_coords=x_e, t_coords=t_e, readings=y_e, sigma=sigma,
+                    is_zero_bc=is_zero_bc, is_sin_ic=is_sin_ic, is_std_domain=is_std_domain,
+                    L=L, T=T, T_boundary=T_boundary, T_peak=T_peak, truth_alpha=truth_alpha,
+                    u0_fn=u0_fn, bc_left=bc_left, bc_right=bc_right, domain_x=domain_x, domain_t=domain_t,
+                    grid_nx=grid_nx, grid_nt=grid_nt, mode=config.get("mode", "mode3plus")
+                )
+                a_l, ci_l, _ = _estimate_alpha_helper(
+                    x_coords=x_l, t_coords=t_l, readings=y_l, sigma=sigma,
+                    is_zero_bc=is_zero_bc, is_sin_ic=is_sin_ic, is_std_domain=is_std_domain,
+                    L=L, T=T, T_boundary=T_boundary, T_peak=T_peak, truth_alpha=truth_alpha,
+                    u0_fn=u0_fn, bc_left=bc_left, bc_right=bc_right, domain_x=domain_x, domain_t=domain_t,
+                    grid_nx=grid_nx, grid_nt=grid_nt, mode=config.get("mode", "mode3plus")
+                )
+
+                if a_e is not None and a_l is not None and a_e > 0 and a_l > 0:
+                    ci_e_hw = 0.5 * (ci_e[1] - ci_e[0]) if (ci_e and ci_e[0] is not None) else 0.05
+                    ci_l_hw = 0.5 * (ci_l[1] - ci_l[0]) if (ci_l and ci_l[0] is not None) else 0.05
+                    comb_ci = float(np.sqrt(ci_e_hw ** 2 + ci_l_hw ** 2))
+                    diff = float(abs(a_e - a_l))
+                    z_ratio = diff / max(comb_ci, 1e-6)
+                    if diff > comb_ci and z_ratio > max_z_diff:
+                        max_z_diff = z_ratio
+                        best_regime_split = {
+                            "t_split": t_s,
+                            "a_early": a_e,
+                            "ci_early": ci_e,
+                            "a_late": a_l,
+                            "ci_late": ci_l,
+                            "diff": diff,
+                            "comb_ci": comb_ci
+                        }
+
+            if best_regime_split is not None and (chi2_red_single > 2.0 or verdict == "C"):
+                verdict = "C"
+                t_ch = best_regime_split["t_split"]
+                case_notes.append(
+                    f"Regime-consistency check: alpha_early={best_regime_split['a_early']:.4f} and "
+                    f"alpha_late={best_regime_split['a_late']:.4f} differ by {best_regime_split['diff']:.4f} "
+                    f"(> combined 95% CI {best_regime_split['comb_ci']:.4f}); reported verdict C with estimated change time t_c={t_ch}."
+                )
+
+    # If single reading was flagged by cascade and not yet excluded by whole sensor
+    if verdict == "F" and alpha_hat_excluding_faulty is None and faulty_idx is not None and isinstance(faulty_idx, int):
         if 0 <= faulty_idx < len(readings) and (len(readings) - 1) >= 4:
+            faulty_sensor_x = round(float(x_coords[faulty_idx]), 4)
             x_excl = [x for i, x in enumerate(x_coords) if i != faulty_idx]
             t_excl = [t for i, t in enumerate(t_coords) if i != faulty_idx]
             y_excl = [y for i, y in enumerate(readings) if i != faulty_idx]
@@ -1249,7 +1427,11 @@ def run_heat_case(case: Dict[str, Any], config: Dict[str, Any], app_context: Dic
             )
             alpha_hat_excluding_faulty = a_ex
             ci95_excluding_faulty = ci_ex
-            case_notes.append(f"Sensor fault flagged at index {faulty_idx}; re-estimated alpha without faulty reading.")
+            case_notes.append(f"Single sensor fault flagged at index {faulty_idx} (x={faulty_sensor_x}); re-estimated alpha without faulty reading.")
+
+    t_diag_ms = round((time.perf_counter() - t0_diag) * 1000.0, 2)
+    timing_breakdown["diagnose_ms"] = t_diag_ms
+    timing_breakdown["total_ms"] = round(t_est_ms + t_field_ms + t_diag_ms, 2)
 
     return {
         "case_id": case_id,
@@ -1267,11 +1449,14 @@ def run_heat_case(case: Dict[str, Any], config: Dict[str, Any], app_context: Dic
         "field_method": method_used,
         "field_rel_l2": field_rel_l2,
         "field_fno_out_of_domain": field_fno_out_of_domain,
+        "field_fno_rel_to_solver": field_fno_rel_l2,
+        "field_linear_rel_to_solver": None,
         "field_fno_rel_l2": field_fno_rel_l2,
         "field_fno": None,
         "field_linear": None,
         "field_linear_rel_l2": None,
         "verdict": verdict,
+        "faulty_sensor_x": faulty_sensor_x,
         "faulty_reading_idx": faulty_idx,
         "diagnose_note": diag_note,
         "out_of_domain": ood_warnings,
@@ -1359,16 +1544,15 @@ def run_poisson_case(case: Dict[str, Any], config: Dict[str, Any], app_context: 
 
     is_zero_dir = _is_all_zero_dirichlet(bc_dict)
     field_fno = None
-    field_fno_rel_l2 = None
+    field_fno_rel_to_solver = None
     field_linear = None
-    field_linear_rel_l2 = None
+    field_linear_rel_to_solver = None
 
     if is_zero_dir and grid_nx == 64 and grid_ny == 64:
         # FNO-2D and Linear Baseline operate on 64x64 grid
         X_grid, Y_grid = solver.X, solver.Y
         f_grid = source_fn(X_grid, Y_grid)
-        ref_field = np.array(truth_field, dtype=float) if truth_field is not None else u_field
-        norm_ref = max(1e-12, float(np.linalg.norm(ref_field)))
+        norm_solver = max(1e-12, float(np.linalg.norm(u_field)))
 
         # 1. FNO-2D Poisson
         fno_poi = APP_STATE.get("fno_poisson")
@@ -1380,7 +1564,7 @@ def run_poisson_case(case: Dict[str, Any], config: Dict[str, Any], app_context: 
                 with torch.no_grad():
                     u_fno_arr = fno_poi(fno_in).squeeze().cpu().numpy()
                 field_fno = u_fno_arr.tolist()
-                field_fno_rel_l2 = float(np.linalg.norm(u_fno_arr - ref_field) / norm_ref)
+                field_fno_rel_to_solver = float(np.linalg.norm(u_fno_arr - u_field) / norm_solver)
             except Exception as e:
                 case_notes.append(f"FNO Poisson failed: {e}")
 
@@ -1390,11 +1574,11 @@ def run_poisson_case(case: Dict[str, Any], config: Dict[str, Any], app_context: 
             try:
                 u_lin_arr = lin_poi.predict(f_grid)
                 field_linear = u_lin_arr.tolist()
-                field_linear_rel_l2 = float(np.linalg.norm(u_lin_arr - ref_field) / norm_ref)
+                field_linear_rel_to_solver = float(np.linalg.norm(u_lin_arr - u_field) / norm_solver)
             except Exception as e:
                 case_notes.append(f"Linear baseline Poisson failed: {e}")
 
-        case_notes.append("Primary answer is the exact numerical solver; FNO-2D and Linear baseline provided for comparative evaluation.")
+        case_notes.append("Primary answer is the exact numerical solver; FNO-2D and Linear baseline errors are relative to the solver.")
 
     return {
         "case_id": case_id,
@@ -1412,11 +1596,14 @@ def run_poisson_case(case: Dict[str, Any], config: Dict[str, Any], app_context: 
         "field_method": "solver",
         "field_rel_l2": field_rel_l2,
         "field_fno_out_of_domain": None,
-        "field_fno_rel_l2": field_fno_rel_l2,
+        "field_fno_rel_to_solver": field_fno_rel_to_solver,
+        "field_linear_rel_to_solver": field_linear_rel_to_solver,
+        "field_fno_rel_l2": field_fno_rel_to_solver,
         "field_fno": field_fno,
         "field_linear": field_linear,
-        "field_linear_rel_l2": field_linear_rel_l2,
+        "field_linear_rel_l2": field_linear_rel_to_solver,
         "verdict": "-",
+        "faulty_sensor_x": None,
         "faulty_reading_idx": None,
         "diagnose_note": None,
         "out_of_domain": ood_warnings,
@@ -1655,8 +1842,8 @@ def write_results(
         "case_id", "equation", "status", "tier", "message",
         "truth_alpha", "alpha_hat", "ci95_low", "ci95_high", "in_ci", "alpha_rel_error",
         "alpha_hat_excluding_faulty", "ci95_excl_low", "ci95_excl_high",
-        "field_method", "field_rel_l2", "field_fno_rel_l2", "field_linear_rel_l2",
-        "verdict", "faulty_reading_idx", "diagnose_note",
+        "field_method", "field_rel_l2", "field_fno_rel_to_solver", "field_linear_rel_to_solver", "field_fno_rel_l2", "field_linear_rel_l2",
+        "verdict", "faulty_sensor_x", "faulty_reading_idx", "diagnose_note",
         "ood_count", "notes_count", "errors_count",
         "errors", "out_of_domain", "notes",
         "field_ms", "estimate_ms", "diagnose_ms", "total_ms"
@@ -1688,9 +1875,12 @@ def write_results(
             "ci95_excl_high": ci_ex[1] if (isinstance(ci_ex, (list, tuple)) and len(ci_ex) > 1 and ci_ex[1] is not None) else "",
             "field_method": r.get("field_method", ""),
             "field_rel_l2": r.get("field_rel_l2") if r.get("field_rel_l2") is not None else "",
+            "field_fno_rel_to_solver": r.get("field_fno_rel_to_solver") if r.get("field_fno_rel_to_solver") is not None else "",
+            "field_linear_rel_to_solver": r.get("field_linear_rel_to_solver") if r.get("field_linear_rel_to_solver") is not None else "",
             "field_fno_rel_l2": r.get("field_fno_rel_l2") if r.get("field_fno_rel_l2") is not None else "",
             "field_linear_rel_l2": r.get("field_linear_rel_l2") if r.get("field_linear_rel_l2") is not None else "",
             "verdict": r.get("verdict") if r.get("verdict") is not None else "",
+            "faulty_sensor_x": r.get("faulty_sensor_x") if r.get("faulty_sensor_x") is not None else "",
             "faulty_reading_idx": r.get("faulty_reading_idx") if r.get("faulty_reading_idx") is not None else "",
             "diagnose_note": r.get("diagnose_note") if r.get("diagnose_note") is not None else "",
             "ood_count": len(ood),
@@ -1729,12 +1919,12 @@ def write_results(
 
 def print_summary_table(results: List[Dict[str, Any]], metadata: Dict[str, Any]):
     """Print ASCII summary table to stdout."""
-    print("\n" + "=" * 130)
+    print("\n" + "=" * 135)
     print(f" THERMALENS CHALLENGE EVALUATION SUMMARY (Cases: {metadata['num_cases']}, Seed: {metadata['seed']})")
-    print("=" * 130)
-    header = f"{'Case ID':<32} {'Truth':<8} {'AlphaHat':<10} {'RelErr':<8} {'CI95':<19} {'InCI':<6} {'Verd':<6} {'AlphaExcl':<10} {'Status':<18}"
+    print("=" * 135)
+    header = f"{'Case ID':<32} {'Truth':<8} {'AlphaHat':<10} {'RelErr':<8} {'CI95':<19} {'InCI':<6} {'Verd':<10} {'AlphaExcl':<10} {'Status':<18}"
     print(header)
-    print("-" * 130)
+    print("-" * 135)
 
     for r in results:
         cid = str(r.get("case_id", "unknown"))[:31]
@@ -1755,20 +1945,24 @@ def print_summary_table(results: List[Dict[str, Any]], metadata: Dict[str, Any])
 
         verd = str(r.get("verdict") or "-")
         f_idx = r.get("faulty_reading_idx")
-        if verd == "F" and f_idx is not None:
-            verd = f"F({f_idx})"
+        f_x = r.get("faulty_sensor_x")
+        if verd == "F":
+            if f_x is not None:
+                verd = f"F(x={f_x})"
+            elif f_idx is not None:
+                verd = f"F({f_idx})"
 
         a_excl = f"{r.get('alpha_hat_excluding_faulty', 0.0):.5f}" if r.get("alpha_hat_excluding_faulty") is not None else "-"
 
-        print(f"{cid:<32} {truth:<8} {ahat:<10} {rel_err:<8} {ci_str:<19} {in_ci_str:<6} {verd:<6} {a_excl:<10} {st:<18}")
+        print(f"{cid:<32} {truth:<8} {ahat:<10} {rel_err:<8} {ci_str:<19} {in_ci_str:<6} {verd:<10} {a_excl:<10} {st:<18}")
 
     n_ok = metadata.get("num_ok", 0)
     n_warn = metadata.get("num_ok_with_warnings", 0)
     n_invalid = metadata.get("num_invalid_input", 0)
 
-    print("=" * 130)
+    print("=" * 135)
     print(f" SUMMARY COUNTS: ok: {n_ok}, ok_with_warnings: {n_warn}, invalid_input: {n_invalid} (Total: {len(results)})")
-    print("=" * 130 + "\n")
+    print("=" * 135 + "\n")
 
 
 # =================================================================================================
@@ -1926,11 +2120,14 @@ def main():
                     "field_method": case_res.get("field_method"),
                     "field_rel_l2": case_res.get("field_rel_l2"),
                     "field_fno_out_of_domain": case_res.get("field_fno_out_of_domain"),
+                    "field_fno_rel_to_solver": case_res.get("field_fno_rel_to_solver"),
+                    "field_linear_rel_to_solver": case_res.get("field_linear_rel_to_solver"),
                     "field_fno_rel_l2": case_res.get("field_fno_rel_l2"),
                     "field_fno": case_res.get("field_fno"),
                     "field_linear": case_res.get("field_linear"),
                     "field_linear_rel_l2": case_res.get("field_linear_rel_l2"),
                     "verdict": case_res.get("verdict"),
+                    "faulty_sensor_x": case_res.get("faulty_sensor_x"),
                     "faulty_reading_idx": case_res.get("faulty_reading_idx"),
                     "diagnose_note": case_res.get("diagnose_note"),
                     "out_of_domain": ood,

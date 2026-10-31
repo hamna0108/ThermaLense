@@ -99,7 +99,7 @@ def test_placement_middle_default_and_handoff_to_estimate(live_server):
         assert "how many readings can you take?" in lbl_n.inner_text().lower()
 
         lbl_sigma = page.locator("#place-lbl-sigma")
-        assert "thermometer accuracy" in lbl_sigma.inner_text().lower()
+        assert ("sensor noise" in lbl_sigma.inner_text().lower()) or ("thermometer accuracy" in lbl_sigma.inner_text().lower())
 
         lbl_x = page.locator("#place-lbl-sensor-x")
         assert "sensor position (m from the left end)" in lbl_x.inner_text().lower()

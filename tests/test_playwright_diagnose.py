@@ -145,7 +145,7 @@ def test_playwright_diagnose_real_units_and_baseline_conversion(live_server):
         heat_line_h = page.locator("#diag-heat-spread-line").text_content()
         assert "Normal heat spread (reference):" in heat_line_h
         assert "This test:" in heat_line_h
-        assert "m^2/s" in heat_line_h
+        assert ("m²/s" in heat_line_h) or ("m^2/s" in heat_line_h)
         assert "(within normal range)" in heat_line_h
 
         # Verify Show details concept note
@@ -168,7 +168,7 @@ def test_playwright_diagnose_real_units_and_baseline_conversion(live_server):
         heat_line_a = page.locator("#diag-heat-spread-line").text_content()
         assert "Normal heat spread (reference):" in heat_line_a
         assert "This test:" in heat_line_a
-        assert "m^2/s" in heat_line_a
+        assert ("m²/s" in heat_line_a) or ("m^2/s" in heat_line_a)
         assert "(different from normal)" in heat_line_a
 
         # Class F: Sensor Fault (Sensor 3 stuck)

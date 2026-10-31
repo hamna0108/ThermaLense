@@ -2225,6 +2225,21 @@ tr[id*="alpha"] td {
   align-items: center;
 }
 
+@media (max-width: 480px) {
+  .poi-view-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.35rem;
+    width: 100%;
+  }
+  .poi-view-btn {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.78rem;
+    text-align: center;
+    width: 100%;
+  }
+}
+
 .poi-view-btn {
   padding: 0.38rem 0.8rem;
   font-size: 0.83rem;

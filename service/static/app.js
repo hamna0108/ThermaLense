@@ -958,7 +958,7 @@ function initEstimateWorkbench() {
         if (colXHelper) colXHelper.textContent = 'Where on the bar: 0 = one end, 1 = other end';
         if (colTHelper) colTHelper.textContent = 'When it was measured (0 to 1)';
         if (colUHelper) colUHelper.textContent = 'Scaled so hottest point at start = 1';
-        if (sigmaLabel) sigmaLabel.innerHTML = 'Sensor accuracy (&plusmn;) <span class="info-tooltip" title="Measurement error in scaled units.">&#9432;</span>';
+        if (sigmaLabel) sigmaLabel.innerHTML = 'Sensor noise (&plusmn;) <span class="info-tooltip" title="Measurement noise in scaled units.">&#9432;</span>';
         if (sigmaInput && (sigmaInput.value === '0.5' || sigmaInput.value === '0.50')) {
           sigmaInput.value = '0.01';
         }
@@ -969,7 +969,7 @@ function initEstimateWorkbench() {
         if (colXHelper) colXHelper.textContent = 'Where on the bar: 0 = one end, up to bar length';
         if (colTHelper) colTHelper.textContent = 'When it was measured';
         if (colUHelper) colUHelper.textContent = 'What the sensor read';
-        if (sigmaLabel) sigmaLabel.innerHTML = 'Sensor accuracy (&plusmn; &deg;C) <span class="info-tooltip" title="Typical measurement error of your temperature sensor. Not sure? Leave 0.5 &deg;C.">&#9432;</span>';
+        if (sigmaLabel) sigmaLabel.innerHTML = 'Sensor noise (&plusmn; &deg;C) <span class="info-tooltip" title="Typical measurement noise of your temperature sensor. Not sure? Leave 0.5 &deg;C.">&#9432;</span>';
         if (sigmaInput && (sigmaInput.value === '0.01' || sigmaInput.value === '0.010')) {
           sigmaInput.value = '0.5';
         }
@@ -3390,7 +3390,7 @@ async function executeDiagnosis() {
     return;
   }
   if (!isAutoSigma && (isNaN(sigma) || sigma <= 0)) {
-    stateContainer.innerHTML = '<div class="state-box error">Please enter a valid sensor accuracy (&plusmn; &deg;C) or check "Estimate sensor accuracy from the reference run".</div>';
+    stateContainer.innerHTML = '<div class="state-box error">Please enter a valid sensor noise (&plusmn; &deg;C) or check "Estimate sensor noise from the reference run".</div>';
     return;
   }
 
@@ -3547,7 +3547,7 @@ async function executeDiagnosis() {
     if (heatSpreadEl) {
       const isNormalSpread = (assignedClass !== 'A');
       const statusText = isNormalSpread ? 'within normal range' : 'different from normal';
-      heatSpreadEl.textContent = `Normal heat spread (reference): ${alphaBase} m^2/s. This test: ${alphaFit} m^2/s (${statusText}).`;
+      heatSpreadEl.textContent = `Normal heat spread (reference): ${alphaBase} m²/s. This test: ${alphaFit} m²/s (${statusText}).`;
       heatSpreadEl.style.display = 'block';
     }
 
@@ -3607,9 +3607,9 @@ async function executeDiagnosis() {
         </tr>
         <tr>
           <td>Heat spread rate</td>
-          <td class="mono">${alphaFit}</td>
-          <td class="mono">Baseline: ${alphaBase}</td>
-          <td><span class="text-muted mono">Diffusivity &alpha;</span></td>
+          <td class="mono">${alphaFit} m²/s</td>
+          <td class="mono">Baseline: ${alphaBase} m²/s</td>
+          <td><span class="text-muted mono">Heat spread &alpha;</span></td>
         </tr>
         ${tcRow}
       `;
@@ -5619,8 +5619,38 @@ function initPoissonWorkbench() {
   const presetsSelect = document.getElementById('poi-presets-select');
   const submitBtn = document.getElementById('poi-submit-btn');
   const downloadBtn = document.getElementById('poi-download-btn');
+  const cxInput = document.getElementById('poi-gauss-cx');
+  const cyInput = document.getElementById('poi-gauss-cy');
+  const ampInput = document.getElementById('poi-gauss-amp');
   const sigmaInput = document.getElementById('poi-gauss-sigma');
+  const cxSlider = document.getElementById('poi-gauss-cx-slider');
+  const cySlider = document.getElementById('poi-gauss-cy-slider');
+  const ampSlider = document.getElementById('poi-gauss-amp-slider');
+  const sigmaSlider = document.getElementById('poi-gauss-sigma-slider');
+  const cxPct = document.getElementById('poi-gauss-cx-pct');
+  const cyPct = document.getElementById('poi-gauss-cy-pct');
+  const ampVal = document.getElementById('poi-gauss-amp-val');
+  const sigmaPct = document.getElementById('poi-gauss-sigma-pct');
   const narrowNote = document.getElementById('poi-narrow-warning');
+
+  function updatePoissonRawDisplay() {
+    const rawCenter = document.getElementById('poi-raw-center');
+    const rawAmp = document.getElementById('poi-raw-amp');
+    const rawSigma = document.getElementById('poi-raw-sigma');
+    const rawGrid = document.getElementById('poi-raw-grid');
+    const gridEl = document.getElementById('poi-grid-size');
+
+    const cx = cxInput ? parseFloat(cxInput.value) || 0 : 0.5;
+    const cy = cyInput ? parseFloat(cyInput.value) || 0 : 0.5;
+    const amp = ampInput ? parseFloat(ampInput.value) || 0 : 1.0;
+    const sigma = sigmaInput ? parseFloat(sigmaInput.value) || 0 : 0.15;
+    const grid = gridEl ? gridEl.value : '64';
+
+    if (rawCenter) rawCenter.textContent = `(${cx.toFixed(2)}, ${cy.toFixed(2)})`;
+    if (rawAmp) rawAmp.textContent = amp.toFixed(2);
+    if (rawSigma) rawSigma.textContent = sigma.toFixed(2);
+    if (rawGrid) rawGrid.textContent = `${grid} × ${grid}`;
+  }
 
   function updateNarrowWarning() {
     if (!sigmaInput || !narrowNote) return;
@@ -5638,14 +5668,137 @@ function initPoissonWorkbench() {
     }
   }
 
+  function syncPoissonSlidersFromInputs() {
+    if (cxInput && cxSlider) {
+      const cx = parseFloat(cxInput.value);
+      if (!isNaN(cx)) {
+        const pct = Math.round(cx * 100);
+        cxSlider.value = pct;
+        if (cxPct) cxPct.textContent = `${pct}%`;
+      }
+    }
+    if (cyInput && cySlider) {
+      const cy = parseFloat(cyInput.value);
+      if (!isNaN(cy)) {
+        const pct = Math.round(cy * 100);
+        cySlider.value = pct;
+        if (cyPct) cyPct.textContent = `${pct}%`;
+      }
+    }
+    if (ampInput && ampSlider) {
+      const a = parseFloat(ampInput.value);
+      if (!isNaN(a)) {
+        ampSlider.value = a;
+        if (ampVal) ampVal.textContent = a.toFixed(1);
+      }
+    }
+    if (sigmaInput && sigmaSlider) {
+      const s = parseFloat(sigmaInput.value);
+      if (!isNaN(s)) {
+        sigmaSlider.value = Math.max(0.04, s);
+        if (sigmaPct) sigmaPct.textContent = `${Math.round(s * 100)}%`;
+      }
+    }
+    updateNarrowWarning();
+    updatePoissonRawDisplay();
+  }
+
+  // Slider input handlers
+  if (cxSlider) {
+    cxSlider.addEventListener('input', () => {
+      const pct = parseInt(cxSlider.value, 10);
+      if (cxInput) cxInput.value = (pct / 100).toFixed(2);
+      if (cxPct) cxPct.textContent = `${pct}%`;
+      updatePoissonRawDisplay();
+    });
+  }
+  if (cySlider) {
+    cySlider.addEventListener('input', () => {
+      const pct = parseInt(cySlider.value, 10);
+      if (cyInput) cyInput.value = (pct / 100).toFixed(2);
+      if (cyPct) cyPct.textContent = `${pct}%`;
+      updatePoissonRawDisplay();
+    });
+  }
+  if (ampSlider) {
+    ampSlider.addEventListener('input', () => {
+      const a = parseFloat(ampSlider.value);
+      if (ampInput) ampInput.value = a.toFixed(1);
+      if (ampVal) ampVal.textContent = a.toFixed(1);
+      updatePoissonRawDisplay();
+    });
+  }
+  if (sigmaSlider) {
+    sigmaSlider.addEventListener('input', () => {
+      const s = parseFloat(sigmaSlider.value);
+      if (sigmaInput) sigmaInput.value = s.toFixed(2);
+      if (sigmaPct) sigmaPct.textContent = `${Math.round(s * 100)}%`;
+      updateNarrowWarning();
+      updatePoissonRawDisplay();
+    });
+  }
+
+  // Number input handlers
+  if (cxInput) {
+    const onCxChange = () => {
+      let v = parseFloat(cxInput.value);
+      if (!isNaN(v)) {
+        v = Math.max(0.0, Math.min(1.0, v));
+        const pct = Math.round(v * 100);
+        if (cxSlider) cxSlider.value = pct;
+        if (cxPct) cxPct.textContent = `${pct}%`;
+      }
+      updatePoissonRawDisplay();
+    };
+    cxInput.addEventListener('input', onCxChange);
+    cxInput.addEventListener('change', onCxChange);
+  }
+  if (cyInput) {
+    const onCyChange = () => {
+      let v = parseFloat(cyInput.value);
+      if (!isNaN(v)) {
+        v = Math.max(0.0, Math.min(1.0, v));
+        const pct = Math.round(v * 100);
+        if (cySlider) cySlider.value = pct;
+        if (cyPct) cyPct.textContent = `${pct}%`;
+      }
+      updatePoissonRawDisplay();
+    };
+    cyInput.addEventListener('input', onCyChange);
+    cyInput.addEventListener('change', onCyChange);
+  }
+  if (ampInput) {
+    const onAmpChange = () => {
+      const v = parseFloat(ampInput.value);
+      if (!isNaN(v)) {
+        if (ampSlider) ampSlider.value = v;
+        if (ampVal) ampVal.textContent = v.toFixed(1);
+      }
+      updatePoissonRawDisplay();
+    };
+    ampInput.addEventListener('input', onAmpChange);
+    ampInput.addEventListener('change', onAmpChange);
+  }
   if (sigmaInput) {
-    sigmaInput.addEventListener('input', updateNarrowWarning);
+    sigmaInput.addEventListener('input', () => {
+      const v = parseFloat(sigmaInput.value);
+      if (!isNaN(v)) {
+        if (sigmaSlider) sigmaSlider.value = Math.max(0.04, v);
+        if (sigmaPct) sigmaPct.textContent = `${Math.round(v * 100)}%`;
+      }
+      updateNarrowWarning();
+      updatePoissonRawDisplay();
+    });
     sigmaInput.addEventListener('change', () => {
       let s = parseFloat(sigmaInput.value);
       if (isNaN(s) || s < 0.04) {
+        s = 0.04;
         sigmaInput.value = '0.04';
       }
+      if (sigmaSlider) sigmaSlider.value = s;
+      if (sigmaPct) sigmaPct.textContent = `${Math.round(s * 100)}%`;
       updateNarrowWarning();
+      updatePoissonRawDisplay();
     });
   }
 
@@ -5690,12 +5843,13 @@ function initPoissonWorkbench() {
       document.getElementById('poi-gauss-amp').value = 1.0;
       document.getElementById('poi-gauss-sigma').value = 0.12;
     }
-    updateNarrowWarning();
+    syncPoissonSlidersFromInputs();
   });
 
   // Default shape: Hot spots, default example: Single center heat spot
   setPoissonFamily('gaussian');
   presetsSelect.value = 'gauss_center';
+  syncPoissonSlidersFromInputs();
 
   // Segmented view buttons: Result, AI model, Simple baseline, Compare
   ['result', 'fno', 'lin', 'compare'].forEach(v => {
@@ -5897,19 +6051,23 @@ async function executePoisson() {
     const compScaleMidEl = document.getElementById('poi-compare-scale-mid');
     const compScaleMaxEl = document.getElementById('poi-compare-scale-max');
 
-    const minText = hasNegative ? `${(-scaleMax).toFixed(3)} (cooler than edges)` : '0.000 (edges)';
+    const minText = hasNegative
+      ? `Cool (plate edges: ${(-scaleMax).toFixed(3)} (cooler than edges))`
+      : 'Cool (plate edges: 0.000 (edges))';
     const midVal = scaleMax * 0.25;
     const dec = scaleMax < 0.005 ? 4 : 3;
     const midText = hasNegative ? '0.000 (edges)' : `+${midVal.toFixed(dec)}`;
-    const maxText = hasNegative ? `+${scaleMax.toFixed(3)} (warmer than edges)` : `+${scaleMax.toFixed(dec)} (max)`;
+    const maxText = hasNegative
+      ? `Hottest <small class="text-muted" style="font-size: 0.72rem;">(+${scaleMax.toFixed(3)} (warmer than edges) (max))</small>`
+      : `Hottest <small class="text-muted" style="font-size: 0.72rem;">(+${scaleMax.toFixed(dec)} (max))</small>`;
 
     if (scaleMinEl) scaleMinEl.textContent = minText;
     if (scaleMidEl) scaleMidEl.textContent = midText;
-    if (scaleMaxEl) scaleMaxEl.textContent = maxText;
+    if (scaleMaxEl) scaleMaxEl.innerHTML = maxText;
 
     if (compScaleMinEl) compScaleMinEl.textContent = minText;
     if (compScaleMidEl) compScaleMidEl.textContent = midText;
-    if (compScaleMaxEl) compScaleMaxEl.textContent = maxText;
+    if (compScaleMaxEl) compScaleMaxEl.innerHTML = maxText;
 
     renderPoissonColorbar('poi-solution-colorbar', hasNegative);
     renderPoissonColorbar('poi-compare-colorbar', hasNegative);
@@ -6053,9 +6211,12 @@ function renderPoissonSingleView(viewName) {
   }
   const hottestEl = document.getElementById('poi-hottest-point');
   if (hottestEl) {
-    const valStr = (maxVal >= 0 ? '+' : '') + maxVal.toFixed(maxVal < 0.005 ? 4 : 3);
+    const dec = maxVal < 0.005 ? 4 : 3;
+    const valStr = (maxVal >= 0 ? '+' : '') + maxVal.toFixed(dec);
+    const xPct = Math.round(maxX * 100);
+    const yPct = Math.round(maxY * 100);
     const unitStr = (data.units || data.temperature_units) ? ` ${data.units || data.temperature_units}` : ' in plate units';
-    hottestEl.textContent = `Hottest point: ${valStr} at (${maxX.toFixed(2)}, ${maxY.toFixed(2)})${unitStr}`;
+    hottestEl.innerHTML = `Hottest spot: ${xPct}% from the left, ${yPct}% from the bottom. Heat level ${valStr} (relative). <span class="text-muted" style="font-size: 0.76rem;">(Hottest point: ${valStr} at (${maxX.toFixed(2)}, ${maxY.toFixed(2)})${unitStr})</span>`;
   }
 
   // Render the single large plate canvas
